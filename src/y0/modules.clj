@@ -1,8 +1,8 @@
 (ns y0.modules
-  (:require [clojure.edn :as edn]
-            [clojure.walk :as walk]
+  (:require [clojure.walk :as walk]
             [clojure.string :as str]
-            [clojure.java.io :as io]))
+            [clojure.java.io :as io]
+            [edamame.core :as e :refer [parse-string-all]]))
 
 (def y0-symbols ["<-" "..." "test" "clj-step" "return" "continue"])
 
@@ -73,7 +73,7 @@
 
 (defn load-single-module [module-name y0-path]
   (let [module-text (read-module module-name y0-path)
-        [ns-decl & statements] (edn/read-string (str "(" module-text ")"))
+        [ns-decl & statements] (parse-string-all module-text)
         [module-list ns-map refer-map] (parse-ns-decl ns-decl)
         refer-map (merge refer-map (->> (for [sym y0-symbols]
                                           [sym "y0"])

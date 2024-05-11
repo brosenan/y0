@@ -111,6 +111,18 @@
                                              (test ...)
                                              (clj-step return continue)"))
 
+;; When reading the module, the source location of symbols is recorded as metadata on the symbols.
+(fact
+ (-> (load-single-module "foo.bar" ["/some/path"])
+     first     ;; The parsed module
+     second    ;; (charlie)
+     first     ;; charlie
+     meta) => {:col 47 :end-col 54 :row 3 :end-row 3}
+ (provided
+  (read-module "foo.bar" ["/some/path"]) => "(ns foo.bar)
+                                             (a b)
+                                             (charlie)"))
+
 ;; ## Loading a Complete Program
 
 ;; The loading of a complete program is done module-by-module.
