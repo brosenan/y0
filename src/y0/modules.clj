@@ -34,7 +34,7 @@
         existing (->> paths (filter #(.exists %)))]
     (if (empty? existing)
       (throw (Exception. (str "Cannot find module " module-name " in paths " (list y0-path))))
-      (-> existing first slurp))))
+      [(-> existing first slurp) existing])))
 
 (defn fold- [[m1 n1 r1] [m2 n2 r2]]
   [(concat m1 m2) (merge n1 n2) (merge r1 r2)])
@@ -72,8 +72,12 @@
          (reduce fold [[] {nil module-name} {}]))))
 
 (defn load-single-module [module-name y0-path]
-  (let [module-text (read-module module-name y0-path)
-        [ns-decl & statements] (parse-string-all module-text)
+  (let [[module-text module-path] (read-module module-name y0-path)
+        [ns-decl & statements] (parse-string-all module-text {:postprocess (fn [m]
+                                                                             (if (instance? clojure.lang.IObj (:obj m))
+                                                                               (with-meta (:obj m) (-> (:loc m)
+                                                                                                       (assoc :path module-path)))
+                                                                               (:obj m)))})
         [module-list ns-map refer-map] (parse-ns-decl ns-decl)
         refer-map (merge refer-map (->> (for [sym y0-symbols]
                                           [sym "y0"])

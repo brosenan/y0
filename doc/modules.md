@@ -110,9 +110,9 @@ To retrieve the module file's contents it calls `read-module`.
 (fact
  (load-single-module "foo.bar" ["/some/path"]) => ['[(foo.bar/a baz.quux/x)] ["baz.quux"]]
  (provided
-  (read-module "foo.bar" ["/some/path"]) => "(ns foo.bar
-                                              (:require [baz.quux :as baz :refer [x y z]]))
-                                              (a x)"))
+  (read-module "foo.bar" ["/some/path"]) => ["(ns foo.bar
+                                               (:require [baz.quux :as baz :refer [x y z]]))
+                                              (a x)" "bar.y0"]))
 
 ```
 The `y0` module is a special one in that it does not contain a set of statements but rather the semantics of the language itself.
@@ -125,10 +125,10 @@ Additional symbols in the `y0` namespace: `...` and `test`.
                                                      (y0/test y0/...)
                                                      (y0/clj-step y0/return y0/continue)] []]
  (provided
-  (read-module "foo.bar" ["/some/path"]) => "(ns foo.bar)
-                                             (<- (a :x) (b :x))
-                                             (test ...)
-                                             (clj-step return continue)"))
+  (read-module "foo.bar" ["/some/path"]) => ["(ns foo.bar)
+                                              (<- (a :x) (b :x))
+                                              (test ...)
+                                              (clj-step return continue)" "bar.y0"]))
 
 ```
 When reading the module, the source location of symbols is recorded as metadata on the symbols.
@@ -138,11 +138,11 @@ When reading the module, the source location of symbols is recorded as metadata 
      first     ;; The parsed module
      second    ;; (charlie)
      first     ;; charlie
-     meta) => {:col 47 :end-col 54 :row 3 :end-row 3}
+     meta) => {:path "foo.y0" :col 48 :end-col 55 :row 3 :end-row 3}
  (provided
-  (read-module "foo.bar" ["/some/path"]) => "(ns foo.bar)
-                                             (a b)
-                                             (charlie)"))
+  (read-module "foo.bar" ["/some/path"]) => ["(ns foo.bar)
+                                              (a b)
+                                              (charlie)" "foo.y0"]))
 
 ```
 ## Loading a Complete Program
@@ -165,14 +165,14 @@ returns a pair (`statements`, `modules`) where `statements` is an aggregated lis
                                                         (test.a/foo test.b/bar test.c/baz)]
                                                        #{"test.a" "test.b" "test.c"}]
  (provided
-  (read-module "test.a" ["/some/path"]) => "(ns test.a
-                                             (:require [test.b :as b]
-                                                       [test.c :as c]))
-                                            (foo b/bar c/baz)"
-  (read-module "test.b" ["/some/path"]) => "(ns test.b
-                                             (:require [test.c :as c]))
-                                            (bar c/baz)"
-  (read-module "test.c" ["/some/path"]) => "(ns test.c)
-                                            (baz 42)"))
+  (read-module "test.a" ["/some/path"]) => ["(ns test.a
+                                              (:require [test.b :as b]
+                                                        [test.c :as c]))
+                                             (foo b/bar c/baz)" "a.y0"]
+  (read-module "test.b" ["/some/path"]) => ["(ns test.b
+                                              (:require [test.c :as c]))
+                                             (bar c/baz)" "b.y0"]
+  (read-module "test.c" ["/some/path"]) => ["(ns test.c)
+                                             (baz 42)" "c.y0"]))
 ```
 
