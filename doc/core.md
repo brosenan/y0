@@ -1,10 +1,10 @@
 ```clojure
-(ns y0.core-test
-  (:require [clojure.test :refer :all]
-            [y0.core :refer :all]))
+(ns y0.core-test 
+  (:require [midje.sweet :refer [fact =>]]
+            [y0.core :refer :all]
+            [edamame.core :as e :refer [parse-string]]))
 
-(deftest a-test
-  (testing "FIXME, I fail."
-    (is (= 0 1))))
+(fact
+ (+ 1 2) => 3)
 ```
 
