@@ -74,29 +74,17 @@
 ;; These symbols will be implicitly associated with that namespace when written without a namespace prefix.
 (fact
  (parse-ns-decl '(ns foo.bar
-                   (require baz.quux quux)
-                   (require baz.muux muux [a b c]))) =>
- [["baz.quux" "baz.muux"]
+                    (:require [baz.quux :as quux]
+                              [baz.puux :refer [x]]
+                              [baz.muux :as muux :refer [a b c]]))) =>
+ [["baz.quux" "baz.puux" "baz.muux"]
   {nil "foo.bar"
    "quux" "baz.quux"
    "muux" "baz.muux"}
   {"a" "baz.muux"
    "b" "baz.muux"
-   "c" "baz.muux"}])
-
-;; The `use` directive is similar to `require`, but does not cause the module to be loaded,
-;; thus allowing for referencing namespaces that are not associated with modules.
-(fact
- (parse-ns-decl '(ns foo.bar
-                   (use baz.quux quux)
-                   (use baz.muux muux [a b c]))) =>
- [[]
-  {nil "foo.bar"
-   "quux" "baz.quux"
-   "muux" "baz.muux"}
-  {"a" "baz.muux"
-   "b" "baz.muux"
-   "c" "baz.muux"}])
+   "c" "baz.muux"
+   "x" "baz.puux"}])
 
 ;; The function `load-single-module` takes a module name and the `y0-path` as a list of paths,
 ;; and returns a pair consisting of a list of statements read from the module (with namespaces translated)
@@ -106,7 +94,7 @@
  (load-single-module "foo.bar" ["/some/path"]) => ['[(foo.bar/a baz.quux/x)] ["baz.quux"]]
  (provided
   (read-module "foo.bar" ["/some/path"]) => "(ns foo.bar
-                                              (require baz.quux baz [x y z]))
+                                              (:require [baz.quux :as baz :refer [x y z]]))
                                               (a x)"))
 
 ;; The `y0` module is a special one in that it does not contain a set of statements but rather the semantics of the language itself.
@@ -145,11 +133,11 @@
                                                        #{"test.a" "test.b" "test.c"}]
  (provided
   (read-module "test.a" ["/some/path"]) => "(ns test.a
-                                             (require test.b b)
-                                             (require test.c c))
+                                             (:require [test.b :as b]
+                                                       [test.c :as c]))
                                             (foo b/bar c/baz)"
   (read-module "test.b" ["/some/path"]) => "(ns test.b
-                                             (require test.c c))
+                                             (:require [test.c :as c]))
                                             (bar c/baz)"
   (read-module "test.c" ["/some/path"]) => "(ns test.c)
                                             (baz 42)"))

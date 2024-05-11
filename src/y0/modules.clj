@@ -36,26 +36,31 @@
       (throw (Exception. (str "Cannot find module " module-name " in paths " (list y0-path))))
       (-> existing first slurp))))
 
-(defn- handle-directive [directive args module-name]
-  (when (< (count args) 2)
-    (throw (Exception. (str "A " directive " directive in module " module-name " requires at least two arguments. " (count args) " given."))))
-  (when (> (count args) 3)
-    (throw (Exception. (str "A " directive " directive in module " module-name " requires at most three arguments. " (count args) " given."))))
-  (let [[name alias & others] args
-        name (str name)
-        alias (str alias)]
-    [[name] {alias name} (if (= (count others) 1)
-                           (->> others first
-                                (map (fn [sym] [(str sym) name]))
-                                (into {}))
-                           {})]))
+(defn fold- [[m1 n1 r1] [m2 n2 r2]]
+  [(concat m1 m2) (merge n1 n2) (merge r1 r2)])
 
-(defn- handle-require [args module-name]
-  (handle-directive "require" args module-name))
+(defn- handle-directive [args]
+  (let [[name & {:keys [as refer]}] args
+        name (str name)]
+    [[name]
+     (if (nil? as)
+       {}
+       {(str as) name})
+     (if (nil? refer)
+       {}
+       (->> refer
+            (map (fn [sym] [(str sym) name]))
+            (into {})))]))
 
-(defn- handle-use [args module-name]
-  (let [[_modules ns-map refer-map] (handle-directive "use" args module-name)]
-    [[] ns-map refer-map]))
+(defn- handle-require [vecs]
+  (loop [vecs vecs
+         res [[] {} {}]]
+    (if (empty? vecs)
+      res
+      (let [[args & vecs] vecs]
+        (recur vecs
+               (fold- res
+                      (handle-directive args)))))))
 
 (defn parse-ns-decl [[_ns module-name & directives]]
   (let [module-name (str module-name)
@@ -63,8 +68,7 @@
                [(concat m1 m2) (merge n1 n2) (merge r1 r2)])]
     (->> (for [[directive & args] directives]
            (cond
-             (= directive 'require) (handle-require args module-name)
-             (= directive 'use) (handle-use args module-name)))
+             (= directive ':require) (handle-require args)))
          (reduce fold [[] {nil module-name} {}]))))
 
 (defn load-single-module [module-name y0-path]
