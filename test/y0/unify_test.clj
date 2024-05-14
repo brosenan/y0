@@ -129,15 +129,31 @@
 
 ;; ## Reification
 
-;; The function `reify-term` takes an s-expression and replaces every bound variable (atom with non-`nil` value)
-;; with its value.
-(fact
- (let [x (atom 1)
-       y (atom nil)]
-   (reify-term [x 2 y]) => [1 2 y]))
+;; The function `reify-term` reifies the terms it is given.
 
-;; In case of a variable chain, `reify-term` goes all the way to the value.
+;; For scalar values, it just returns the given value.
 (fact
- (let [x (atom (atom (atom 1)))
-       y (atom nil)]
-   (reify-term [x 2 y]) => [1 2 y]))
+ (reify-term 42) => 42)
+
+;; In case of a variable (atom), a (deep) dereference is returned.
+(fact
+ (let [x (atom 7)]
+   (reify-term x) => 7)
+ (let [x (atom (atom (atom 7)))]
+   (reify-term x) => 7))
+
+;; `reify-term` recurses into lists and vectors.
+(fact
+ (let [x (atom 3)]
+   (reify-term [1 2 x]) => [1 2 3]
+   (reify-term [1 2 x]) => vector?
+   (reify-term (list 1 2 x)) => '(1 2 3)
+   (reify-term (list 1 2 x)) => seq?))
+
+;; A list or vector ending with `& something` are reified such that `something` is the tail of the list or vector.
+(fact
+ (let [tail (atom [3 4 5])]
+   (reify-term [1 2 & tail]) => [1 2 3 4 5]
+   (reify-term [1 2 & tail]) => vector?
+   (reify-term (list 1 2 & tail)) => '(1 2 3 4 5)
+   (reify-term (list 1 2 & tail)) => seq?))

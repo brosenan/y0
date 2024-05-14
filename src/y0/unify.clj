@@ -35,9 +35,19 @@
                        (unify-all a b vec))
       :else (= a b))))
 
+(declare reify-term)
+
+(defn- reify-terms [ts]
+  (cond (empty? ts) ts
+        (and (= (count ts) 2)
+             (= (first ts) '&)) (reify-term (second ts))
+        :else (let [[e & es] ts]
+                (cons (reify-term e)
+                      (reify-terms es)))))
+
 (defn reify-term [t]
-  (walk/postwalk (fn [x] (let [x (resolve-var x)]
-                           (if (and (instance? clojure.lang.Atom x)
-                                    (not (nil? @x)))
-                             @x
-                             x))) t))
+  (cond
+    (instance? clojure.lang.Atom t) (resolve-var t)
+    (vector? t) (vec (reify-terms t))
+    (seq? t) (seq (reify-terms t))
+    :else t))
