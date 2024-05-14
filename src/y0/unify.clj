@@ -12,7 +12,7 @@
     :else (let [[a & as] a
                 [b & bs] b]
             (and (unify a b)
-                 (unify-all as bs constructor)))))
+                 (recur as bs constructor)))))
 
 (defn- resolve-var [a]
   (cond
