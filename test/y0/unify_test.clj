@@ -142,6 +142,11 @@
  (let [x (atom (atom (atom 7)))]
    (reify-term x) => 7))
 
+;; Unbound variables remain unchanged.
+(fact
+ (let [x (atom nil)]
+   (reify-term x) => x))
+
 ;; `reify-term` recurses into lists and vectors.
 (fact
  (let [x (atom 3)]

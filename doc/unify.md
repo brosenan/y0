@@ -175,6 +175,13 @@ In case of a variable (atom), a (deep) dereference is returned.
    (reify-term x) => 7))
 
 ```
+Unbound variables remain unchanged.
+```clojure
+(fact
+ (let [x (atom nil)]
+   (reify-term x) => x))
+
+```
 `reify-term` recurses into lists and vectors.
 ```clojure
 (fact
