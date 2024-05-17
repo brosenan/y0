@@ -31,3 +31,14 @@
     (seq? arg) (sequential-key arg :list)
     (vector? arg) (sequential-key arg :vec)
     :else {:value arg}))
+
+(defn arg-key-generalizations [key]
+  (cond
+    (int? (:list key)) (cons key (arg-key-generalizations (assoc key :list :non-empty)))
+    (int? (:vec key)) (cons key (arg-key-generalizations (assoc key :vec :non-empty)))
+    (contains? key :symbol) (cons key (arg-key-generalizations (dissoc key :symbol)))
+    (contains? key :keyword) (cons key (arg-key-generalizations (dissoc key :keyword)))
+    (contains? key :value) (cons key (arg-key-generalizations (dissoc key :value)))
+    (= (:list key) :non-empty) (cons key (arg-key-generalizations (dissoc key :list)))
+    (= (:vec key) :non-empty) (cons key (arg-key-generalizations (dissoc key :vec)))
+    :else [key]))

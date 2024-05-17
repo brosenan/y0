@@ -1,6 +1,6 @@
 (ns y0.predstore-test
   (:require [midje.sweet :refer [fact =>]]
-            [y0.predstore :refer [pred-key arg-key]]
+            [y0.predstore :refer [pred-key arg-key arg-key-generalizations]]
             [y0.unify :refer [&]]))
 
 ;; ## Goal Keys
@@ -60,3 +60,55 @@
  (arg-key [(atom nil) (atom nil) (atom nil)]) => {:vec 3}
  (arg-key ['foo (atom nil) (atom nil)]) => {:vec 3 :symbol "foo"})
 
+;; ### Argument Key Generalization
+
+;; Consider the goal `(mypred (foo 1 2 3) x)`. It is certainly a call to the predicate `{:name "mypred" :arity 2}`.
+;; However, depending on which rules exist for this predicate, it may match one of a few options:
+
+;; 1. `(mypred (foo x y z) r)`, where `x`, `y`, `z` and `r` are all variables,
+;; 2. `(mypred (foo & args) r)` or some other variadic form,
+;; 3. `(mypred (head & tail) r)`, where `head`, `tail` and `r` are variables, or
+;; 4. `(mypred x y)`, where `x` and `y` are variables.
+
+;; Note that `(mypred (w x y z))` for variables `w`, `x`, `y` and `z` is not considered a match. This is because
+;; if it were, there would be a conflict with option (2). In y0 we explicitly treat the first argument of a predicate
+;; as a form, i.e., we prioritize its name (the first element) over its size, when treated as a list.
+
+;; To allow matching against all these options, the function `arg-key-generalizations` takes an arg-key and returns
+;; a lazy sequence of "generalizations", starting from the key itself, moving to keys that are more and more general,
+;; until reaching the most general key `{}`, which matches anything.
+
+;; For `{}`, the generalization sequence only contains `{}`.
+(fact
+ (arg-key-generalizations {}) => [{}])
+
+;; For a key containing a `:non-empty` list, the sequence contains the key and `{}`.
+(fact
+ (arg-key-generalizations {:list :non-empty}) => [{:list :non-empty} {}])
+
+;; A key containing a `:symbol`, `:keyword` or `:value` first removes these attributes from the key before removing the
+;; `:list` attribute.
+(fact
+ (arg-key-generalizations {:list :non-empty :symbol "foo"}) => [{:list :non-empty :symbol "foo"}
+                                                                {:list :non-empty}
+                                                                {}]
+ (arg-key-generalizations {:list :non-empty :keyword ":foo"}) => [{:list :non-empty :keyword ":foo"}
+                                                                  {:list :non-empty}
+                                                                  {}]
+ (arg-key-generalizations {:list :non-empty :value 42}) => [{:list :non-empty :value 42}
+                                                            {:list :non-empty}
+                                                            {}])
+
+;; A fixed-size list will first generalize into a variadic list (`:list :non-empty`) before generalizing the first element.
+(fact
+ (arg-key-generalizations {:list 3 :symbol "foo"}) => [{:list 3 :symbol "foo"}
+                                                       {:list :non-empty :symbol "foo"}
+                                                       {:list :non-empty}
+                                                       {}])
+
+;; Vectors move the same path as lists.
+(fact
+ (arg-key-generalizations {:vec 3 :symbol "foo"}) => [{:vec 3 :symbol "foo"}
+                                                      {:vec :non-empty :symbol "foo"}
+                                                      {:vec :non-empty}
+                                                      {}])
