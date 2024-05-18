@@ -1,7 +1,7 @@
 (ns y0.predstore-test
   (:require [midje.sweet :refer [fact =>]]
             [y0.predstore :refer [pred-key arg-key arg-key-generalizations]]
-            [y0.unify :refer [&]]))
+            [y0.core :refer [&]]))
 
 ;; ## Goal Keys
 

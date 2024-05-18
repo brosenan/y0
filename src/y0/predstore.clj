@@ -1,5 +1,5 @@
 (ns y0.predstore
-  (:require [y0.unify :refer [&]]))
+  (:require [y0.core :refer [&]]))
 
 (defn pred-key [[name-sym & args]]
   {:name (str name-sym)

@@ -1,7 +1,7 @@
 (ns y0.unify
-  (:require [clojure.walk :as walk]))
+  (:require [y0.core :refer [&]]
+            [clojure.walk :as walk]))
 
-(def & '&)
 (declare unify)
 
 (defn- unify-all [a b constructor]

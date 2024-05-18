@@ -1,6 +1,7 @@
 (ns y0.unify-test
   (:require [midje.sweet :refer [fact => throws provided]]
-            [y0.unify :refer :all]))
+            [y0.unify :refer :all]
+            [y0.core :refer [&]]))
 
 ;; ## Unification
 
