@@ -3,8 +3,9 @@
   * [Threading Statuses](#threading-statuses)
 ```clojure
 (ns y0.status-test
-  (:require [midje.sweet :refer [fact => throws provided]]
-            [y0.status :refer [unwrap-status ok ->s]]))
+  (:require [midje.sweet :refer [fact => throws]]
+            [y0.status :refer [unwrap-status ok ->s update-with-status]]
+            [y0.core :refer [on-key]]))
 
 ```
 One key aspect of y0 is the fact that evaluation can result in either a value or an explanation _why not_.
@@ -97,5 +98,25 @@ With this function, the first argument (threaded by `->s`) determines success or
       (ok - 3) ;; => 0
       (safe-divide-rev 4) ;; error!
       (safe-divide-rev 3)) => {:err '(cannot divide 4 by 0)})
+
+```
+Updating with Statuses
+
+`update-with-status` is similar to Clojure's `update`. It takes a map, a key and a function
+as arguments and applies the function to the value corresponding to the given key, returning
+the map with the value replaced. However, in the case of `update-with-status`, the function
+is a status-returning function. For `:ok`, it will replace the value just like `update`.
+```clojure
+(fact
+ (let [m {:a 4 :b 5}]
+   (update-with-status m :a #(safe-divide % 2)) => {:ok {:a 2 :b 5}}))
+
+```
+If the function returns `:err`, the error is propagagated, specifying the key for context.
+```clojure
+(fact
+ (let [m {:a 4 :b 5}]
+   (update-with-status m :a #(safe-divide % 0)) => 
+   {:err '(on-key (cannot divide 4 by 0) :a)}))
 ```
 
