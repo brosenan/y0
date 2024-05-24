@@ -79,7 +79,7 @@
       (safe-divide-rev 4) ;; error!
       (safe-divide-rev 3)) => {:err '(cannot divide 4 by 0)})
 
-;; Updating with Statuses
+;; ## Updating with Statuses
 
 ;; `update-with-status` is similar to Clojure's `update`. It takes a map, a key and a function
 ;; as arguments and applies the function to the value corresponding to the given key, returning

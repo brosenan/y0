@@ -1,6 +1,7 @@
   * [Unwrapping Statuses](#unwrapping-statuses)
   * [Status-Returning-Functions](#status-returning-functions)
   * [Threading Statuses](#threading-statuses)
+  * [Updating with Statuses](#updating-with-statuses)
 ```clojure
 (ns y0.status-test
   (:require [midje.sweet :refer [fact => throws]]
@@ -100,7 +101,7 @@ With this function, the first argument (threaded by `->s`) determines success or
       (safe-divide-rev 3)) => {:err '(cannot divide 4 by 0)})
 
 ```
-Updating with Statuses
+## Updating with Statuses
 
 `update-with-status` is similar to Clojure's `update`. It takes a map, a key and a function
 as arguments and applies the function to the value corresponding to the given key, returning
