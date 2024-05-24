@@ -29,3 +29,14 @@
     (if (nil? err)
       {:ok (assoc m k ok)}
       {:err (list on-key err k)})))
+
+(defmacro let-s [bindings expr]
+  (if (empty? bindings)
+    expr
+    (let [[var b-expr & bindings] bindings
+          status-var (gensym "status-var")]
+      `(let [~status-var ~b-expr]
+         (if (nil? (:err ~status-var))
+           (let [~var (:ok ~status-var)]
+             (let-s ~(vec bindings) ~expr))
+           ~status-var)))))

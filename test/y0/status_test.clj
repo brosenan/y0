@@ -1,6 +1,6 @@
 (ns y0.status-test
   (:require [midje.sweet :refer [fact => throws]]
-            [y0.status :refer [unwrap-status ok ->s update-with-status]]
+            [y0.status :refer [unwrap-status ok ->s let-s update-with-status]]
             [y0.core :refer [on-key]]))
 
 ;; One key aspect of y0 is the fact that evaluation can result in either a value or an explanation _why not_.
@@ -78,6 +78,24 @@
       (ok - 3) ;; => 0
       (safe-divide-rev 4) ;; error!
       (safe-divide-rev 3)) => {:err '(cannot divide 4 by 0)})
+
+;; ## The `let-s` Macro
+
+;; While threading with the `->s` addresses many use-cases, the flow of data is sometimes more complex, requiring
+;; to explicitly name and unpack the values returned from a call before moving on to the next call.
+
+;; `let-s` behaves similar to Clojure's `let` macro, only that every expression in the bindings vector is expected
+;; to return a status. When the status is `:ok`, the value is unpacked.
+(fact
+ (let-s [two (safe-divide 6 3)
+         three (ok two + 1)]
+        (ok three identity)) => {:ok 3})
+
+;; If at any point in the bindings an `:err` is returned, the entire `let-s` expression returns that error.
+(fact
+ (let-s [two (safe-divide 6 0)
+         three (ok two + 1)]
+        (ok three identity)) => {:err '(cannot divide 6 by 0)})
 
 ;; ## Updating with Statuses
 
