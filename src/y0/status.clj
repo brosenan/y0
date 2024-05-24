@@ -1,4 +1,5 @@
-(ns y0.status)
+(ns y0.status
+  (:require [y0.core :refer [on-key]]))
 
 (defn unwrap-status [{:keys [ok err]}]
   (if (nil? err)
@@ -21,3 +22,10 @@
                ~val))))
     
     ))
+
+(defn update-with-status [m k f]
+  (let [v (get m k)
+        {:keys [ok err]} (f v)]
+    (if (nil? err)
+      {:ok (assoc m k ok)}
+      {:err (list on-key err k)})))
