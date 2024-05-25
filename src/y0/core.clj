@@ -3,3 +3,9 @@
 (def & '&)
 
 (def on-key 'on-key)
+
+(def specific-rule-without-base 'specific-rule-without-base)
+
+(def must-come-before 'must-come-before)
+
+(def conflicting-defs 'conflicting-defs)

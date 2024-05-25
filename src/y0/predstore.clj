@@ -1,5 +1,6 @@
 (ns y0.predstore
-  (:require [y0.core :refer [&]]))
+  (:require [y0.core :refer [& specific-rule-without-base must-come-before conflicting-defs]]
+            [y0.status :refer [let-s ok]]))
 
 (defn pred-key [[name-sym & args]]
   {:name (str name-sym)
@@ -42,3 +43,27 @@
     (= (:list key) :non-empty) (lazy-seq (cons key (arg-key-generalizations (dissoc key :list))))
     (= (:vec key) :non-empty) (lazy-seq (cons key (arg-key-generalizations (dissoc key :vec))))
     :else [key]))
+
+(defn pd-check-base [pd head keys]
+  (if (empty? keys)
+    {:err `(specific-rule-without-base ~head)}
+    (let [[key & keys] keys]
+      (if (contains? pd key)
+        {:ok pd}
+        (recur (assoc pd key {:overriden-by head}) head keys)))))
+
+(defn- pd-check-generalizations [pd head keys]
+  (if (empty? keys)
+    {:ok pd}
+    (pd-check-base pd head keys)))
+
+(defn pd-store-rule [pd head body]
+  (let-s [arg (ok head second)
+          [key & keys] (ok (arg-key arg) arg-key-generalizations)
+          pd (pd-check-generalizations pd head keys)]
+         (if (contains? pd key)
+           (let [existing (get pd key)]
+             (cond
+               (map? existing) {:err `(must-come-before ~head ~(:overriden-by existing))}
+               (fn? existing) {:err `(conflicting-defs ~head ~(-> existing meta :head))}))
+           (ok pd assoc key (with-meta body {:head head})))))

@@ -2,11 +2,14 @@
     * [Argument Keys](#argument-keys)
       * [Lists and Forms](#lists-and-forms)
     * [Argument Key Generalization](#argument-key-generalization)
+  * [Storing Predicates Rules](#storing-predicates-rules)
+    * [Predicate Definitions](#predicate-definitions)
 ```clojure
 (ns y0.predstore-test
   (:require [midje.sweet :refer [fact =>]]
-            [y0.predstore :refer [pred-key arg-key arg-key-generalizations]]
-            [y0.core :refer [&]]))
+            [y0.predstore :refer [pred-key arg-key arg-key-generalizations pd-store-rule]]
+            [y0.core :refer [& specific-rule-without-base must-come-before conflicting-defs]]
+            [y0.status :refer [ok ->s]]))
 
 ```
 ## Goal Keys
@@ -145,5 +148,83 @@ Vectors move the same path as lists.
                                                       {:vec :non-empty :symbol "foo"}
                                                       {:vec :non-empty}
                                                       {}])
+
+```
+## Storing Predicates Rules
+
+The predicate store is a map of maps. The main map (predicate store) is keyed by a [predicate key](#goal-key) while
+the inner maps (predicate definitions) are keyd by [argument keys](#argument-keys). We will discuss predicate
+definitions first and then the predicate store.
+
+### Predicate Definitions
+
+The function `pd-store-rule` takes a predicate definition, the rule's _head_ and the body of the rule in the form
+of a function. It returns a [status](status.md) containing the updated predicate definition or an explanation why
+adding it wasn't possible.
+
+Given a free variable as a first argument and an empty definition, the rule is added.
+```clojure
+(fact
+ (->s (pd-store-rule {} (list 'my-pred (atom nil) (atom nil) 7) (constantly 42))
+      (ok get {})
+      (ok apply []))=> {:ok 42})
+
+```
+If instead of a free variable, we provide anything else as a first argument in the head (on an empty definition),
+we get an error.
+```clojure
+(fact
+ (let [x (atom nil)]
+   (pd-store-rule {} `(my-pred :foo ~x 7) (constantly 42)) >
+   {:err `(specific-rule-without-base (my-pred :foo ~x 7))}))
+
+```
+A specific rule (one with anything other than an unbound var as its first argument) may follow a "base" rule.
+```clojure
+(fact
+ (->s (ok {} identity)
+      (pd-store-rule `(my-pred ~(atom nil) ~(atom nil) 7) (constantly 42))
+      (pd-store-rule `(my-pred :foo ~(atom nil) 7) (constantly 43))
+      (ok get {:keyword ":foo"})
+      (ok apply [])) => {:ok 43})
+
+```
+Head patterns that overlap need to be added in order, from the most general to the most specific.
+```clojure
+(fact
+ (->s (ok {} identity)
+      (pd-store-rule `(my-pred ~(atom nil) ~(atom nil) 7) (constantly 42))
+      (pd-store-rule `(my-pred (foo ~(atom nil) & ~(atom nil)) ~(atom nil) 7) (constantly 43))
+      (pd-store-rule `(my-pred (foo ~(atom nil) ~(atom nil)) ~(atom nil) 7) (constantly 44))
+      (ok get {:list 3 :symbol "y0.predstore-test/foo"})
+      (ok apply [])) => {:ok 44})
+
+```
+When this order is violated, however, an error is returned.
+```clojure
+(fact
+ (let [x (atom nil)
+       y (atom nil)
+       z (atom nil)]
+   (->s (ok {} identity)
+        (pd-store-rule `(my-pred ~x ~z 7) (constantly 42))
+        (pd-store-rule `(my-pred (foo ~x ~y) ~z 7) (constantly 44))
+        (pd-store-rule `(my-pred (foo ~x & ~y) ~z 7) (constantly 43)))
+   => {:err `(must-come-before (my-pred (foo ~x & ~y) ~z 7)
+                               (my-pred (foo ~x ~y) ~z 7))}))
+
+```
+And of course, if two rules have the exact same first-arg pattern, this is a conflict.
+```clojure
+(fact
+ (let [x (atom nil)
+       y (atom nil)
+       z (atom nil)]
+   (->s (ok {} identity)
+        (pd-store-rule `(my-pred ~x ~z 7) (constantly 42))
+        (pd-store-rule `(my-pred (foo ~x ~y) ~z 7) (constantly 44))
+        (pd-store-rule `(my-pred (foo ~x ~z) ~y 8) (constantly 43)))
+   => {:err `(conflicting-defs (my-pred (foo ~x ~z) ~y 8)
+                               (my-pred (foo ~x ~y) ~z 7))}))
 ```
 
