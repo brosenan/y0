@@ -54,6 +54,12 @@ Now you may have noticed something strange. `ok`'s first argument is not the fun
 called, but rather the first argument. Only the second argument to `ok` is the function, followed by the
 rest of the arguments.
 
+Given only one argument, `ok` just wraps this argument with an `:ok` status.
+```clojure
+(fact
+ (ok 42) => {:ok 42})
+
+```
 The reason for this order will become clear soon.
 
 ## Threading Statuses
@@ -67,15 +73,15 @@ We define the macro `->s` as a threading macro for status-returning functions.
 Given just one expression, it simply evaluates it.
 ```clojure
 (fact
- (->s (ok 42 identity)) => {:ok 42})
+ (->s (ok 42)) => {:ok 42})
 
 ```
 Given two or more expressions, it threads the `:ok` value as the first argument of each subsequent expression.
 ```clojure
 (fact
- (->s (ok 42 identity)
+ (->s (ok 42)
       (safe-divide 6)) => {:ok 7}
- (->s (ok 42 identity)
+ (->s (ok 42)
       (ok - 20)
       (safe-divide 2)) => {:ok 11})
 
@@ -95,7 +101,7 @@ With this function, the first argument (threaded by `->s`) determines success or
 `->s` fails on the first `:err`, as can be seen here:
 ```clojure
 (fact
- (->s (ok 2 identity)
+ (->s (ok 2)
       (safe-divide-rev 6) ;; => 3
       (ok - 3) ;; => 0
       (safe-divide-rev 4) ;; error!
@@ -113,7 +119,7 @@ to return a status. When the status is `:ok`, the value is unpacked.
 (fact
  (let-s [two (safe-divide 6 3)
          three (ok two + 1)]
-        (ok three identity)) => {:ok 3})
+        (ok three)) => {:ok 3})
 
 ```
 If at any point in the bindings an `:err` is returned, the entire `let-s` expression returns that error.
@@ -121,7 +127,7 @@ If at any point in the bindings an `:err` is returned, the entire `let-s` expres
 (fact
  (let-s [two (safe-divide 6 0)
          three (ok two + 1)]
-        (ok three identity)) => {:err '(cannot divide 6 by 0)})
+        (ok three)) => {:err '(cannot divide 6 by 0)})
 
 ```
 ## Updating with Statuses

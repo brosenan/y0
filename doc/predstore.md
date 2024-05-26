@@ -182,7 +182,7 @@ we get an error.
 A specific rule (one with anything other than an unbound var as its first argument) may follow a "base" rule.
 ```clojure
 (fact
- (->s (ok {} identity)
+ (->s (ok {})
       (pd-store-rule `(my-pred ~(atom nil) ~(atom nil) 7) (constantly 42))
       (pd-store-rule `(my-pred :foo ~(atom nil) 7) (constantly 43))
       (ok get {:keyword ":foo"})
@@ -192,7 +192,7 @@ A specific rule (one with anything other than an unbound var as its first argume
 Head patterns that overlap need to be added in order, from the most general to the most specific.
 ```clojure
 (fact
- (->s (ok {} identity)
+ (->s (ok {})
       (pd-store-rule `(my-pred ~(atom nil) ~(atom nil) 7) (constantly 42))
       (pd-store-rule `(my-pred (foo ~(atom nil) & ~(atom nil)) ~(atom nil) 7) (constantly 43))
       (pd-store-rule `(my-pred (foo ~(atom nil) ~(atom nil)) ~(atom nil) 7) (constantly 44))
@@ -206,7 +206,7 @@ When this order is violated, however, an error is returned.
  (let [x (atom nil)
        y (atom nil)
        z (atom nil)]
-   (->s (ok {} identity)
+   (->s (ok {})
         (pd-store-rule `(my-pred ~x ~z 7) (constantly 42))
         (pd-store-rule `(my-pred (foo ~x ~y) ~z 7) (constantly 44))
         (pd-store-rule `(my-pred (foo ~x & ~y) ~z 7) (constantly 43)))
@@ -220,7 +220,7 @@ And of course, if two rules have the exact same first-arg pattern, this is a con
  (let [x (atom nil)
        y (atom nil)
        z (atom nil)]
-   (->s (ok {} identity)
+   (->s (ok {})
         (pd-store-rule `(my-pred ~x ~z 7) (constantly 42))
         (pd-store-rule `(my-pred (foo ~x ~y) ~z 7) (constantly 44))
         (pd-store-rule `(my-pred (foo ~x ~z) ~y 8) (constantly 43)))

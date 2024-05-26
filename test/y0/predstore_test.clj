@@ -141,7 +141,7 @@
 
 ;; A specific rule (one with anything other than an unbound var as its first argument) may follow a "base" rule.
 (fact
- (->s (ok {} identity)
+ (->s (ok {})
       (pd-store-rule `(my-pred ~(atom nil) ~(atom nil) 7) (constantly 42))
       (pd-store-rule `(my-pred :foo ~(atom nil) 7) (constantly 43))
       (ok get {:keyword ":foo"})
@@ -149,7 +149,7 @@
 
 ;; Head patterns that overlap need to be added in order, from the most general to the most specific.
 (fact
- (->s (ok {} identity)
+ (->s (ok {})
       (pd-store-rule `(my-pred ~(atom nil) ~(atom nil) 7) (constantly 42))
       (pd-store-rule `(my-pred (foo ~(atom nil) & ~(atom nil)) ~(atom nil) 7) (constantly 43))
       (pd-store-rule `(my-pred (foo ~(atom nil) ~(atom nil)) ~(atom nil) 7) (constantly 44))
@@ -161,7 +161,7 @@
  (let [x (atom nil)
        y (atom nil)
        z (atom nil)]
-   (->s (ok {} identity)
+   (->s (ok {})
         (pd-store-rule `(my-pred ~x ~z 7) (constantly 42))
         (pd-store-rule `(my-pred (foo ~x ~y) ~z 7) (constantly 44))
         (pd-store-rule `(my-pred (foo ~x & ~y) ~z 7) (constantly 43)))
@@ -173,7 +173,7 @@
  (let [x (atom nil)
        y (atom nil)
        z (atom nil)]
-   (->s (ok {} identity)
+   (->s (ok {})
         (pd-store-rule `(my-pred ~x ~z 7) (constantly 42))
         (pd-store-rule `(my-pred (foo ~x ~y) ~z 7) (constantly 44))
         (pd-store-rule `(my-pred (foo ~x ~z) ~y 8) (constantly 43)))

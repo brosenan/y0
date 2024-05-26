@@ -6,8 +6,10 @@
     ok
     (throw (Exception. (str err)))))
 
-(defmacro ok [arg f & args]
-  {:ok `(~f ~arg ~@args)})
+(defmacro ok
+  ([arg f & args]
+   {:ok `(~f ~arg ~@args)})
+  ([value] {:ok value}))
 
 (defmacro ->s [expr & exprs]
   (if (empty? exprs)
