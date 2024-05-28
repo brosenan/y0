@@ -167,7 +167,7 @@ Given a free variable as a first argument and an empty definition, the rule is a
 (fact
  (->s (pd-store-rule {} (list 'my-pred (atom nil) (atom nil) 7) (constantly 42))
       (ok get {})
-      (ok apply []))=> {:ok 42})
+      (ok apply [])) => {:ok 42})
 
 ```
 If instead of a free variable, we provide anything else as a first argument in the head (on an empty definition),
@@ -175,8 +175,18 @@ we get an error.
 ```clojure
 (fact
  (let [x (atom nil)]
-   (pd-store-rule {} `(my-pred :foo ~x 7) (constantly 42)) >
+   (pd-store-rule {} `(my-pred :foo ~x 7) (constantly 42)) =>
    {:err `(specific-rule-without-base (my-pred :foo ~x 7))}))
+
+```
+One exception to this rule are predicates whose names end with `?`. These are called _partial predicates_ and
+are not expected to provide a solution on every call.
+```clojure
+(fact 
+ (let [x (atom nil)]
+   (->s (pd-store-rule {} `(my-partial-pred? :foo ~x 7) (constantly 42))
+        (ok get {:keyword ":foo"})
+        (ok apply []))) => {:ok 42})
 
 ```
 A specific rule (one with anything other than an unbound var as its first argument) may follow a "base" rule.
