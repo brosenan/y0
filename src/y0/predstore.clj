@@ -1,6 +1,7 @@
 (ns y0.predstore
   (:require [y0.core :refer [& specific-rule-without-base must-come-before conflicting-defs]]
-            [y0.status :refer [let-s ok]]))
+            [y0.status :refer [let-s ok]]
+            [clojure.string :refer [ends-with?]]))
 
 (defn pred-key [[name-sym & args]]
   {:name (str name-sym)
@@ -46,7 +47,9 @@
 
 (defn pd-check-base [pd head keys]
   (if (empty? keys)
-    {:err `(specific-rule-without-base ~head)}
+    (if (-> head first str (ends-with? "?"))
+      {:ok pd}
+      {:err `(specific-rule-without-base ~head)})
     (let [[key & keys] keys]
       (if (contains? pd key)
         {:ok pd}
