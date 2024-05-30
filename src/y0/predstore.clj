@@ -70,3 +70,11 @@
                (map? existing) {:err `(must-come-before ~head ~(:overriden-by existing))}
                (fn? existing) {:err `(conflicting-defs ~head ~(-> existing meta :head))}))
            (ok pd assoc key (with-meta body {:head head})))))
+
+(defn pd-match [pd goal]
+  (loop [keys (-> goal second arg-key arg-key-generalizations)]
+    (let [[key & keys] keys]
+      (cond (nil? key) nil
+            (and (contains? pd key)
+                 (fn? (get pd key))) (get pd key)
+            :else (recur keys)))))

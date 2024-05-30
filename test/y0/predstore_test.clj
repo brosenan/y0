@@ -1,6 +1,6 @@
 (ns y0.predstore-test
   (:require [midje.sweet :refer [fact =>]]
-            [y0.predstore :refer [pred-key arg-key arg-key-generalizations pd-store-rule]]
+            [y0.predstore :refer [pred-key arg-key arg-key-generalizations pd-store-rule pd-match]]
             [y0.core :refer [& specific-rule-without-base must-come-before conflicting-defs]]
             [y0.status :refer [ok ->s]]))
 
@@ -114,7 +114,7 @@
                                                       {:vec :non-empty}
                                                       {}])
 
-;; ## Storing Predicates Rules
+;; ## Storage and Retreival Predicates Rules
 
 ;; The predicate store is a map of maps. The main map (predicate store) is keyed by a [predicate key](#goal-key) while
 ;; the inner maps (predicate definitions) are keyd by [argument keys](#argument-keys). We will discuss predicate
@@ -128,7 +128,7 @@
 
 ;; Given a free variable as a first argument and an empty definition, the rule is added.
 (fact
- (->s (pd-store-rule {} (list 'my-pred (atom nil) (atom nil) 7) (constantly 42))
+ (->s (pd-store-rule {} `(my-pred ~(atom nil) ~(atom nil) 7) (constantly 42))
       (ok get {})
       (ok apply [])) => {:ok 42})
 
@@ -187,3 +187,29 @@
         (pd-store-rule `(my-pred (foo ~x ~z) ~y 8) (constantly 43)))
    => {:err `(conflicting-defs (my-pred (foo ~x ~z) ~y 8)
                                (my-pred (foo ~x ~y) ~z 7))}))
+
+;; Retreival of rules is done based on a goal. As a general rule, the most specific rule that matches
+;; the goal is retreived.
+
+;; The function `pd-match` takes a predicate definition and a goal and returns a rule for which the
+;; head matches the goal.
+(fact
+ (->s (pd-store-rule {} `(my-pred ~(atom nil) ~(atom nil) 7) (constantly 42))
+      (ok pd-match `(my-pred (foo 1) (bar 2) ~(atom nil)))
+      (ok apply [])) => {:ok 42})
+
+;; In case more than one definitions exist, the most specific is taken.
+(fact
+ (->s (ok {})
+      (pd-store-rule `(my-pred ~(atom nil) ~(atom nil) 7) (constantly 42))
+      (pd-store-rule `(my-pred (foo ~(atom nil)) ~(atom nil) 6) (constantly 43))
+      (ok pd-match `(my-pred (foo 1) (bar 2) ~(atom nil)))
+      (ok apply [])) => {:ok 43})
+
+;; In case of a partial predicate, where no default case exists, if none of the rules match the goel,
+;; `nil` is returned.
+(fact
+ (->s (ok {})
+      (pd-store-rule `(my-partial-pred? (foo ~(atom nil)) ~(atom nil) 6) (constantly 43))
+      (pd-store-rule `(my-partial-pred? (bar ~(atom nil)) ~(atom nil) 6) (constantly 43))
+      (ok pd-match `(my-partial-pred? (baz 1) :quux ~(atom nil)))) => {:ok nil})
