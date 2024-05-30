@@ -4,11 +4,12 @@
     * [Argument Key Generalization](#argument-key-generalization)
   * [Storage and Retreival Predicates Rules](#storage-and-retreival-predicates-rules)
     * [Predicate Definitions](#predicate-definitions)
+    * [The Predicate Store](#the-predicate-store)
 ```clojure
 (ns y0.predstore-test
   (:require [midje.sweet :refer [fact =>]]
-            [y0.predstore :refer [pred-key arg-key arg-key-generalizations pd-store-rule pd-match]]
-            [y0.core :refer [& specific-rule-without-base must-come-before conflicting-defs]]
+            [y0.predstore :refer [pred-key arg-key arg-key-generalizations pd-store-rule pd-match store-rule match-rule]]
+            [y0.core :refer [& specific-rule-without-base must-come-before conflicting-defs undefined-predicate]]
             [y0.status :refer [ok ->s]]))
 
 ```
@@ -266,7 +267,38 @@ In case of a partial predicate, where no default case exists, if none of the rul
 (fact
  (->s (ok {})
       (pd-store-rule `(my-partial-pred? (foo ~(atom nil)) ~(atom nil) 6) (constantly 43))
-      (pd-store-rule `(my-partial-pred? (bar ~(atom nil)) ~(atom nil) 6) (constantly 43))
+      (pd-store-rule `(my-partial-pred? (bar ~(atom nil)) ~(atom nil) 6) (constantly 44))
       (ok pd-match `(my-partial-pred? (baz 1) :quux ~(atom nil)))) => {:ok nil})
+
+```
+### The Predicate Store
+
+The predicate store is a map mapping from predicate keys to predicate definitions. The function
+`store-rule` takes a predicate store, a rule head and a body (function) and returns a
+[status](status.md). In case of success, the updated predicate store is returned.
+```clojure
+(fact
+ (->s (ok {})
+      (store-rule `(my-pred ~(atom nil) ~(atom nil) 7) (constantly 42))
+      (ok get {:name "y0.predstore-test/my-pred" :arity 3})
+      (ok get {})
+      (ok apply [])) => {:ok 42})
+
+```
+Retreival from the predicate store is done using the function `match-rule`, which takes a predicate
+store and a goal and returns a status with the best match's body.
+```clojure
+(fact
+ (->s (ok {})
+      (store-rule `(my-pred ~(atom nil) ~(atom nil) 7) (constantly 42))
+      (store-rule `(my-pred (foo ~(atom nil)) ~(atom nil) 6) (constantly 43))
+      (match-rule `(my-pred (foo 1) (bar 2) ~(atom nil)))
+      (ok apply [])) => {:ok 43})
+
+```
+If the goal is for a predicate that does not exist, an `:err` is returned.
+```clojure
+(fact
+ (match-rule {} `(my-pred (foo 1) (bar 2) ~(atom nil))) => {:err `(undefined-predicate my-pred 3)})
 ```
 

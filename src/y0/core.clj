@@ -9,3 +9,5 @@
 (def must-come-before 'must-come-before)
 
 (def conflicting-defs 'conflicting-defs)
+
+(def undefined-predicate 'undefined-predicate)

@@ -1,6 +1,6 @@
 (ns y0.predstore
-  (:require [y0.core :refer [& specific-rule-without-base must-come-before conflicting-defs]]
-            [y0.status :refer [let-s ok]]
+  (:require [y0.core :refer [& specific-rule-without-base must-come-before conflicting-defs undefined-predicate]]
+            [y0.status :refer [let-s ok ->s update-with-status]]
             [clojure.string :refer [ends-with?]]))
 
 (defn pred-key [[name-sym & args]]
@@ -78,3 +78,16 @@
             (and (contains? pd key)
                  (fn? (get pd key))) (get pd key)
             :else (recur keys)))))
+
+(defn store-rule [ps head body]
+  (update-with-status ps (pred-key head) #(pd-store-rule % head body)))
+
+(defn- get-or-err [m k err]
+  (if-let [v (get m k)]
+    (ok v)
+    {:err err}))
+
+(defn match-rule [ps goal]
+  (->s (ok ps)
+       (get-or-err (pred-key goal) `(undefined-predicate ~(first goal) ~(dec (count goal))))
+       (ok pd-match goal)))
