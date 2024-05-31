@@ -102,7 +102,7 @@ These symbols will be implicitly associated with that namespace when written wit
    "x" "baz.puux"}])
 
 ```
-The function `load-single-module` takes a module name and the `$y_0$-path` as a list of paths,
+The function `load-single-module` takes a module name and the `y0-path` as a list of paths,
 and returns a pair consisting of a list of statements read from the module (with namespaces translated)
 and a list of module names to be further loaded.
 To retrieve the module file's contents it calls `read-module`.
@@ -155,7 +155,7 @@ The state of the loading consists of the following:
 A loading step takes the first pending module and loads it.
 It prepends its statements to the statement list and prepends the modules it requires to the pending module list.
 It also adds the loaded module to the loaded modules set to avoid loading this module again.
-`load-with-dependencies` takes the name of a "main" module and a list of `$y_0$-path` and
+`load-with-dependencies` takes the name of a "main" module and a list of `y0-path` and
 returns a pair (`statements`, `modules`) where `statements` is an aggregated list of statements that were loaded and
 `modules` is a set of modules that were loaded.
 ```clojure
