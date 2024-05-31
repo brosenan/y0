@@ -1,6 +1,6 @@
 (ns y0.rules
-  (:require [y0.status :refer [->s ok]]
-            [y0.predstore :refer [store-rule]]
+  (:require [y0.status :refer [->s ok let-s]]
+            [y0.predstore :refer [store-rule match-rule]]
             [y0.unify :refer [unify]]
             [clojure.walk :refer [postwalk-replace]]))
 
@@ -22,3 +22,7 @@
                             (if (unify goal head)
                               {:ok nil}
                               {:err why-not}))))))
+
+(defn satisfy_goal [ps goal why-not]
+  (let-s [rule (match-rule ps goal)]
+         (rule goal why-not)))
