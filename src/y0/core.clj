@@ -11,3 +11,7 @@
 (def conflicting-defs 'conflicting-defs)
 
 (def undefined-predicate 'undefined-predicate)
+
+(def all 'all)
+
+(def <- '<-)
