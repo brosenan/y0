@@ -83,11 +83,13 @@
   (update-with-status ps (pred-key head) #(pd-store-rule % head body)))
 
 (defn- get-or-err [m k err]
-  (if-let [v (get m k)]
-    (ok v)
-    {:err err}))
+  (let [v (get m k)]
+    (if (nil? v)
+      {:err err}
+      (ok v))))
 
 (defn match-rule [ps goal]
   (->s (ok ps)
-       (get-or-err (pred-key goal) `(undefined-predicate ~(first goal) ~(dec (count goal))))
+       (get-or-err (pred-key goal) 
+                   `(undefined-predicate ~(first goal) ~(-> goal count dec)))
        (ok pd-match goal)))
