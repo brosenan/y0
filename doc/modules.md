@@ -56,9 +56,9 @@ the `ns-map`.
 
 Similar to Python, Java and Clojure, $y_0$ modules are given names that correspond to their paths in the file system,
 to allow the module system to find them within the file-system.
-Like Python and Java, $y_0$ has a `$y_0$_PATH`, an ordered set of path prefixes in which the module system should look
+Like Python and Java, $y_0$ has a `Y0_PATH`, an ordered set of path prefixes in which the module system should look
 for modules.
-`module-paths` takes a dot-separated module name and a sequence of base paths (the `$y_0$_PATH`) and returns a sequence
+`module-paths` takes a dot-separated module name and a sequence of base paths (the `Y0_PATH`) and returns a sequence
 of `java.io.File` objects representing the different candidate paths for this module.
 ```clojure
 (fact
