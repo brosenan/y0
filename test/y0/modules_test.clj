@@ -5,7 +5,7 @@
 
 ;; ## Namespace Conversions
 
-;; Namespace conversion is the process of converting the symbols used in a y0 module from their
+;; Namespace conversion is the process of converting the symbols used in a $y_0$ module from their
 ;; _local_ form, i.e., relative to the definitions of the module, to their _global_ form,
 ;; i.e., using absolute namespace names.
 ;;
@@ -42,12 +42,12 @@
 
 ;; ## Module Names and Paths
 
-;; Similar to Python, Java and Clojure, y0 modules are given names that correspond to their paths in the file system,
+;; Similar to Python, Java and Clojure, $y_0$ modules are given names that correspond to their paths in the file system,
 ;; to allow the module system to find them within the file-system.
-;; Like Python and Java, y0 has a `Y0_PATH`, an ordered set of path prefixes in which the module system should look
+;; Like Python and Java, $y_0$ has a `$y_0$_PATH`, an ordered set of path prefixes in which the module system should look
 ;; for modules.
 ;;
-;; `module-paths` takes a dot-separated module name and a sequence of base paths (the `Y0_PATH`) and returns a sequence
+;; `module-paths` takes a dot-separated module name and a sequence of base paths (the `$y_0$_PATH`) and returns a sequence
 ;; of `java.io.File` objects representing the different candidate paths for this module.
 (fact
  (module-paths "foo.bar.baz" ["/one/path" "/two/path"]) => [(io/file "/one/path" "foo" "bar" "baz.mu")
@@ -86,7 +86,7 @@
    "c" "baz.muux"
    "x" "baz.puux"}])
 
-;; The function `load-single-module` takes a module name and the `y0-path` as a list of paths,
+;; The function `load-single-module` takes a module name and the `$y_0$-path` as a list of paths,
 ;; and returns a pair consisting of a list of statements read from the module (with namespaces translated)
 ;; and a list of module names to be further loaded.
 ;; To retrieve the module file's contents it calls `read-module`.
@@ -97,9 +97,9 @@
                                                (:require [baz.quux :as baz :refer [x y z]]))
                                               (a x)" "bar.y0"]))
 
-;; The `y0` module is a special one in that it does not contain a set of statements but rather the semantics of the language itself.
-;; As such, it defines the `<-` symbol, which is implicitly associated with the `y0` namespace in the `refer-map`.
-;; Additional symbols in the `y0` namespace: `...` and `test`.
+;; The `$y_0$` module is a special one in that it does not contain a set of statements but rather the semantics of the language itself.
+;; As such, it defines the `<-` symbol, which is implicitly associated with the `$y_0$` namespace in the `refer-map`.
+;; Additional symbols in the `$y_0$` namespace: `...` and `test`.
 (fact
  (load-single-module "foo.bar" ["/some/path"]) => ['[(y0/<- (foo.bar/a :x)
                                                               (foo.bar/b :x))
@@ -135,7 +135,7 @@
 ;; It prepends its statements to the statement list and prepends the modules it requires to the pending module list.
 ;; It also adds the loaded module to the loaded modules set to avoid loading this module again.
 ;;
-;; `load-with-dependencies` takes the name of a "main" module and a list of `y0-path` and
+;; `load-with-dependencies` takes the name of a "main" module and a list of `$y_0$-path` and
 ;; returns a pair (`statements`, `modules`) where `statements` is an aggregated list of statements that were loaded and
 ;; `modules` is a set of modules that were loaded.
 (fact

@@ -16,7 +16,7 @@
 ## Goal Keys
 
 For goals to be evaluated efficiently, there needs to be a match goals with corresponding definitions.
-In y0, a definition refers to a certain predicate, with or without a specific pattern for its first argument.
+In $y_0$, a definition refers to a certain predicate, with or without a specific pattern for its first argument.
 
 Predicates are identified with a `:name` and an `:arity`. The `pred-key` function takes a goal and returns
 a corresponding _predicate key_ consisting of these two attributes.
@@ -99,7 +99,7 @@ However, depending on which rules exist for this predicate, it may match one of 
 4. `(mypred x y)`, where `x` and `y` are variables.
 
 Note that `(mypred (w x y z))` for variables `w`, `x`, `y` and `z` is not considered a match. This is because
-if it were, there would be a conflict with option (2). In y0 we explicitly treat the first argument of a predicate
+if it were, there would be a conflict with option (2). In $y_0$ we explicitly treat the first argument of a predicate
 as a form, i.e., we prioritize its name (the first element) over its size, when treated as a list.
 
 To allow matching against all these options, the function `arg-key-generalizations` takes an arg-key and returns

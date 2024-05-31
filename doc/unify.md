@@ -28,7 +28,7 @@ they can be made of the same value.
 ```
 ### Variables
 
-In y0.clj, we use Clojure atoms as variables. A unification will therefore try  to `reset!`
+In $y_0$.clj, we use Clojure atoms as variables. A unification will therefore try  to `reset!`
 these atoms to match the value on the other side of the equation.
 ```clojure
 (fact

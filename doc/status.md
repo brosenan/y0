@@ -10,7 +10,7 @@
             [y0.core :refer [on-key]]))
 
 ```
-One key aspect of y0 is the fact that evaluation can result in either a value or an explanation _why not_.
+One key aspect of $y_0$ is the fact that evaluation can result in either a value or an explanation _why not_.
 In Clojure, we could represent this using return values and exceptions respectively. However, exceptions
 are limited by the constraints of the JVM's handling of exceptions.
 
