@@ -115,9 +115,9 @@ To retrieve the module file's contents it calls `read-module`.
                                               (a x)" "bar.y0"]))
 
 ```
-The `$y_0$` module is a special one in that it does not contain a set of statements but rather the semantics of the language itself.
-As such, it defines the `<-` symbol, which is implicitly associated with the `$y_0$` namespace in the `refer-map`.
-Additional symbols in the `$y_0$` namespace: `...` and `test`.
+The `y0` module is a special one in that it does not contain a set of statements but rather the semantics of the language itself.
+As such, it defines the `<-` symbol, which is implicitly associated with the `y0` namespace in the `refer-map`.
+Additional symbols in the `y0` namespace: `...` and `test`.
 ```clojure
 (fact
  (load-single-module "foo.bar" ["/some/path"]) => ['[(y0/<- (foo.bar/a :x)
