@@ -48,8 +48,8 @@ and returns a status containing the predstore, with the rule added.
 
 ### Trivial Rules
 
-A trivial rule has the form: `(all [bindings...] goal)`. Its means that for all possible values
-replacing the symbols in `bindings...`, `goal` is satisfied.
+A trivial rule has the form: `(all [bindings...] head)`. Its means that for all possible goals
+that replace the symbols in `bindings...` in `head` are satisfied.
 
 To make this more clear, let us work through an example. Let us define predicate `amount`,
 which matches an "amount" to a given number. `0` is matched with `:zero`, `1` is matched with
@@ -87,5 +87,28 @@ The predstore should have rules to match goals of the form `(amount x y)`.
  amount-r1 => fn?
  amount-r2 => fn?)
 
+```
+A rule's body is a function that takes a goal and a "why not" explanation as parameters. It tries
+to _satisfy_ the goal by finding an assignment for its variables. It returns a status. `{:ok nil}`
+means that the goal was satisfied. In such a case, the free variables in the goal are bound to the
+result.
+```clojure
+(fact
+ (let [x (atom nil)
+       goal `(amount 0 ~x)]
+   (amount-r0 goal '(just-because)) => {:ok nil}
+   @x => :zero)
+ (let [x (atom nil)
+       goal `(amount 2 ~x)]
+   (amount-r2 goal '(just-because)) => {:ok nil}
+   @x => :many))
+
+```
+However, if the given goal does not match the rule's head, an `:err` with the reason wny not is
+returned.
+```clojure
+(fact
+ (let [goal `(amount 2 :two)]
+   (amount-r2 goal '(just-because)) => {:err '(just-because)}))
 ```
 

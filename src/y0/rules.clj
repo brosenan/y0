@@ -1,6 +1,7 @@
 (ns y0.rules
   (:require [y0.status :refer [->s ok]]
             [y0.predstore :refer [store-rule]]
+            [y0.unify :refer [unify]]
             [clojure.walk :refer [postwalk-replace]]))
 
 (defn new-vars [bindings symbols]
@@ -17,4 +18,7 @@
         vars (new-vars {} bindings)
         head (postwalk-replace vars head)]
     (->s (ok ps)
-         (store-rule head (constantly 42)))))
+         (store-rule head (fn [goal why-not]
+                            (if (unify goal head)
+                              {:ok nil}
+                              {:err why-not}))))))
