@@ -5,7 +5,7 @@
 (ns y0.rules-test
   (:require [midje.sweet :refer [fact =>]]
             [y0.rules :refer [new-vars add-rule satisfy-goal]]
-            [y0.core :refer [all <-]]
+            [y0.core :refer [all <- !]]
             [y0.status :refer [->s ok let-s]]
             [y0.predstore :refer [match-rule pred-key]]))
 
@@ -137,5 +137,21 @@ On failure it returns the given explanation.
 ```clojure
 (fact
  (satisfy-goal amount-ps `(amount 1 :uno) '(just-because)) => {:err '(just-because)})
+
+```
+If the goal sequence contains a `!` symbol, the goal to be evaluated is everything to the left of
+the `!`.
+```clojure
+(fact
+ (let [x (atom nil)]
+   (satisfy-goal amount-ps `(amount 1 ~x ! "some explanation") '(just-because)) => {:ok nil}
+   @x => :one))
+
+```
+The terms after the `!` override the provided why-not explanation in case of a failure.
+```clojure
+(fact
+ (satisfy-goal amount-ps `(amount 1 :uno ! "the" "correct" "explanation") '(wrong-explanation)) =>
+ {:err ["the" "correct" "explanation"]})
 ```
 

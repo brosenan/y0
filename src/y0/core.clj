@@ -15,3 +15,5 @@
 (def all 'all)
 
 (def <- '<-)
+
+(def ! '!)

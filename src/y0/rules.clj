@@ -2,6 +2,7 @@
   (:require [y0.status :refer [->s ok let-s]]
             [y0.predstore :refer [store-rule match-rule]]
             [y0.unify :refer [unify]]
+            [y0.core :refer [!]]
             [clojure.walk :refer [postwalk-replace]]))
 
 (defn new-vars [bindings symbols]
@@ -12,6 +13,12 @@
       (-> bindings 
           (assoc sym (atom nil))
           (recur syms)))))
+
+(defn- split-goal [goal why-not]
+  (let [bang-index (.indexOf goal `!)] 
+    (if (= bang-index -1)
+      [goal why-not]
+      [(take bang-index goal) (-> bang-index inc (drop goal) vec)])))
 
 (defn add-rule [ps rule]
   (let [[_all bindings head] rule
@@ -26,5 +33,6 @@
                                 {:err why-not})))))))
 
 (defn satisfy-goal [ps goal why-not]
-  (let-s [rule (match-rule ps goal)]
-         (rule goal why-not)))
+  (let [[goal why-not] (split-goal goal why-not)]
+    (let-s [rule (match-rule ps goal)]
+           (rule goal why-not))))
