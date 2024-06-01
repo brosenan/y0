@@ -22,15 +22,18 @@
 
 (defn add-rule [ps rule]
   (let [[_all bindings head] rule
+        [head why-not] (split-goal head nil)
         vars (new-vars {} bindings)
-        head' (postwalk-replace vars head)]
-    (->s (ok ps)
-         (store-rule head' (fn [goal why-not]
-                            (let [vars (new-vars {} bindings)
-                                  head (postwalk-replace vars head)]
-                              (if (unify goal head)
-                                {:ok nil}
-                                {:err why-not})))))))
+        head' (postwalk-replace vars head)
+        body (if why-not
+               (constantly {:err why-not})
+               (fn [goal why-not]
+                 (let [vars (new-vars {} bindings)
+                       head (postwalk-replace vars head)]
+                   (if (unify goal head)
+                     {:ok nil}
+                     {:err why-not}))))]
+    (store-rule ps head' body)))
 
 (defn satisfy-goal [ps goal why-not]
   (let [[goal why-not] (split-goal goal why-not)]

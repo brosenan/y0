@@ -1,6 +1,7 @@
   * [Variable Bindings](#variable-bindings)
   * [Rule Parsing](#rule-parsing)
     * [Trivial Rules](#trivial-rules)
+    * [Providing Why-Not-Explanations](#providing-why-not-explanations)
 ```clojure
 (ns y0.rules-test
   (:require [midje.sweet :refer [fact =>]]
@@ -139,6 +140,8 @@ On failure it returns the given explanation.
  (satisfy-goal amount-ps `(amount 1 :uno) '(just-because)) => {:err '(just-because)})
 
 ```
+### Providing Why-Not Explanations
+
 If the goal sequence contains a `!` symbol, the goal to be evaluated is everything to the left of
 the `!`.
 ```clojure
@@ -153,5 +156,20 @@ The terms after the `!` override the provided why-not explanation in case of a f
 (fact
  (satisfy-goal amount-ps `(amount 1 :uno ! "the" "correct" "explanation") '(wrong-explanation)) =>
  {:err ["the" "correct" "explanation"]})
+
+```
+A rule can provide its own why not explanation. Rules can be provided to always fail, providing
+an explanation. This is useful, for example, when rules are provided to cover all "valid" special
+cases, but we want to make the default fail with a proper explanation, e.g., x is not a valid y.
+
+Creating a failing rule is done by placing a `!` in its head.
+
+To demonstrate this, we extend the `amount` example to have a failing case for `-1`.
+```clojure
+(fact
+ (let [x (atom nil)]
+   (->s (ok amount-ps)
+        (add-rule `(all [x] (amount -1 x ! "Cannot have negative amounts")))
+        (satisfy-goal `(amount -1 ~x) '(wrong-explanation)))) => {:err ["Cannot have negative amounts"]})
 ```
 
