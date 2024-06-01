@@ -23,6 +23,6 @@
                               {:ok nil}
                               {:err why-not}))))))
 
-(defn satisfy_goal [ps goal why-not]
+(defn satisfy-goal [ps goal why-not]
   (let-s [rule (match-rule ps goal)]
          (rule goal why-not)))

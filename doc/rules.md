@@ -4,7 +4,7 @@
 ```clojure
 (ns y0.rules-test
   (:require [midje.sweet :refer [fact =>]]
-            [y0.rules :refer [new-vars add-rule satisfy_goal]]
+            [y0.rules :refer [new-vars add-rule satisfy-goal]]
             [y0.core :refer [all <-]]
             [y0.status :refer [->s ok let-s]]
             [y0.predstore :refer [match-rule pred-key]]))
@@ -112,18 +112,18 @@ returned.
    (amount-r2 goal '(just-because)) => {:err '(just-because)}))
 
 ```
-The function `satisfy_goal` takes a predstore, a goal and a why-not explanation. On success it
+The function `satisfy-goal` takes a predstore, a goal and a why-not explanation. On success it
 returns `(:ok nil)` and assigns the assigns values to free variables in the goal.
 ```clojure
 (fact
  (let [x (atom nil)]
-   (satisfy_goal amount-ps `(amount 1 ~x) '(just-because)) => {:ok nil}
+   (satisfy-goal amount-ps `(amount 1 ~x) '(just-because)) => {:ok nil}
    @x => :one))
 
 ```
 On failure it returns the given explanation.
 ```clojure
 (fact
- (satisfy_goal amount-ps `(amount 1 :uno) '(just-because)) => {:err '(just-because)})
+ (satisfy-goal amount-ps `(amount 1 :uno) '(just-because)) => {:err '(just-because)})
 ```
 
