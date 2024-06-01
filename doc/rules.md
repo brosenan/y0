@@ -82,7 +82,8 @@ The predstore should have rules to match goals of the form `(amount x y)`.
         (do (def amount-ps ps)  ;; for future reference
             (def amount-r0 r0)
             (def amount-r1 r1)
-            (def amount-r2 r2)))
+            (def amount-r2 r2)
+            (ok nil))) => {:ok nil}
  amount-r0 => fn?
  amount-r1 => fn?
  amount-r2 => fn?)
@@ -110,6 +111,17 @@ returned.
 (fact
  (let [goal `(amount 2 :two)]
    (amount-r2 goal '(just-because)) => {:err '(just-because)}))
+
+```
+Calls to rules are independent. A rule can be called with different values each time independently.
+```clojure
+(fact
+ (let [x1 (atom nil)
+       x2 (atom nil)]
+   (amount-r2 `(amount 2 ~x1) '(because-of-1)) => {:ok nil}
+   @x1 => :many
+   (amount-r2 `(amount 3 ~x2) '(because-of-2)) => {:ok nil}
+   @x2 => :many))
 
 ```
 The function `satisfy-goal` takes a predstore, a goal and a why-not explanation. On success it
