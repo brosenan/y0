@@ -7,11 +7,15 @@
   {:name (str name-sym)
    :arity (count args)})
 
+(defn- free-var? [v]
+  (and (instance? clojure.lang.Atom v)
+       (nil? @v)))
+
 (defn- has-tail? [l]
   (cond
     (< (count l) 2) false
     (> (count l) 2) (recur (rest l))
-    (= (first l) &) (instance? clojure.lang.Atom (second l))
+    (= (first l) &) (free-var? (second l))
     :else false))
 
 (declare arg-key)
@@ -29,7 +33,8 @@
   (cond
     (symbol? arg) {:symbol (str arg)}
     (keyword? arg) {:keyword (str arg)}
-    (instance? clojure.lang.Atom arg) {}
+    (free-var? arg) {}
+    (instance? clojure.lang.Atom arg) (recur @arg)
     (seq? arg) (sequential-key arg :list)
     (vector? arg) (sequential-key arg :vec)
     :else {:value arg}))

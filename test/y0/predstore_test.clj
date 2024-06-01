@@ -34,6 +34,10 @@
 (fact
  (arg-key (atom nil)) => {})
 
+;; A bound variable, however, is represented by the underlying value.
+(fact
+ (arg-key (atom 'foo)) => {:symbol "foo"})
+
 ;; #### Lists and Forms
 
 ;; An empty list is represented as `{:list :empty}`.

@@ -51,6 +51,12 @@ Unbount variables can be bound to anything and are therefore represented by `{}`
  (arg-key (atom nil)) => {})
 
 ```
+A bound variable, however, is represented by the underlying value.
+```clojure
+(fact
+ (arg-key (atom 'foo)) => {:symbol "foo"})
+
+```
 #### Lists and Forms
 
 An empty list is represented as `{:list :empty}`.
