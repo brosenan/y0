@@ -17,3 +17,5 @@
 (def <- '<-)
 
 (def ! '!)
+
+(def test 'test)
