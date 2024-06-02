@@ -19,9 +19,11 @@
     (symbol? expr) (name expr)
     (seq? expr) (sequential-to-str budget expr "(" ")")
     (vector? expr) (sequential-to-str budget expr "[" "]")
-    :else (str expr)))
+    :else (pr-str expr)))
 
 (defn explanation-to-str [why-not ps]
   (->> why-not
-       (map #(explanation-expr-to-str % 3))
+       (map #(if (string? %)
+               %
+               (explanation-expr-to-str % 3)))
        (join " ")))

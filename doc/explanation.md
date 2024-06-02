@@ -32,6 +32,12 @@ Numbers are stringified decimally.
  (explanation-expr-to-str 3.14 3) => "3.14")
 
 ```
+Strings are represented with quotes.
+```clojure
+(fact
+ (explanation-expr-to-str "foo" 3) => "\"foo\"")
+
+```
 A sequence (form) is stringified by adding `()` around its contents and spaces between
 its elements.
 ```clojure
