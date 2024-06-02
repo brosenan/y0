@@ -27,3 +27,18 @@
                %
                (explanation-expr-to-str % 3)))
        (join " ")))
+
+(defn- has-location? [term]
+  (and (instance? clojure.lang.Obj term)
+         (let [m (meta term)]
+           (and (contains? m :row)
+                (contains? m :path)))))
+
+(defn code-location [term]
+  (cond
+    (has-location? term) (meta term)
+    (sequential? term) (->> term
+                            (map code-location)
+                            (filter #(not (nil? %)))
+                            first)
+    :else nil))
