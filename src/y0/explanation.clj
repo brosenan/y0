@@ -1,9 +1,6 @@
 (ns y0.explanation
   (:require [clojure.string :refer [join]]))
 
-(defn explanation-to-str [why-not ps]
-  why-not)
-
 (defn- sequential-to-str [budget expr opener closer]
   (str opener
        (->> expr
@@ -21,3 +18,8 @@
     (seq? expr) (sequential-to-str budget expr "(" ")")
     (vector? expr) (sequential-to-str budget expr "[" "]")
     :else (str expr)))
+
+(defn explanation-to-str [why-not ps]
+  (->> why-not
+       (map #(explanation-expr-to-str % 3))
+       (join " ")))

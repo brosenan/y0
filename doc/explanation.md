@@ -1,5 +1,6 @@
   * [Pretty-printing-an-Explanation](#pretty-printing-an-explanation)
     * [Stringifying S-Expressions](#stringifying-s-expressions)
+    * [Stringifying Explanations](#stringifying-explanations)
 ```clojure
 (ns y0.explanation-test
   (:require [midje.sweet :refer [fact =>]]
@@ -11,18 +12,9 @@ software support for them.
 
 ## Pretty-printing an Explanation
 
-A "why not" explanation is a recursive structure. It is either a string, a sequence
-representing an underlying s-expression or a vector of these. The `explanation-to-str`
-function takes an explanation and returns a string representing it. It takes an
-explanation term and a predstore and return a string representing the explanation.
-The role of the predstore will be made clear later.
+A "why not" explanation is a vector of components, including strings and (other)
+s-expressions. We begin by discussing how the s-expressions are being stringified.
 
-Given a string, the same string is returned.
-```clojure
-(fact
- (explanation-to-str "foo bar" {}) => "foo bar")
-
-```
 ### Stringifying S-Expressions
 
 The function `explanation-expr-to-str` takes an s-expression and a "budget" of elements
@@ -56,5 +48,27 @@ Sub-expressions are taken with budget = 1.
 ```clojure
 (fact (explanation-expr-to-str '(foo/bar (+ 1 2) 3 4) 3) => "(bar (+ ...) 3 ...)")
 
+```
+Vectors are supported too.
+```clojure
+(fact (explanation-expr-to-str '[[x y z] 1 [2 3] 4] 3) => "[[x ...] 1 [2 ...] ...]")
+
+```
+### Stringifying Explanations
+
+The `explanation-to-str` function takes an explanation and returns a string representing
+it. It takes an explanation term and a predstore and return a string representing the explanation.
+The role of the predstore will be made clear later.
+
+Strings are taken verbatim, joined with spaces.
+```clojure
+(fact
+ (explanation-to-str ["foo" "bar"] {}) => "foo bar")
+
+```
+Non-strings are treated as s-expressions and are stringified with budget 3.
+```clojure
+(fact
+ (explanation-to-str ["foo" 3 '(x/bar 1 2 3)] {}) => "foo 3 (bar 1 2 ...)")
 ```
 
