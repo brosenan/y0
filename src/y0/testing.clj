@@ -7,6 +7,10 @@
             [clojure.walk :refer [postwalk-replace]]))
 
 (defn apply-test-block [ps test-block]
-  (let [[_test & tests] test-block
-        [test & tests] tests]
-    (satisfy-goal ps test "Test failed without explanation")))
+  (let [[_test & tests] test-block]
+    (loop [tests tests]
+      (let [[test & tests] tests]
+        (if (nil? test)
+          (ok nil)
+          (let-s [_nil (satisfy-goal ps test "Test failed without explanation")]
+                 (recur tests)))))))

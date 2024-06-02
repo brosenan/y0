@@ -45,9 +45,13 @@
 ;; A test withing a `test` block can be a simple goal. In such a case, the expected
 ;; behavior is for it to succeed.
 (fact
- (apply-test-block name-ps `(test (name 1 "one"))) => {:ok nil})
+ (apply-test-block name-ps `(test (name 1 "one")
+                                  (name 2 "two"))) => {:ok nil})
 
 ;; However, if a goal expected to succeed fails, the explanation provided by the goal's
 ;; evaluation is returned.
 (fact
- (apply-test-block name-ps `(test (name 3 "three"))) => {:err ["3 is not real"]})
+ (apply-test-block name-ps `(test (name 1 "one")
+                                  (name 2 "two")
+                                  (name 3 "three")
+                                  (name [] "empty vec"))) => {:err ["3 is not real"]})
