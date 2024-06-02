@@ -1,6 +1,8 @@
 (ns y0.explanation
   (:require [clojure.string :refer [join]]))
 
+(declare explanation-expr-to-str)
+
 (defn- sequential-to-str [budget expr opener closer]
   (str opener
        (->> expr
