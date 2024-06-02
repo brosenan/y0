@@ -12,7 +12,7 @@
              (vector? x) (->> x (map #(postwalk-with-meta f %)) vec)
              :else x)
         y (f x')]
-    (if (instance? clojure.lang.Obj y)
+    (if (instance? clojure.lang.IObj y)
       (with-meta y m)
       y)))
 
