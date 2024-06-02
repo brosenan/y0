@@ -41,3 +41,5 @@
 ;; Sub-expressions are taken with budget = 1.
 (fact (explanation-expr-to-str '(foo/bar (+ 1 2) 3 4) 3) => "(bar (+ ...) 3 ...)")
 
+;; Vectors are supported too.
+(fact (explanation-expr-to-str '[[x y z] 1 [2 3] 4] 3) => "[[x ...] 1 [2 ...] ...]")
