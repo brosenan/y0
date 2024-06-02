@@ -14,7 +14,7 @@
           (assoc sym (atom nil))
           (recur syms)))))
 
-(defn- split-goal [goal why-not]
+(defn split-goal [goal why-not]
   (let [bang-index (.indexOf goal `!)] 
     (if (= bang-index -1)
       [goal why-not]
@@ -26,7 +26,7 @@
         vars (new-vars {} bindings)
         head' (postwalk-replace vars head)
         body (if why-not
-               (constantly {:err why-not})
+               (constantly {:err (postwalk-replace vars why-not)})
                (fn [goal why-not]
                  (let [vars (new-vars {} bindings)
                        head (postwalk-replace vars head)]

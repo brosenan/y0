@@ -1,5 +1,6 @@
   * [Running Example](#running-example)
   * [Testing for Success](#testing-for-success)
+  * [Testing for Failure](#testing-for-failure)
 ```clojure
 (ns y0.testing-test
   (:require [midje.sweet :refer [fact =>]]
@@ -52,13 +53,47 @@ A test withing a `test` block can be a simple goal. In such a case, the expected
 behavior is for it to succeed.
 ```clojure
 (fact
- (apply-test-block name-ps `(test (name 1 "one"))) => {:ok nil})
+ (apply-test-block name-ps `(test (name 1 "one")
+                                  (name 2 "two"))) => {:ok nil})
 
 ```
 However, if a goal expected to succeed fails, the explanation provided by the goal's
 evaluation is returned.
 ```clojure
 (fact
- (apply-test-block name-ps `(test (name 3 "three"))) => {:err ["3 is not real"]})
+ (apply-test-block name-ps `(test (name 1 "one")
+                                  (name 2 "two")
+                                  (name 3 "three")
+                                  (name [] "empty vec"))) => {:err ["3 is not real"]})
+
+```
+## Testing for Failure
+
+A test block may also contain tests that expect failure of goals. This is important
+in order to make sure the $y_0$ program can correctly identify invalid input and
+provide a correct explanation.
+
+Expecting failure is done using the `!` symbol.
+```clojure
+(fact
+ (apply-test-block name-ps 
+                   `(test (name 3 "three" ! "3 is not real")
+                          (name 5 "five" ! "I don't know how to name" 5))) => {:ok nil})
+
+```
+The expression(s) after the `!` must match the error. For example, this test will fail:
+```clojure
+(fact
+ (apply-test-block name-ps
+                   `(test (name 3 "three" ! "3 has no name"))) =>
+ {:err ["Wrong explanation is given:" ["3 is not real"] "instead of" ["3 has no name"]]})
+
+```
+If a goal is expected to fail but passes, the test fails too.
+```clojure
+(fact
+ (apply-test-block name-ps
+                   `(test (name 2 "two" ! "2 is not real"))) =>
+ {:err ["Expected failure for goal" `(name 2 "two") "but it succeeded"]})
 ```
 

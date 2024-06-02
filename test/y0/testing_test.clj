@@ -55,3 +55,27 @@
                                   (name 2 "two")
                                   (name 3 "three")
                                   (name [] "empty vec"))) => {:err ["3 is not real"]})
+
+;; ## Testing for Failure
+
+;; A test block may also contain tests that expect failure of goals. This is important
+;; in order to make sure the $y_0$ program can correctly identify invalid input and
+;; provide a correct explanation.
+
+;; Expecting failure is done using the `!` symbol.
+(fact
+ (apply-test-block name-ps 
+                   `(test (name 3 "three" ! "3 is not real")
+                          (name 5 "five" ! "I don't know how to name" 5))) => {:ok nil})
+
+;; The expression(s) after the `!` must match the error. For example, this test will fail:
+(fact
+ (apply-test-block name-ps
+                   `(test (name 3 "three" ! "3 has no name"))) =>
+ {:err ["Wrong explanation is given:" ["3 is not real"] "instead of" ["3 has no name"]]})
+
+;; If a goal is expected to fail but passes, the test fails too.
+(fact
+ (apply-test-block name-ps
+                   `(test (name 2 "two" ! "2 is not real"))) =>
+ {:err ["Expected failure for goal" `(name 2 "two") "but it succeeded"]})
