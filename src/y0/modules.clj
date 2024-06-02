@@ -6,6 +6,16 @@
 
 (def y0-symbols ["<-" "..." "test" "clj-step" "return" "continue"])
 
+(defn postwalk-with-meta [f x]
+  (let [m (meta x)
+        x' (cond
+             (vector? x) (->> x (map #(postwalk-with-meta f %)) vec)
+             :else x)
+        y (f x')]
+    (if (instance? clojure.lang.Obj y)
+      (with-meta y m)
+      y)))
+
 (defn convert-ns [expr ns-map refer-map]
   (walk/postwalk (fn [expr] (if (symbol? expr)
                               (let [meta (meta expr)

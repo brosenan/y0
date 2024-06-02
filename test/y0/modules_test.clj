@@ -153,3 +153,37 @@
                                              (bar c/baz)" "b.y0"]
   (read-module "test.c" ["/some/path"]) => ["(ns test.c)
                                              (baz 42)" "c.y0"]))
+
+;; ## Appendix
+
+;; ### Meta-Preserving `postwalk`.
+
+;; In the process of renaming symbols to their global namespaces we need to traverse the entire module. This is easy
+;; to do using `clojure.walk/postwalk`. Unfortunately, this function does not preserve metadata on the objects it
+;; traverses. For this reason, we create `postwalk-with-meta`, which, similar to `postwalk`, takes a function and
+;; an s-expression and traverses the expression, calling the function on every node, replacing it with the return
+;; value. However, unlike `postwalk`, it preseves metadata.
+
+;; First we demonstrate this for a simple object.
+(fact
+ (let [res (postwalk-with-meta identity (with-meta [] {:foo :bar}))]
+   res => []
+   (meta res) => {:foo :bar})
+ (let [res (postwalk-with-meta (constantly 'x) (with-meta [] {:foo :bar}))]
+   res => 'x
+   (meta res) => {:foo :bar}))
+
+;; If the expression cannot hold metadata, none is passed on.
+(fact
+ (let [res (postwalk-with-meta (constantly 'x) 42)]
+   res => 'x
+   (meta res) => nil))
+
+;; In the following example we show how postwalk-with-meta traverses a tree of lists and vectors, containing numbers
+;; as leafs. The function we provide will increment the numbers. Metadata on the lists and vectors will be preserved.
+(fact
+ (let [tree [1 [2 3]]
+       res (postwalk-with-meta #(if (int? %)
+                                  (inc %)
+                                  %) tree)]
+   res => [2 [3 4]]))
