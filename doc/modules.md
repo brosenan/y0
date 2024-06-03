@@ -2,6 +2,8 @@
   * [Module Names and Paths](#module-names-and-paths)
   * [Parsing a Module](#parsing-a-module)
   * [Loading a Complete Program](#loading-a-complete-program)
+  * [Appendix](#appendix)
+    * [Meta-Preserving-`postwalk`.](#meta-preserving-`postwalk`.)
 ```clojure
 (ns y0.modules-test
   (:require [midje.sweet :refer [fact => throws provided]]
@@ -131,18 +133,25 @@ Additional symbols in the `y0` namespace: `...` and `test`.
                                               (clj-step return continue)" "bar.y0"]))
 
 ```
-When reading the module, the source location of symbols is recorded as metadata on the symbols.
+When reading the module, the source location of expressions is recorded as metadata.
 ```clojure
 (fact
- (-> (load-single-module "foo.bar" ["/some/path"])
-     first     ;; The parsed module
-     second    ;; (charlie)
-     first     ;; charlie
-     meta) => {:path "foo.y0" :col 48 :end-col 55 :row 3 :end-row 3}
+ (let [[module _deps] (load-single-module "foo.bar" ["/some/path"])]
+   (def foobar-module module)) => #'y0.modules-test/foobar-module
  (provided
   (read-module "foo.bar" ["/some/path"]) => ["(ns foo.bar)
-                                              (a b)
-                                              (charlie)" "foo.y0"]))
+                                                  (a b)
+                                                  (charlie)" "foo.y0"])
+ ;; Location of `(a b)`
+ (-> foobar-module first meta)  => {:path "foo.y0" :row 2 :col 51 :end-row 2 :end-col 56}
+ ;; Location of `a`
+ (-> foobar-module first first meta)  => {:path "foo.y0" :row 2 :col 52 :end-row 2 :end-col 53}
+ ;; Location of `b`
+ (-> foobar-module first second meta)  => {:path "foo.y0" :row 2 :col 54 :end-row 2 :end-col 55}
+ ;; Location of `charlie`
+ (-> foobar-module second first meta)  => {:path "foo.y0" :row 3 :col 52 :end-row 3 :end-col 59})
+
+
 
 ```
 ## Loading a Complete Program
@@ -174,5 +183,55 @@ returns a pair (`statements`, `modules`) where `statements` is an aggregated lis
                                              (bar c/baz)" "b.y0"]
   (read-module "test.c" ["/some/path"]) => ["(ns test.c)
                                              (baz 42)" "c.y0"]))
+
+```
+## Appendix
+
+### Meta-Preserving `postwalk`.
+
+In the process of renaming symbols to their global namespaces we need to traverse the entire module. This is easy
+to do using `clojure.walk/postwalk`. Unfortunately, this function does not preserve metadata on the objects it
+traverses. For this reason, we create `postwalk-with-meta`, which, similar to `postwalk`, takes a function and
+an s-expression and traverses the expression, calling the function on every node, replacing it with the return
+value. However, unlike `postwalk`, it preseves metadata.
+
+First we demonstrate this for a simple object.
+```clojure
+(fact
+ (let [res (postwalk-with-meta identity (with-meta [] {:foo :bar}))]
+   res => []
+   (meta res) => {:foo :bar})
+ (let [res (postwalk-with-meta (constantly 'x) (with-meta [] {:foo :bar}))]
+   res => 'x
+   (meta res) => {:foo :bar}))
+
+```
+If the expression cannot hold metadata, none is passed on.
+```clojure
+(fact
+ (let [res (postwalk-with-meta (constantly 'x) 42)]
+   res => 'x
+   (meta res) => nil))
+
+```
+In the following example we show how postwalk-with-meta traverses a tree of lists and vectors, containing numbers
+as leafs. The function we provide will increment the numbers. Metadata on the lists and vectors will be preserved.
+```clojure
+(fact
+ (let [tree (with-meta [1 
+                        (with-meta [2 3] {:vec :bottom})
+                        (with-meta '(4 5) {:seq :foo})
+                        (with-meta {6 [7] 8 [9]} {:map :bar})
+                        (with-meta #{[10] 11} {:set :baz})]
+              {:vec :top})
+       res (postwalk-with-meta #(if (int? %)
+                                  (inc %)
+                                  %) tree)]
+   res => [2 [3 4] '(5 6) {7 [8] 9 [10]} #{[11] 12}]
+   (-> res meta) => {:vec :top}
+   (-> res second meta) => {:vec :bottom}
+   (-> res (nth 2) meta) => {:seq :foo}
+   (-> res (nth 3) meta) => {:map :bar}
+   (-> res (nth 4) meta) => {:set :baz}))
 ```
 

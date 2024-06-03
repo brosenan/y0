@@ -111,17 +111,24 @@
                                               (test ...)
                                               (clj-step return continue)" "bar.y0"]))
 
-;; When reading the module, the source location of symbols is recorded as metadata on the symbols.
+;; When reading the module, the source location of expressions is recorded as metadata.
 (fact
- (-> (load-single-module "foo.bar" ["/some/path"])
-     first     ;; The parsed module
-     second    ;; (charlie)
-     first     ;; charlie
-     meta) => {:path "foo.y0" :col 48 :end-col 55 :row 3 :end-row 3}
+ (let [[module _deps] (load-single-module "foo.bar" ["/some/path"])]
+   (def foobar-module module)) => #'y0.modules-test/foobar-module
  (provided
   (read-module "foo.bar" ["/some/path"]) => ["(ns foo.bar)
-                                              (a b)
-                                              (charlie)" "foo.y0"]))
+                                                  (a b)
+                                                  (charlie)" "foo.y0"])
+ ;; Location of `(a b)`
+ (-> foobar-module first meta)  => {:path "foo.y0" :row 2 :col 51 :end-row 2 :end-col 56}
+ ;; Location of `a`
+ (-> foobar-module first first meta)  => {:path "foo.y0" :row 2 :col 52 :end-row 2 :end-col 53}
+ ;; Location of `b`
+ (-> foobar-module first second meta)  => {:path "foo.y0" :row 2 :col 54 :end-row 2 :end-col 55}
+ ;; Location of `charlie`
+ (-> foobar-module second first meta)  => {:path "foo.y0" :row 3 :col 52 :end-row 3 :end-col 59})
+
+
 
 ;; ## Loading a Complete Program
 
@@ -182,8 +189,18 @@
 ;; In the following example we show how postwalk-with-meta traverses a tree of lists and vectors, containing numbers
 ;; as leafs. The function we provide will increment the numbers. Metadata on the lists and vectors will be preserved.
 (fact
- (let [tree [1 [2 3]]
+ (let [tree (with-meta [1 
+                        (with-meta [2 3] {:vec :bottom})
+                        (with-meta '(4 5) {:seq :foo})
+                        (with-meta {6 [7] 8 [9]} {:map :bar})
+                        (with-meta #{[10] 11} {:set :baz})]
+              {:vec :top})
        res (postwalk-with-meta #(if (int? %)
                                   (inc %)
                                   %) tree)]
-   res => [2 [3 4]]))
+   res => [2 [3 4] '(5 6) {7 [8] 9 [10]} #{[11] 12}]
+   (-> res meta) => {:vec :top}
+   (-> res second meta) => {:vec :bottom}
+   (-> res (nth 2) meta) => {:seq :foo}
+   (-> res (nth 3) meta) => {:map :bar}
+   (-> res (nth 4) meta) => {:set :baz}))

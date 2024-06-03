@@ -10,6 +10,9 @@
   (let [m (meta x)
         x' (cond
              (vector? x) (->> x (map #(postwalk-with-meta f %)) vec)
+             (seq? x) (->> x (map #(postwalk-with-meta f %)) seq)
+             (map? x) (->> x (map #(postwalk-with-meta f %)) (into {}))
+             (set? x) (->> x (map #(postwalk-with-meta f %)) set)
              :else x)
         y (f x')]
     (if (instance? clojure.lang.IObj y)
@@ -17,18 +20,20 @@
       y)))
 
 (defn convert-ns [expr ns-map refer-map]
-  (walk/postwalk (fn [expr] (if (symbol? expr)
-                              (let [meta (meta expr)
-                                    orig-ns (namespace expr)
-                                    new-ns (if (and (empty? orig-ns)
-                                                    (refer-map (name expr)))
-                                             (refer-map (name expr))
-                                             (if-let [new-ns (ns-map orig-ns)]
-                                               new-ns
-                                               (throw (Exception. (str "Undefined namespace: " orig-ns)))))]
-                                (-> (symbol new-ns (name expr))
-                                    (with-meta meta)))
-                              expr)) expr))
+  (postwalk-with-meta
+   (fn [expr] (if (symbol? expr)
+                (let [meta (meta expr)
+                      orig-ns (namespace expr)
+                      new-ns (if (and (empty? orig-ns)
+                                      (refer-map (name expr)))
+                               (refer-map (name expr))
+                               (if-let [new-ns (ns-map orig-ns)]
+                                 new-ns
+                                 (throw (Exception. (str "Undefined namespace: " orig-ns)))))]
+                  (-> (symbol new-ns (name expr))
+                      (with-meta meta)))
+                expr))
+   expr))
 
 
 (defn module-paths [module-name y0-path]
