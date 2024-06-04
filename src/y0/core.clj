@@ -1,21 +1,9 @@
 (ns y0.core)
 
-(def & '&)
+(defmacro def-symbols [& symbols]
+  `(do
+     ~@(for [sym symbols]
+         `(def ~sym (quote ~sym)))
+     (def y0-symbols ~(vec symbols))))
 
-(def on-key 'on-key)
-
-(def specific-rule-without-base 'specific-rule-without-base)
-
-(def must-come-before 'must-come-before)
-
-(def conflicting-defs 'conflicting-defs)
-
-(def undefined-predicate 'undefined-predicate)
-
-(def all 'all)
-
-(def <- '<-)
-
-(def ! '!)
-
-(def test 'test)
+(def-symbols & on-key specific-rule-without-base must-come-before conflicting-defs undefined-predicate all <- ! test)

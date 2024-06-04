@@ -50,8 +50,8 @@
 ;; `module-paths` takes a dot-separated module name and a sequence of base paths (the `Y0_PATH`) and returns a sequence
 ;; of `java.io.File` objects representing the different candidate paths for this module.
 (fact
- (module-paths "foo.bar.baz" ["/one/path" "/two/path"]) => [(io/file "/one/path" "foo" "bar" "baz.mu")
-                                                            (io/file "/two/path" "foo" "bar" "baz.mu")])
+ (module-paths "foo.bar.baz" ["/one/path" "/two/path"]) => [(io/file "/one/path" "foo" "bar" "baz.y0")
+                                                            (io/file "/two/path" "foo" "bar" "baz.y0")])
 
 ;; The function `read-module` (not shown here) uses `module-paths` to determine the path candidates for the module,
 ;; and reads (as string) the first one that exists.
@@ -76,14 +76,14 @@
  (parse-ns-decl '(ns foo.bar
                     (:require [baz.quux :as quux]
                               [baz.puux :refer [x]]
-                              [baz.muux :as muux :refer [a b c]]))) =>
- [["baz.quux" "baz.puux" "baz.muux"]
+                              [baz.y0ux :as muux :refer [a b c]]))) =>
+ [["baz.quux" "baz.puux" "baz.y0ux"]
   {nil "foo.bar"
    "quux" "baz.quux"
-   "muux" "baz.muux"}
-  {"a" "baz.muux"
-   "b" "baz.muux"
-   "c" "baz.muux"
+   "muux" "baz.y0ux"}
+  {"a" "baz.y0ux"
+   "b" "baz.y0ux"
+   "c" "baz.y0ux"
    "x" "baz.puux"}])
 
 ;; The function `load-single-module` takes a module name and the `y0-path` as a list of paths,
@@ -101,15 +101,15 @@
 ;; As such, it defines the `<-` symbol, which is implicitly associated with the `y0` namespace in the `refer-map`.
 ;; Additional symbols in the `y0` namespace: `...` and `test`.
 (fact
- (load-single-module "foo.bar" ["/some/path"]) => ['[(y0/<- (foo.bar/a :x)
+ (load-single-module "foo.bar" ["/some/path"]) => ['[(y0.core/<- (foo.bar/a :x)
                                                               (foo.bar/b :x))
-                                                     (y0/test y0/...)
-                                                     (y0/clj-step y0/return y0/continue)] []]
+                                                     (y0.core/test)
+                                                     (y0.core/all [] foo.bar/foo)] []]
  (provided
   (read-module "foo.bar" ["/some/path"]) => ["(ns foo.bar)
                                               (<- (a :x) (b :x))
-                                              (test ...)
-                                              (clj-step return continue)" "bar.y0"]))
+                                              (test)
+                                              (all [] foo)" "bar.y0"]))
 
 ;; When reading the module, the source location of expressions is recorded as metadata.
 (fact

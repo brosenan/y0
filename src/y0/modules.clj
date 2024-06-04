@@ -1,10 +1,8 @@
 (ns y0.modules
-  (:require [clojure.walk :as walk]
-            [clojure.string :as str]
+  (:require [clojure.string :as str]
             [clojure.java.io :as io]
-            [edamame.core :as e :refer [parse-string-all]]))
-
-(def y0-symbols ["<-" "..." "test" "clj-step" "return" "continue"])
+            [edamame.core :as e :refer [parse-string-all]]
+            [y0.core :refer [y0-symbols]]))
 
 (defn postwalk-with-meta [f x]
   (let [m (meta x)
@@ -39,7 +37,7 @@
 (defn module-paths [module-name y0-path]
   (let [rel-path (str/split module-name #"[.]")
         depth (-> rel-path count dec)
-        rel-path (update rel-path depth #(str % ".mu"))]
+        rel-path (update rel-path depth #(str % ".y0"))]
     (for [path y0-path]
       (apply io/file path rel-path))))
 
@@ -95,7 +93,7 @@
                                                                                (:obj m)))})
         [module-list ns-map refer-map] (parse-ns-decl ns-decl)
         refer-map (merge refer-map (->> (for [sym y0-symbols]
-                                          [sym "y0"])
+                                          [(name sym) "y0.core"])
                                         (into {})))]
     [(for [statement statements]
        (convert-ns statement ns-map refer-map))
