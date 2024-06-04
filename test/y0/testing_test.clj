@@ -14,8 +14,8 @@
 ;; an expected explanation is provided using the `!` symbol.
 
 ;; The function `apply-test-block` takes a predstore and a test-block and returns
-;; `{:ok nil}` if all tests have passed, or an appropriate explanation if something
-;; failed.
+;; the given predstore if all tests have passed, or an appropriate explanation if
+;; something failed.
 
 ;; ## Running Example
 
@@ -46,7 +46,7 @@
 ;; behavior is for it to succeed.
 (fact
  (apply-test-block name-ps `(test (name 1 "one")
-                                  (name 2 "two"))) => {:ok nil})
+                                  (name 2 "two"))) => {:ok name-ps})
 
 ;; However, if a goal expected to succeed fails, the explanation provided by the goal's
 ;; evaluation is returned.
@@ -66,7 +66,7 @@
 (fact
  (apply-test-block name-ps 
                    `(test (name 3 "three" ! "3 is not real")
-                          (name 5 "five" ! "I don't know how to name" 5))) => {:ok nil})
+                          (name 5 "five" ! "I don't know how to name" 5))) => {:ok name-ps})
 
 ;; The expression(s) after the `!` must match the error. For example, this test will fail:
 (fact
