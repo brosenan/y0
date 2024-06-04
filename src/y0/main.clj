@@ -1,9 +1,9 @@
 (ns y0.main
-  (:require [y0.core :refer []]
+  (:require [y0.core :refer [all test]]
             [y0.modules :refer [load-with-dependencies]]
-            [y0.rules :refer []]
-            [y0.status :refer []]
-            [y0.testing :refer []]
+            [y0.rules :refer [add-rule]]
+            [y0.status :refer [ok let-s]]
+            [y0.testing :refer [apply-test-block]]
             [clojure.tools.cli :refer [parse-opts]])
   (:gen-class))
 
@@ -14,9 +14,27 @@
     :update-fn conj]
    ["-h" "--help"]])
 
+(defn- apply-statement [statement ps]
+  (let [[form & _] statement]
+    (case form
+      y0.core/all (add-rule ps statement)
+      y0.core/test (apply-test-block ps statement)
+      (ok ps))))
+
+(defn- apply-statements [statements]
+  (loop [statements statements
+         ps {}]
+    (if (empty? statements)
+      ps
+      (let [[statement & statements] statements]
+        (let-s [ps (apply-statement statement ps)]
+               (recur statements ps))))))
+
 (defn- main [file path]
-  (let [statements (load-with-dependencies file path)]
-    (println statements)))
+  (let [[statements _] (load-with-dependencies file path)
+        status (apply-statements statements)]
+    (when (:err status)
+      (println status))))
 
 (defn -main [& args]
   (let [cli (parse-opts args cli-options)
