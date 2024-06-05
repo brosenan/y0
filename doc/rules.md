@@ -6,9 +6,10 @@
 (ns y0.rules-test
   (:require [midje.sweet :refer [fact =>]]
             [y0.rules :refer [new-vars add-rule satisfy-goal]]
-            [y0.core :refer [all <- !]]
+            [y0.core :refer [all <- ! &]]
             [y0.status :refer [->s ok let-s]]
-            [y0.predstore :refer [match-rule pred-key]]))
+            [y0.predstore :refer [match-rule pred-key]]
+            [y0.explanation :refer [explanation-to-str]]))
 
 ```
 This module is responsible for rules and their interpretation.
@@ -171,5 +172,18 @@ To demonstrate this, we extend the `amount` example to have a failing case for `
    (->s (ok amount-ps)
         (add-rule `(all [x] (amount -1 x ! "Cannot have negative amounts")))
         (satisfy-goal `(amount -1 ~x) '(wrong-explanation)))) => {:err ["Cannot have negative amounts"]})
+
+```
+The provided explanation may contain variables shared with the head. These make the explanation
+refer to the arguments that were given. For example, the following rule takes a 1-place vector
+and explains that it cannot provide an amount for a vector containing that value.
+```clojure
+(fact
+ (let [y (atom nil)
+       status (->s (ok amount-ps)
+                   (add-rule `(all [x xs y] (amount [x & xs] y ! "Cannot provide an amount for a vector containing" x)))
+                   (satisfy-goal `(amount [6] ~y) '(wrong-explanation)))]
+   (explanation-to-str (:err status) {}) => "Cannot provide an amount for a vector containing 6"))
+
 ```
 

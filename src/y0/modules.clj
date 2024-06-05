@@ -47,7 +47,8 @@
         existing (->> paths (filter #(.exists %)))]
     (if (empty? existing)
       (throw (Exception. (str "Cannot find module " module-name " in paths " (list y0-path))))
-      [(-> existing first slurp) existing])))
+      (let [path (first existing)]
+        [(slurp path) path]))))
 
 (defn fold- [[m1 n1 r1] [m2 n2 r2]]
   [(concat m1 m2) (merge n1 n2) (merge r1 r2)])

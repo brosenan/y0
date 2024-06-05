@@ -19,6 +19,8 @@
     (symbol? expr) (name expr)
     (seq? expr) (sequential-to-str budget expr "(" ")")
     (vector? expr) (sequential-to-str budget expr "[" "]")
+    (instance? clojure.lang.Atom expr) (recur @expr budget)
+    (nil? expr) "_"
     :else (pr-str expr)))
 
 (defn explanation-to-str [why-not ps]

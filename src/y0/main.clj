@@ -4,6 +4,7 @@
             [y0.rules :refer [add-rule]]
             [y0.status :refer [ok let-s]]
             [y0.testing :refer [apply-test-block]]
+            [y0.explanation :refer [explanation-to-str code-location]]
             [clojure.tools.cli :refer [parse-opts]])
   (:gen-class))
 
@@ -34,7 +35,12 @@
   (let [[statements _] (load-with-dependencies file path)
         status (apply-statements statements)]
     (when (:err status)
-      (println status))))
+      (let [explanation (:err status)
+            message (explanation-to-str explanation {})
+            location (code-location explanation)]
+        (binding [*out* *err*]
+          (println (str (:path location) ":" (:row location) ": Error:") message))
+        (System/exit 1)))))
 
 (defn -main [& args]
   (let [cli (parse-opts args cli-options)

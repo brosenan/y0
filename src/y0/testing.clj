@@ -8,7 +8,9 @@
 
 (defn- expect-status [status why-not test]
   (if (nil? why-not)
-    status
+    (cond
+      (contains? status :err) {:err (concat (:err status) ["in test" test])}
+      :else status)
     (cond
       (contains? status :ok) {:err 
                               ["Expected failure for goal" test "but it succeeded"]}

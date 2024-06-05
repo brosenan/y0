@@ -54,7 +54,7 @@
  (apply-test-block name-ps `(test (name 1 "one")
                                   (name 2 "two")
                                   (name 3 "three")
-                                  (name [] "empty vec"))) => {:err ["3 is not real"]})
+                                  (name [] "empty vec"))) => {:err ["3 is not real" "in test" `(name 3 "three")]})
 
 ;; ## Testing for Failure
 

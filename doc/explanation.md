@@ -61,6 +61,16 @@ Vectors are supported too.
 (fact (explanation-expr-to-str '[[x y z] 1 [2 3] 4] 3) => "[[x ...] 1 [2 ...] ...]")
 
 ```
+The values of bound variables are printed.
+```clojure
+(fact (explanation-expr-to-str (atom `(foo/bar ~(atom 1) 2 3)) 3) => "(bar 1 2 ...)")
+
+```
+Unbound variables are printed as `_`.
+```clojure
+(fact (explanation-expr-to-str `(foo/bar ~(atom nil) 2 3) 3) => "(bar _ 2 ...)")
+
+```
 ### Stringifying Explanations
 
 The `explanation-to-str` function takes an explanation and returns a string representing

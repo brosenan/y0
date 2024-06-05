@@ -26,7 +26,11 @@
         vars (new-vars {} bindings)
         head' (postwalk-replace vars head)
         body (if why-not
-               (constantly {:err (postwalk-replace vars why-not)})
+               (fn [goal _why-not]
+                 (let [why-not (postwalk-replace vars why-not)
+                       head (postwalk-replace vars head)]
+                   (unify goal head)
+                   {:err why-not}))
                (fn [goal why-not]
                  (let [vars (new-vars {} bindings)
                        head (postwalk-replace vars head)]
