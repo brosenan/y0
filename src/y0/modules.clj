@@ -100,8 +100,8 @@
        (convert-ns statement ns-map refer-map))
      module-list]))
 
-(defn load-with-dependencies [module-name y0-path]
-  (loop [modules-to-load [module-name]
+(defn load-with-dependencies [modules-to-load y0-path]
+  (loop [modules-to-load modules-to-load
          statements []
          modules-loaded #{}]
     (if (empty? modules-to-load)

@@ -142,11 +142,11 @@
 ;; It prepends its statements to the statement list and prepends the modules it requires to the pending module list.
 ;; It also adds the loaded module to the loaded modules set to avoid loading this module again.
 ;;
-;; `load-with-dependencies` takes the name of a "main" module and a list of `y0-path` and
-;; returns a pair (`statements`, `modules`) where `statements` is an aggregated list of statements that were loaded and
-;; `modules` is a set of modules that were loaded.
+;; `load-with-dependencies` takes names of initial modules and a list of `y0-path` and returns a pair (`statements`,
+;; `modules`) where `statements` is an aggregated list of statements that were loaded and `modules` is a set of modules
+;; that were loaded.
 (fact
- (load-with-dependencies "test.a" ["/some/path"]) => '[[(test.c/baz 42)
+ (load-with-dependencies ["test.a"] ["/some/path"]) => '[[(test.c/baz 42)
                                                         (test.b/bar test.c/baz)
                                                         (test.a/foo test.b/bar test.c/baz)]
                                                        #{"test.a" "test.b" "test.c"}]

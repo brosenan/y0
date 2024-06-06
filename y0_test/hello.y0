@@ -10,4 +10,4 @@
 (all [x y] (name [x y] "vec of length 2"))
 
 (test
- (name 4 "one"))
+ (name 1 "one"))

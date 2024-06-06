@@ -31,8 +31,8 @@
         (let-s [ps (apply-statement statement ps)]
                (recur statements ps))))))
 
-(defn- main [file path]
-  (let [[statements _] (load-with-dependencies file path)
+(defn- main [modules path]
+  (let [[statements _] (load-with-dependencies modules path)
         status (apply-statements statements)]
     (when (:err status)
       (let [explanation (:err status)
@@ -45,8 +45,7 @@
 (defn -main [& args]
   (let [cli (parse-opts args cli-options)
         {:keys [path help]} (:options cli)
-        [file & files] (:arguments cli)]
+        modlues (:arguments cli)]
     (cond
       help (println (:summary cli))
-      (seq? files) (println "Only one positional argument expected. Extra:" files)
-      :else (main file path))))
+      :else (main modlues path))))
