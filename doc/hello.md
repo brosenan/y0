@@ -1,0 +1,16 @@
+```clojure
+(ns hello)
+
+(all [x y] (name x y ! "I don't know how to name" x))
+(all [] (name 1 "one"))
+(all [] (name 2 "two"))
+(all [y] (name 3 y ! "3 is not real"))
+(all [] (name [] "empty vec"))
+(all [x xs] (name [x & xs] "nonempty vec"))
+(all [x] (name [x] "vec of length 1"))
+(all [x y] (name [x y] "vec of length 2"))
+
+(test
+ (name 1 "one"))
+```
+
