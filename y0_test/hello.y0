@@ -1,13 +1,78 @@
 (ns hello)
 
-(all [x y] (name x y ! "I don't know how to name" x))
-(all [] (name 1 "one"))
-(all [] (name 2 "two"))
-(all [y] (name 3 y ! "3 is not real"))
-(all [] (name [] "empty vec"))
-(all [x xs] (name [x & xs] "nonempty vec"))
-(all [x] (name [x] "vec of length 1"))
-(all [x y] (name [x y] "vec of length 2"))
+;; # Introduction to $y_0$
 
+;; $y_0$ is a language for defining the _semantics_ of programming languages. It allows for
+;; the definition of _rules_ which define which programs are valid, and if a program isn't,
+;; provide explanations as to what the problem is.
+
+;; To focus on _semantics_ rather than _syntax_, $y_0$ works on programs in the form of
+;; their _Abstract Syntax Trees_, or ASTs for short. A parser is expected to have parsed
+;; the program from its textual form into this tree. $y_0$ is then used to analyze the
+;; tree and determine whether it is valid or not.
+
+;; $y_0$ uses [EDN](https://github.com/edn-format/edn) (s-expressions) for its own syntax
+;; and for the data format it uses for the trees it acceps. For this reason the languages
+;; we will discuss in this document are going to be subsets of EDN.
+
+;; In this document we start, step by step, to define languages of growing complexity as
+;; we introduce new features of $y_0$.
+
+;; ## Predicates
+
+;; The basic abstraction in $y_0$ is called a _predicate_. A predicate defines a relationship
+;; between things. At its simplest form, it can define the relationship between a language
+;; and ASTs that are valid in that language.
+
+;; To demonstrate this, consider the simplest language possible. The `bit` language. This
+;; "language" has only two possible programs: `0` and `1`.
+
+;; To define this language we need to define three rules. One to define each possible value,
+;; and a third rule (which has to come first for reasons we will discuss later) to define
+;; the error in case someone checks if something other than `0` or `1` is a bit.
+
+;; All rules in $y_0$ are based on the keyword `all` followed by a list of variable names
+;; used in the rule, followed by the rule's _head_. The first rule we will define (the
+;; error case for all non-bit ASTs) will also contain `!` followed by the error to be
+;; presented to the user.
+(all [x]
+     (bit x ! "Expected a bit, received" x))
+
+;; This is a "catch all" rule, since `x` in this rule is a _free variable_ which can match
+;; anything. Now we wish to provide _specializations_ for this rule, making sure it will
+;; succeed for `0` and `1`.
+(all []
+     (bit 0))
+(all []
+     (bit 1))
+ 
+;; Congratulations to us! We have just defined our first $y_0$ language by defining a
+;; predicate that accepts it. OK, it ain't fancy or anything, but it's a language
+;; nevertheless. But what can we do with?
+
+;; For one, we can test it. We first want to test that both `0` and `1` are accepted.
+;; We will do so in the following `test` block.
 (test
- (name 1 "one"))
+ (bit 0)
+ (bit 1))
+
+;; What we have here is a `test` block. It starts with the keyword `test` and continues
+;; with some number (two in this case) of _tests_. The simplest tests are _goals_.
+;; One can think of goals as _calls to a predicate_. They have a similar structure
+;; to the predicate's head, and in our case, they have exactly the same values.
+;; This of-course will not be the case as we define more complex languages.
+
+;; A `test` block runs when $y_0$ loads the source file. It then evaluates the goals
+;; and expects success. If they fail, a message with the reason of the failure is
+;; presented. Because this `.md` file is created from
+;; [a matching `.y0` file](https://github.com/brosenan/y0/blob/main/y0_test/hello.y0),
+;; you can be sure these goals succeed, telling us that both `0` and `1` are `bit`s.
+
+;; We can also test for the error message we expect for non-bits.
+(test
+ (bit 2 ! "Expected a bit, received" 2))
+
+;; Here the meaning of the `!` symbol is different: it means that an error is _expected_.
+
+;; This test succeeds because the error message we provided after the `!` matches the
+;; one provided by the default rule exactly.
