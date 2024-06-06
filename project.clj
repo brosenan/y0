@@ -5,7 +5,8 @@
             :url "https://www.eclipse.org/legal/epl-2.0/"}
   :dependencies [[org.clojure/clojure "1.10.0"]
                  [borkdude/edamame "1.4.25"]
-                 [org.clojure/tools.cli "1.1.230"]]
+                 [org.clojure/tools.cli "1.1.230"]
+                 [clojure-term-colors "0.1.0"]]
   :profiles {:dev {:dependencies [[midje "1.10.10"]]}}
   :plugins [[lein-midje "3.2.2"]]
   :repl-options {:init-ns y0.core})

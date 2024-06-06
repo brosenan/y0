@@ -26,5 +26,5 @@
           (ok ps)
           (let-s [[test why-not] (ok  test split-goal nil)
                   _nil (expect-status 
-                        (satisfy-goal ps test "Test failed without explanation") why-not test)]
+                        (satisfy-goal ps test ["Test failed without explanation"]) why-not test)]
                  (recur tests)))))))

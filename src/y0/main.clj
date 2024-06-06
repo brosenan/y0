@@ -5,7 +5,8 @@
             [y0.status :refer [ok let-s]]
             [y0.testing :refer [apply-test-block]]
             [y0.explanation :refer [explanation-to-str code-location]]
-            [clojure.tools.cli :refer [parse-opts]])
+            [clojure.tools.cli :refer [parse-opts]]
+            [clojure.term.colors :refer [red green]])
   (:gen-class))
 
 (def cli-options
@@ -34,13 +35,14 @@
 (defn- main [modules path]
   (let [[statements _] (load-with-dependencies modules path)
         status (apply-statements statements)]
-    (when (:err status)
+    (if (:err status)
       (let [explanation (:err status)
             message (explanation-to-str explanation {})
             location (code-location explanation)]
         (binding [*out* *err*]
-          (println (str (:path location) ":" (:row location) ": Error:") message))
-        (System/exit 1)))))
+          (println (str (:path location) ":" (:row location) ": " (red "Error") ":") message))
+        (System/exit 1))
+      (println (green "Success")))))
 
 (defn -main [& args]
   (let [cli (parse-opts args cli-options)
