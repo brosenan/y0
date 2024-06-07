@@ -150,7 +150,7 @@
 (fact
  (let [y (atom nil)
        status (->s (ok amount-ps)
-                   (add-rule `(all [x xs y] (amount [x & xs] y ! "Cannot provide an amount for a vector containing" x)))
+                   (add-rule `(all [x xs y] (amount [x y0.core/& xs] y ! "Cannot provide an amount for a vector containing" x)))
                    (satisfy-goal `(amount [6] ~y) '(wrong-explanation)))]
    (explanation-to-str (:err status) {}) => "Cannot provide an amount for a vector containing 6"))
 

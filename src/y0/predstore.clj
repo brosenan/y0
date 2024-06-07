@@ -15,7 +15,7 @@
   (cond
     (< (count l) 2) false
     (> (count l) 2) (recur (rest l))
-    (= (first l) &) (free-var? (second l))
+    (= (first l) 'y0.core/&) (free-var? (second l))
     :else false))
 
 (declare arg-key)

@@ -90,19 +90,39 @@ in the sequence on the other side.
 (fact
  (let [h (atom nil)
        t (atom nil)]
-   (unify [h & t] [1 2 3]) => true
+   (unify [h 'y0.core/& t] [1 2 3]) => true
+   @h => 1
+   @t => [2 3])
+ (let [h (atom nil)
+       t (atom nil)]
+   (unify [1 2 3] [h 'y0.core/& t]) => true
    @h => 1
    @t => [2 3]))
+
+```
+Specifically, the variable after the `&` can bind to an empty list.
+```clojure
+(fact
+ (let [h (atom nil)
+       t (atom nil)]
+   (unify [h 'y0.core/& t] [1]) => true
+   @h => 1
+   @t => [])
+ (let [h (atom nil)
+       t (atom nil)]
+   (unify [1] [h 'y0.core/& t]) => true
+   @h => 1
+   @t => []))
 
 ```
 The type of sequence (list vs. vector) is preserved. The tail of a list is a list and the tail of
 a vector is a vector.
 ```clojure
 (fact
- (unify [1 & [2 3]] [1 2 3]) => true
- (unify '(1 & (2 3)) '(1 2 3)) => true
- (unify [1 & '(2 3)] [1 2 3]) => false
- (unify '(1 & [2 3]) '(1 2 3)) => false)
+ (unify [1 'y0.core/& [2 3]] [1 2 3]) => true
+ (unify '(1 y0.core/& (2 3)) '(1 2 3)) => true
+ (unify [1 'y0.core/& '(2 3)] [1 2 3]) => false
+ (unify '(1 y0.core/& [2 3]) '(1 2 3)) => false)
 
 ```
 ### Bound Variables
@@ -197,9 +217,9 @@ A list or vector ending with `& something` are reified such that `something` is 
 ```clojure
 (fact
  (let [tail (atom [3 4 5])]
-   (reify-term [1 2 & tail]) => [1 2 3 4 5]
-   (reify-term [1 2 & tail]) => vector?
-   (reify-term (list 1 2 & tail)) => '(1 2 3 4 5)
-   (reify-term (list 1 2 & tail)) => seq?))
+   (reify-term [1 2 'y0.core/& tail]) => [1 2 3 4 5]
+   (reify-term [1 2 'y0.core/& tail]) => vector?
+   (reify-term (list 1 2 'y0.core/& tail)) => '(1 2 3 4 5)
+   (reify-term (list 1 2 'y0.core/& tail)) => seq?))
 ```
 

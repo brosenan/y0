@@ -4,11 +4,15 @@
 
 (declare unify)
 
+(defn- tail? [a]
+  (and (= (count a) 2)
+         (= (first a) 'y0.core/&)))
+
 (defn- unify-all [a b constructor]
   (cond
+    (tail? a) (unify (second a) (constructor b))
+    (tail? b) (unify (second b) (constructor a))
     (empty? a) (empty? b)
-    (and (= (count a) 2)
-         (= (first a) '&)) (unify (second a) (constructor b))
     :else (let [[a & as] a
                 [b & bs] b]
             (and (unify a b)
@@ -39,8 +43,7 @@
 
 (defn- reify-terms [ts]
   (cond (empty? ts) ts
-        (and (= (count ts) 2)
-             (= (first ts) '&)) (reify-term (second ts))
+        (tail? ts) (reify-term (second ts))
         :else (let [[e & es] ts]
                 (cons (reify-term e)
                       (reify-terms es)))))

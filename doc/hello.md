@@ -1,5 +1,6 @@
 * [Introduction to $y_0$](#introduction-to-$y_0$)
   * [Predicates](#predicates)
+  * [Rule Specialization](#rule-specialization)
 ```clojure
 (ns hello)
 
@@ -88,4 +89,69 @@ We can also test for the error message we expect for non-bits.
 Here the meaning of the `!` symbol is different: it means that an error is _expected_.
 
 This test succeeds because the error message we provided after the `!` matches the
-one provided by the default rule exactly.
+one provided by the error-case rule exactly.
+
+## Rule Specialization
+
+As we have seen in the previous section, when defining a predicate we need to start
+from the most general form, a form that _must_ take a variable as its first argument
+(the _only_ argument in the above case) and work our way down to more specific rules.
+
+The next predicate we define is a simple "classifier" for s-expressions. This predicate
+takes two arguments, which means that it defines the relationship between two things:
+an AST and a string describing it.
+
+The predicate will always succeed. To make sure it does, the base case needs to succeed.
+```clojure
+(all [x]
+     (classify x "I don't know what it is"))
+
+```
+This makes sure that even if the classifier doesn't have a specific answer for a given
+input, it will still provide an answer, albeit not a useful one.
+```clojure
+(test
+ (classify 1 "I don't know what it is"))
+
+```
+Now we can define special cases. We start with a special case for the number `1`.
+```clojure
+(all []
+     (classify 1 "The number one"))
+
+```
+Now, if we run the test again, we get a usefule answer.
+```clojure
+(test
+ (classify 1 "The number one"))
+
+```
+Next, we will define a rule for `()`, an empty list.
+```clojure
+(all []
+     (classify () "An empty list"))
+
+```
+Lists are overloaded in langauges based on s-expressions to act as _forms_. A form
+is a list where the first element, typically a symbol, determines the type of object
+the list represets. In our case, the symbol at the beginning of a list defines the
+_type of node_ the list represents in the AST.
+
+In the following examples we define a `foo` node, which can take any number of
+arguments.
+```clojure
+(all [x xs]
+     (classify (foo x & xs) "A foo node with any number of arguments"))
+
+```
+Note that the `&` symbol means that everything that the variable that follows it
+is matched to the _list of elements_ from this position on. This rule is therefore
+a match to `foo` nodes with any number of arguments:
+```clojure
+(test
+ (classify (foo 1) "A foo node with any number of arguments")
+ (classify (foo 1 2 3 4 5) "A foo node with any number of arguments"))
+
+```
+However, we can specialize `classify` further, to allow treatment for `foo` nodes
+with a specific number of arguments.

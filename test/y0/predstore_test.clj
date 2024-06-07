@@ -46,22 +46,23 @@
 
 ;; A pattern matching a non-empty list is represented by `{:list :non-empty}`
 (fact
- (arg-key (list (atom nil) & (atom nil))) => {:list :non-empty})
+ (arg-key `(~(atom nil) y0.core/& ~(atom nil))) => {:list :non-empty})
 
 ;; If the length of the list is known, the value of `:list` becomes the length.
 (fact
- (arg-key (list (atom nil) (atom nil) (atom nil))) => {:list 3})
+ (arg-key `(~(atom nil) ~(atom nil) ~(atom nil))) => {:list 3})
 
 ;; The key of the first element in the list is merged with the list's key, to give a key for the completed _form_.
 (fact
- (arg-key (list 'foo (atom nil) (atom nil))) => {:list 3 :symbol "foo"}
- (arg-key (list :foo (atom nil))) => {:list 2 :keyword ":foo"}
- (arg-key (list 42 & (atom nil))) => {:list :non-empty :value 42})
+ (arg-key `(foo ~(atom nil) ~(atom nil))) => {:list 3 :symbol "y0.predstore-test/foo"}
+ (arg-key `(foo y0.core/& ~(atom nil))) => {:list :non-empty :symbol "y0.predstore-test/foo"}
+ (arg-key `(:foo ~(atom nil))) => {:list 2 :keyword ":foo"}
+ (arg-key `(42 y0.core/& ~(atom nil))) => {:list :non-empty :value 42})
 
 ;; Vectors are similar to lists, but use the `:vec` attribute rather than `:list`.
 (fact
  (arg-key []) => {:vec :empty}
- (arg-key [(atom nil) & (atom nil)]) => {:vec :non-empty}
+ (arg-key [(atom nil) 'y0.core/& (atom nil)]) => {:vec :non-empty}
  (arg-key [(atom nil) (atom nil) (atom nil)]) => {:vec 3}
  (arg-key ['foo (atom nil) (atom nil)]) => {:vec 3 :symbol "foo"})
 
@@ -176,8 +177,8 @@
    (->s (ok {})
         (pd-store-rule `(my-pred ~x ~z 7) (constantly 42))
         (pd-store-rule `(my-pred (foo ~x ~y) ~z 7) (constantly 44))
-        (pd-store-rule `(my-pred (foo ~x & ~y) ~z 7) (constantly 43)))
-   => {:err `(must-come-before (my-pred (foo ~x & ~y) ~z 7)
+        (pd-store-rule `(my-pred (foo ~x y0.core/& ~y) ~z 7) (constantly 43)))
+   => {:err `(must-come-before (my-pred (foo ~x y0.core/& ~y) ~z 7)
                                (my-pred (foo ~x ~y) ~z 7))}))
 
 ;; And of course, if two rules have the exact same first-arg pattern, this is a conflict.
