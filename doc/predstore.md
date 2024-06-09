@@ -4,6 +4,8 @@
     * [Argument Key Generalization](#argument-key-generalization)
   * [Storage and Retreival Predicates Rules](#storage-and-retreival-predicates-rules)
     * [Predicate Definitions](#predicate-definitions)
+      * [Ambiguous Generalizations](#ambiguous-generalizations)
+      * [Predicate Rules Retreival](#predicate-rules-retreival)
     * [The Predicate Store](#the-predicate-store)
 ```clojure
 (ns y0.predstore-test
@@ -246,6 +248,91 @@ And of course, if two rules have the exact same first-arg pattern, this is a con
                                (my-pred (foo ~x ~y) ~z 7))}))
 
 ```
+#### Ambiguous Generalizations
+
+Consider the following patterns (assume `x`, `y` and `z` are free variables): `(x y z)`, `(foo y z)`,
+`(foo & z)`. How would you arrange them from the most generic to the most specific?
+
+The answer is that there is not good way to do this. `(foo x y)` is obviously the most specific since
+it sets the size of the list to be 3 and sets the first element to be `foo`, but it can be generalized
+either by replacing `foo` with a free variable (`x`, in the first pattern) _or_ by making it variadic,
+replacing the two variables following `foo` with a tail matching any number of elements (the third
+pattern). The first and third patterns, however, have no order between them.
+
+Therefore, if a predicate has a rule for both `(x y z)` and `(foo & z)`, and a goal for this predicate
+contains, e.g., `(foo 1 2)`, it is impossible to know which of the two rules needs to be invoked.
+
+For this reason, we make the two types: variadic forms and fixed-size lists, mutually exclusive.
+
+We do so by adding markers to the predicate definition. When adding a rule for a fixed-sized list
+without a form identifier, the key `:fixed-size-list` is added to the predicate definition, with
+the pattern as value.
+```clojure
+(fact
+ (let [x (atom nil)
+       y (atom nil)
+       z (atom nil)
+       w (atom nil)]
+   (->s (ok {})
+        (pd-store-rule `(my-pred ~x ~y 7) (constantly 42))
+        (pd-store-rule `(my-pred (~x ~y ~z) ~w 7) (constantly 43))
+        (ok get :fixed-size-list)) => {:ok `(~x ~y ~z)}))
+
+```
+Similarly, for a fixed-size _vector_, `:fixed-size-vec` is added.
+```clojure
+(fact
+ (let [x (atom nil)
+       y (atom nil)
+       z (atom nil)
+       w (atom nil)]
+   (->s (ok {})
+        (pd-store-rule `(my-pred ~x ~y 7) (constantly 42))
+        (pd-store-rule `(my-pred [~x ~y ~z] ~w 7) (constantly 43))
+        (ok get :fixed-size-vec)) => {:ok [x y z]}))
+
+```
+To capture the other side, a variadic form adds the key `:variadic-form-list` for a list-based
+form, or `:variadic-form-vec` for a vector-based form.
+```clojure
+(fact
+ (let [x (atom nil)
+       y (atom nil)
+       z (atom nil)]
+   (->s (ok {})
+        (pd-store-rule `(my-pred ~x ~y 7) (constantly 42))
+        (pd-store-rule `(my-pred (foo ~x y0.core/& ~y) ~z 7) (constantly 43))
+        (ok get :variadic-form-list)) => {:ok `(foo ~x y0.core/& ~y)})
+ (let [x (atom nil)
+       y (atom nil)
+       z (atom nil)]
+   (->s (ok {})
+        (pd-store-rule `(my-pred ~x ~y 7) (constantly 42))
+        (pd-store-rule `(my-pred [foo ~x y0.core/& ~y] ~z 7) (constantly 43))
+        (ok get :variadic-form-vec)) => {:ok `(foo ~x y0.core/& ~y)}))
+
+```
+These markers are used to make sure variadic forms and fixed-size list patterns are not used in the
+same predicate definition.
+```clojure
+(fact
+ (let [x (atom nil)
+       y (atom nil)
+       z (atom nil)
+       w (atom nil)]
+   (->s (ok {})
+        (pd-store-rule `(my-pred ~x ~y 7) (constantly 42))
+        (pd-store-rule `(my-pred (foo ~x y0.core/& ~y) ~z 7) (constantly 43))
+        (pd-store-rule `(my-pred (~x ~y ~z) ~w 7) (constantly 44)))
+   => {:err ["A rule with the pattern" `(~x ~y ~z)
+             "cannot coexist with a rule with the pattern" `(foo ~x y0.core/& ~y)
+             "within the same predicate due to ambiguous generalizations"]}))
+
+```
+TODO: Check the other way + for vectors.
+
+#### Predicate Rules Retreival
+
 Retreival of rules is done based on a goal. As a general rule, the most specific rule that matches
 the goal is retreived.
 

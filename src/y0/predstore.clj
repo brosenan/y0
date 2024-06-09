@@ -65,6 +65,27 @@
     {:ok pd}
     (pd-check-base pd head keys)))
 
+(defn- check-exclusion-marker [pd marker arg]
+  (if (contains? pd marker)
+    (let [other (get pd marker)]
+      {:err ["A rule with the pattern" arg
+             "cannot coexist with a rule with the pattern" other
+             "within the same predicate due to ambiguous generalizations"]})))
+
+(defn- pd-update-tags [pd arg]
+  (cond (seq? arg) (cond
+                     (free-var? (first arg)) (->s
+                                              (ok pd)
+                                              (check-exclusion-marker :variadic-form-list arg)
+                                              (ok assoc :fixed-size-list arg))
+                     (has-tail? arg) (ok pd assoc :variadic-form-list arg)
+                     :else (ok pd))
+        (vector? arg) (cond
+                        (free-var? (first arg)) (ok pd assoc :fixed-size-vec arg)
+                        (has-tail? arg) (ok pd assoc :variadic-form-vec arg)
+                        :else (ok pd))
+        :else (ok pd)))
+
 (defn pd-store-rule [pd head body]
   (let-s [arg (ok head second)
           [key & keys] (ok (arg-key arg) arg-key-generalizations)
@@ -74,7 +95,10 @@
              (cond
                (map? existing) {:err `(must-come-before ~head ~(:overriden-by existing))}
                (fn? existing) {:err `(conflicting-defs ~head ~(-> existing meta :head))}))
-           (ok pd assoc key (with-meta body {:head head})))))
+           (->s 
+            (ok pd)
+            (pd-update-tags arg)
+            (ok assoc key (with-meta body {:head head}))))))
 
 (defn pd-match [pd goal]
   (loop [keys (-> goal second arg-key arg-key-generalizations)]
