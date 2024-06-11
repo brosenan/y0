@@ -1,7 +1,8 @@
 (ns y0.predstore
   (:require [y0.core :refer [& specific-rule-without-base must-come-before conflicting-defs undefined-predicate]]
             [y0.status :refer [let-s ok ->s update-with-status]]
-            [clojure.string :refer [ends-with?]]))
+            [clojure.string :refer [ends-with?]]
+            [clojure.set :refer [union]]))
 
 (defn pred-key [[name-sym & args]]
   {:name (str name-sym)
@@ -39,16 +40,25 @@
     (vector? arg) (sequential-key arg :vec)
     :else {:value arg}))
 
+(defn generalize-arg [key]
+  (let [keys []
+        keys (if (= (:list key) :non-empty) (conj keys (dissoc key :list)) keys)
+        keys (if (= (:vec key) :non-empty) (conj keys (dissoc key :vec)) keys)
+        keys (if (contains? key :symbol) (conj keys (dissoc key :symbol)) keys)
+        keys (if (contains? key :keyword) (conj keys (dissoc key :keyword)) keys)
+        keys (if (contains? key :value) (conj keys (dissoc key :value)) keys)
+        keys (if (int? (:list key)) (conj keys (assoc key :list :non-empty)) keys)
+        keys (if (int? (:vec key)) (conj keys (assoc key :vec :non-empty)) keys)]
+    keys))
+
+(defn- arg-keys-generalizations [keys used]
+  (if (empty? keys)
+    keys
+    (lazy-seq (concat keys (arg-keys-generalizations (->> keys
+                                                          (mapcat generalize-arg)) (union used keys))))))
+
 (defn arg-key-generalizations [key]
-  (cond
-    (int? (:list key)) (lazy-seq (cons key (arg-key-generalizations (assoc key :list :non-empty))))
-    (int? (:vec key)) (lazy-seq (cons key (arg-key-generalizations (assoc key :vec :non-empty))))
-    (contains? key :symbol) (lazy-seq (cons key (arg-key-generalizations (dissoc key :symbol))))
-    (contains? key :keyword) (lazy-seq (cons key (arg-key-generalizations (dissoc key :keyword))))
-    (contains? key :value) (lazy-seq (cons key (arg-key-generalizations (dissoc key :value))))
-    (= (:list key) :non-empty) (lazy-seq (cons key (arg-key-generalizations (dissoc key :list))))
-    (= (:vec key) :non-empty) (lazy-seq (cons key (arg-key-generalizations (dissoc key :vec))))
-    :else [key]))
+  (distinct (arg-keys-generalizations [key] #{})))
 
 (defn pd-check-base [pd head keys]
   (if (empty? keys)

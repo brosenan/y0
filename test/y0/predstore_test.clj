@@ -1,6 +1,7 @@
 (ns y0.predstore-test
   (:require [midje.sweet :refer [fact =>]]
-            [y0.predstore :refer [pred-key arg-key arg-key-generalizations pd-store-rule pd-match store-rule match-rule]]
+            [y0.predstore :refer [pred-key arg-key arg-key-generalizations
+                                  pd-store-rule pd-match store-rule match-rule generalize-arg]]
             [y0.core :refer [& specific-rule-without-base must-come-before conflicting-defs undefined-predicate]]
             [y0.status :refer [ok ->s]]))
 
@@ -73,50 +74,69 @@
 
 ;; 1. `(mypred (foo x y z) r)`, where `x`, `y`, `z` and `r` are all variables,
 ;; 2. `(mypred (foo & args) r)` or some other variadic form,
-;; 3. `(mypred (head & tail) r)`, where `head`, `tail` and `r` are variables, or
-;; 4. `(mypred x y)`, where `x` and `y` are variables.
+;; 3. `(mypred (w x y z) r)`, where where `x`, `y`, `z`, `w` and `r` are variables, or
+;; 4. `(mypred (head & tail) r)`, where `head`, `tail` and `r` are variables, or
+;; 5. `(mypred x y)`, where `x` and `y` are variables.
 
-;; Note that `(mypred (w x y z))` for variables `w`, `x`, `y` and `z` is not considered a match. This is because
-;; if it were, there would be a conflict with option (2). In $y_0$ we explicitly treat the first argument of a predicate
-;; as a form, i.e., we prioritize its name (the first element) over its size, when treated as a list.
+;; The function `generalize-arg` takes an arg-key and returns a vector with all the direct generalizations of this
+;; key.
 
-;; To allow matching against all these options, the function `arg-key-generalizations` takes an arg-key and returns
-;; a lazy sequence of "generalizations", starting from the key itself, moving to keys that are more and more general,
-;; until reaching the most general key `{}`, which matches anything.
-
-;; For `{}`, the generalization sequence only contains `{}`.
+;; A `{}` is already the most general and therefor does not have any generalizations.
 (fact
- (arg-key-generalizations {}) => [{}])
+ (generalize-arg {}) => [])
 
-;; For a key containing a `:non-empty` list, the sequence contains the key and `{}`.
+;; For a key containing a `:non-empty` list or vector, or `:symbol`, `:keyword` or `:value`, the marker is removed.
+;; In the following example we provide a key containing all these markers (not a real example) and show that
+;; the result is a list containing copies of this key, each time with a different marker removed.
 (fact
- (arg-key-generalizations {:list :non-empty}) => [{:list :non-empty} {}])
+ (generalize-arg {:list :non-empty
+                  :vec :non-empty
+                  :symbol "foo"
+                  :keyword ":foo"
+                  :value 42}) => [{:vec :non-empty
+                                   :symbol "foo"
+                                   :keyword ":foo"
+                                   :value 42}
+                                  {:list :non-empty
+                                   :symbol "foo"
+                                   :keyword ":foo"
+                                   :value 42}
+                                  {:list :non-empty
+                                   :vec :non-empty 
+                                   :keyword ":foo"
+                                   :value 42}
+                                  {:list :non-empty
+                                   :vec :non-empty
+                                   :symbol "foo" 
+                                   :value 42}
+                                  {:list :non-empty
+                                   :vec :non-empty
+                                   :symbol "foo"
+                                   :keyword ":foo"}])
 
-;; A key containing a `:symbol`, `:keyword` or `:value` first removes these attributes from the key before removing the
-;; `:list` attribute.
+;; A key containing `:list` or `:vec` with a concrete size as value, the size is replaced with `:non-empty`.
 (fact
- (arg-key-generalizations {:list :non-empty :symbol "foo"}) => [{:list :non-empty :symbol "foo"}
-                                                                {:list :non-empty}
-                                                                {}]
- (arg-key-generalizations {:list :non-empty :keyword ":foo"}) => [{:list :non-empty :keyword ":foo"}
-                                                                  {:list :non-empty}
-                                                                  {}]
- (arg-key-generalizations {:list :non-empty :value 42}) => [{:list :non-empty :value 42}
-                                                            {:list :non-empty}
-                                                            {}])
+ (generalize-arg {:list 3
+                  :vec 4}) => [{:list :non-empty
+                                :vec 4}
+                               {:list 3
+                                :vec :non-empty}])
 
-;; A fixed-size list will first generalize into a variadic list (`:list :non-empty`) before generalizing the first element.
+;; The function `arg-key-generalizations` uses `generalize-arg` to create a sequence of all (transitive) generalizations
+;; of a given key.
+
 (fact
  (arg-key-generalizations {:list 3 :symbol "foo"}) => [{:list 3 :symbol "foo"}
+                                                       {:list 3}
                                                        {:list :non-empty :symbol "foo"}
                                                        {:list :non-empty}
-                                                       {}])
-
-;; Vectors move the same path as lists.
-(fact
+                                                       {:symbol "foo"}  ;; This has to go
+                                                       {}]
  (arg-key-generalizations {:vec 3 :symbol "foo"}) => [{:vec 3 :symbol "foo"}
+                                                      {:vec 3}
                                                       {:vec :non-empty :symbol "foo"}
                                                       {:vec :non-empty}
+                                                      {:symbol "foo"}  ;; This has to go
                                                       {}])
 
 ;; ## Storage and Retreival Predicates Rules
