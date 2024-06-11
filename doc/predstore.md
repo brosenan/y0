@@ -62,16 +62,16 @@ A bound variable, however, is represented by the underlying value.
 ```
 #### Lists and Forms
 
-An empty list is represented as `{:list :empty}`.
+An empty list is represented as `{:list 0}`.
 ```clojure
 (fact
- (arg-key '()) => {:list :empty})
+ (arg-key '()) => {:list 0})
 
 ```
-A pattern matching a non-empty list is represented by `{:list :non-empty}`
+A pattern matching a non-empty list is represented by `{:list :any}`
 ```clojure
 (fact
- (arg-key `(~(atom nil) y0.core/& ~(atom nil))) => {:list :non-empty})
+ (arg-key `(~(atom nil) y0.core/& ~(atom nil))) => {:list :any})
 
 ```
 If the length of the list is known, the value of `:list` becomes the length.
@@ -84,16 +84,16 @@ The key of the first element in the list is merged with the list's key, to give 
 ```clojure
 (fact
  (arg-key `(foo ~(atom nil) ~(atom nil))) => {:list 3 :symbol "y0.predstore-test/foo"}
- (arg-key `(foo y0.core/& ~(atom nil))) => {:list :non-empty :symbol "y0.predstore-test/foo"}
+ (arg-key `(foo y0.core/& ~(atom nil))) => {:list :any :symbol "y0.predstore-test/foo"}
  (arg-key `(:foo ~(atom nil))) => {:list 2 :keyword ":foo"}
- (arg-key `(42 y0.core/& ~(atom nil))) => {:list :non-empty :value 42})
+ (arg-key `(42 y0.core/& ~(atom nil))) => {:list :any :value 42})
 
 ```
 Vectors are similar to lists, but use the `:vec` attribute rather than `:list`.
 ```clojure
 (fact
- (arg-key []) => {:vec :empty}
- (arg-key [(atom nil) 'y0.core/& (atom nil)]) => {:vec :non-empty}
+ (arg-key []) => {:vec 0}
+ (arg-key [(atom nil) 'y0.core/& (atom nil)]) => {:vec :any}
  (arg-key [(atom nil) (atom nil) (atom nil)]) => {:vec 3}
  (arg-key ['foo (atom nil) (atom nil)]) => {:vec 3 :symbol "foo"})
 
@@ -133,25 +133,25 @@ the result is a list containing copies of this key, each time with a different m
                                    :keyword ":foo"}])
 
 ```
-Lists and vectors with a known size are generalized to `:non-empty`.
+Lists and vectors with a known size are generalized to `:any`.
 ```clojure
 (fact
  (generalize-arg {:list 3
-                  :vec 4}) => [{:list :non-empty
+                  :vec 4}) => [{:list :any
                                 :vec 4}
                                {:list 3
-                                :vec :non-empty}])
+                                :vec :any}])
 
 ```
-Lists and vectors that are already `:non-empty` are removed, but only as long as there are no other markers in the
+Lists and vectors that are already `:any` are removed, but only as long as there are no other markers in the
 key.
 ```clojure
 (fact
- (generalize-arg {:list :non-empty}) => [{}]
- (generalize-arg {:vec :non-empty}) => [{}]
- (generalize-arg {:list :non-empty
+ (generalize-arg {:list :any}) => [{}]
+ (generalize-arg {:vec :any}) => [{}]
+ (generalize-arg {:list :any
                   :something :else}) => []
- (generalize-arg {:vec :non-empty
+ (generalize-arg {:vec :any
                   :something :else}) => [])
 
 ```
@@ -162,13 +162,13 @@ of a given key.
 (fact
  (arg-key-generalizations {:list 3 :symbol "foo"}) => [{:list 3 :symbol "foo"}
                                                        {:list 3}
-                                                       {:list :non-empty :symbol "foo"}
-                                                       {:list :non-empty}
+                                                       {:list :any :symbol "foo"}
+                                                       {:list :any}
                                                        {}]
  (arg-key-generalizations {:vec 3 :symbol "foo"}) => [{:vec 3 :symbol "foo"}
                                                       {:vec 3}
-                                                      {:vec :non-empty :symbol "foo"}
-                                                      {:vec :non-empty}
+                                                      {:vec :any :symbol "foo"}
+                                                      {:vec :any}
                                                       {}])
 
 ```

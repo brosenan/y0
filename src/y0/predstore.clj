@@ -22,13 +22,12 @@
 (declare arg-key)
 
 (defn- sequential-key [arg attr]
-  (if (empty? arg)
-    {attr :empty}
-    (let [first-elem-key (arg-key (first arg))]
-      (merge first-elem-key
-             (if (has-tail? arg)
-               {attr :non-empty}
-               {attr (count arg)})))))
+  (let [seq-key (if (has-tail? arg)
+                  {attr :any}
+                  {attr (count arg)})]
+    (if (nil? (first arg))
+      seq-key
+      (merge seq-key (arg-key (first arg))))))
 
 (defn arg-key [arg]
   (cond
@@ -42,13 +41,13 @@
 
 (defn generalize-arg [key]
   (let [keys []
-        keys (if (and (= (:list key) :non-empty) (= (count key) 1)) (conj keys (dissoc key :list)) keys)
-        keys (if (and (= (:vec key) :non-empty) (= (count key) 1)) (conj keys (dissoc key :vec)) keys)
+        keys (if (and (= (:list key) :any) (= (count key) 1)) (conj keys (dissoc key :list)) keys)
+        keys (if (and (= (:vec key) :any) (= (count key) 1)) (conj keys (dissoc key :vec)) keys)
         keys (if (contains? key :symbol) (conj keys (dissoc key :symbol)) keys)
         keys (if (contains? key :keyword) (conj keys (dissoc key :keyword)) keys)
         keys (if (contains? key :value) (conj keys (dissoc key :value)) keys)
-        keys (if (int? (:list key)) (conj keys (assoc key :list :non-empty)) keys)
-        keys (if (int? (:vec key)) (conj keys (assoc key :vec :non-empty)) keys)]
+        keys (if (int? (:list key)) (conj keys (assoc key :list :any)) keys)
+        keys (if (int? (:vec key)) (conj keys (assoc key :vec :any)) keys)]
     keys))
 
 (defn- arg-keys-generalizations [keys used]
