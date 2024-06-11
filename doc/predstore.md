@@ -118,38 +118,22 @@ A `{}` is already the most general and therefor does not have any generalization
  (generalize-arg {}) => [])
 
 ```
-For a key containing a `:non-empty` list or vector, or `:symbol`, `:keyword` or `:value`, the marker is removed.
+For a key containing `:symbol`, `:keyword` or `:value`, the marker (a key within a key) is removed.
 In the following example we provide a key containing all these markers (not a real example) and show that
 the result is a list containing copies of this key, each time with a different marker removed.
 ```clojure
 (fact
- (generalize-arg {:list :non-empty
-                  :vec :non-empty
-                  :symbol "foo"
+ (generalize-arg {:symbol "foo"
                   :keyword ":foo"
-                  :value 42}) => [{:vec :non-empty
-                                   :symbol "foo"
-                                   :keyword ":foo"
+                  :value 42}) => [{:keyword ":foo"
                                    :value 42}
-                                  {:list :non-empty
-                                   :symbol "foo"
-                                   :keyword ":foo"
+                                  {:symbol "foo"
                                    :value 42}
-                                  {:list :non-empty
-                                   :vec :non-empty 
-                                   :keyword ":foo"
-                                   :value 42}
-                                  {:list :non-empty
-                                   :vec :non-empty
-                                   :symbol "foo" 
-                                   :value 42}
-                                  {:list :non-empty
-                                   :vec :non-empty
-                                   :symbol "foo"
+                                  {:symbol "foo"
                                    :keyword ":foo"}])
 
 ```
-A key containing `:list` or `:vec` with a concrete size as value, the size is replaced with `:non-empty`.
+Lists and vectors with a known size are generalized to `:non-empty`.
 ```clojure
 (fact
  (generalize-arg {:list 3
@@ -157,6 +141,18 @@ A key containing `:list` or `:vec` with a concrete size as value, the size is re
                                 :vec 4}
                                {:list 3
                                 :vec :non-empty}])
+
+```
+Lists and vectors that are already `:non-empty` are removed, but only as long as there are no other markers in the
+key.
+```clojure
+(fact
+ (generalize-arg {:list :non-empty}) => [{}]
+ (generalize-arg {:vec :non-empty}) => [{}]
+ (generalize-arg {:list :non-empty
+                  :something :else}) => []
+ (generalize-arg {:vec :non-empty
+                  :something :else}) => [])
 
 ```
 The function `arg-key-generalizations` uses `generalize-arg` to create a sequence of all (transitive) generalizations
@@ -168,13 +164,11 @@ of a given key.
                                                        {:list 3}
                                                        {:list :non-empty :symbol "foo"}
                                                        {:list :non-empty}
-                                                       {:symbol "foo"}  ;; This has to go
                                                        {}]
  (arg-key-generalizations {:vec 3 :symbol "foo"}) => [{:vec 3 :symbol "foo"}
                                                       {:vec 3}
                                                       {:vec :non-empty :symbol "foo"}
                                                       {:vec :non-empty}
-                                                      {:symbol "foo"}  ;; This has to go
                                                       {}])
 
 ```

@@ -42,8 +42,8 @@
 
 (defn generalize-arg [key]
   (let [keys []
-        keys (if (= (:list key) :non-empty) (conj keys (dissoc key :list)) keys)
-        keys (if (= (:vec key) :non-empty) (conj keys (dissoc key :vec)) keys)
+        keys (if (and (= (:list key) :non-empty) (= (count key) 1)) (conj keys (dissoc key :list)) keys)
+        keys (if (and (= (:vec key) :non-empty) (= (count key) 1)) (conj keys (dissoc key :vec)) keys)
         keys (if (contains? key :symbol) (conj keys (dissoc key :symbol)) keys)
         keys (if (contains? key :keyword) (conj keys (dissoc key :keyword)) keys)
         keys (if (contains? key :value) (conj keys (dissoc key :value)) keys)
