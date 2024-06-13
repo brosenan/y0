@@ -141,7 +141,7 @@ In the following examples we define a `foo` node, which can take any number of
 arguments.
 ```clojure
 (all [x xs]
-     (classify (foo x & xs) "A foo node with any number of arguments"))
+     (classify (foo x & xs) "A foo node with some number of arguments"))
 
 ```
 Note that the `&` symbol means that everything that the variable that follows it
@@ -149,9 +149,61 @@ is matched to the _list of elements_ from this position on. This rule is therefo
 a match to `foo` nodes with any number of arguments:
 ```clojure
 (test
- (classify (foo 1) "A foo node with any number of arguments")
- (classify (foo 1 2 3 4 5) "A foo node with any number of arguments"))
+ (classify (foo 1) "A foo node with some number of arguments")
+ (classify (foo 1 2 3 4 5) "A foo node with some number of arguments"))
 
 ```
 However, we can specialize `classify` further, to allow treatment for `foo` nodes
 with a specific number of arguments.
+```clojure
+(all [x1]
+     (classify (foo x1) "A foo node with exactly one argument"))
+(all [x1 x2 x3]
+     (classify (foo x1 x2) "A foo node with exactly two arguments"))
+(all [x1 x2 x3]
+     (classify (foo x1 x2 x3) "A foo node with exactly three arguments"))
+
+(test
+ (classify (foo 1) "A foo node with exactly one argument")
+ (classify (foo 1 2) "A foo node with exactly two arguments")
+ (classify (foo 1 2 3) "A foo node with exactly three arguments")
+ (classify (foo 1 2 3 4 5) "A foo node with some number of arguments"))
+
+```
+In this example we choose to treat vectors differently, and define classifications
+for vectors of different sizes (and any size), regardless of the first element.
+```clojure
+(all [x xs]
+     (classify [x & xs] "A vector with some elements"))
+(all []
+     (classify [] "An empty vector"))
+(all [x1]
+     (classify [x1] "A vector with one element"))
+(all [x1 x2]
+     (classify [x1 x2] "A vector with two elements"))
+(all [x1 x2 x3]
+     (classify [x1 x2 x3] "A vector with three elements"))
+(test
+ (classify [] "An empty vector")
+ (classify ["foo"] "A vector with one element")
+ (classify ["foo" "bar"] "A vector with two elements")
+ (classify ["foo" "bar" "baz"] "A vector with three elements")
+ (classify ["foo" "bar" "baz" "quux"] "A vector with some elements"))
+
+```
+It is, however, not possible to mix. If, for example, we try defining the rule:
+```clojure
+(all [x1 x2 x3]
+     (classify (x1 x2 x3) "A list with three elements"))
+```
+
+We will get an error. The reason is that now, a goal such as `(classify (foo 1 2) x)`
+can be interpreted as either matching the rule for a `foo` node with two arguments
+_or_ the rule for lists of size 3. To overcome this problem, $y_0$ imposes mutual
+exclusion between the two types of patterns. This mutual exclusion is separate for
+lists and vectors and therefore, as in this example, we can make different choices
+for lists and vectors. In this example we chose to treat lists as forms and vectors
+as tuples. However, we could have made any other choice.
+
+For a more accurate specification of this feature see
+[$y_0$'s internal documentation](predstore.md#ambiguous-generalizations).
