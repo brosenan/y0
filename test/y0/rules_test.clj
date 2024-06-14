@@ -152,5 +152,5 @@
        status (->s (ok amount-ps)
                    (add-rule `(all [x xs y] (amount [x y0.core/& xs] y ! "Cannot provide an amount for a vector containing" x)))
                    (satisfy-goal `(amount [6] ~y) '(wrong-explanation)))]
-   (explanation-to-str (:err status) {}) => "Cannot provide an amount for a vector containing 6"))
+   (explanation-to-str (:err status)) => "Cannot provide an amount for a vector containing 6"))
 
