@@ -191,8 +191,8 @@
         (pd-store-rule `(my-pred ~x ~z 7) (constantly 42))
         (pd-store-rule `(my-pred (foo ~x ~y) ~z 7) (constantly 44))
         (pd-store-rule `(my-pred (foo ~x y0.core/& ~y) ~z 7) (constantly 43)))
-   => {:err ["Rule" `(my-pred (foo ~x y0.core/& ~y) ~z 7) "is defined before rule"
-             `(my-pred (foo ~x ~y) ~z 7) "despite being more generic"]}))
+   => {:err ["Rule" `(my-pred (foo ~x y0.core/& ~y) ~z 7) "must be defined before rule"
+             `(my-pred (foo ~x ~y) ~z 7) "because it is more generic"]}))
 
 ;; And of course, if two rules have the exact same first-arg pattern, this is a conflict.
 (fact

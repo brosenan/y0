@@ -103,8 +103,8 @@
          (if (contains? pd key)
            (let [existing (get pd key)]
              (cond
-               (map? existing) {:err ["Rule" head "is defined before rule"
-                                      (:overriden-by existing) "despite being more generic"]}
+               (map? existing) {:err ["Rule" head "must be defined before rule"
+                                      (:overriden-by existing) "because it is more generic"]}
                (fn? existing) {:err ["The rule for" head
                                      "conflicts with a previous rule defining"
                                      (-> existing meta :head)]}))
