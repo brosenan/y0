@@ -74,19 +74,18 @@ Unbound variables are printed as `_`.
 ### Stringifying Explanations
 
 The `explanation-to-str` function takes an explanation and returns a string representing
-it. It takes an explanation term and a predstore and return a string representing the explanation.
-The role of the predstore will be made clear later.
+it. It takes an explanation term and return a string representing the explanation.
 
 Strings are taken verbatim, joined with spaces.
 ```clojure
 (fact
- (explanation-to-str ["foo" "bar"] {}) => "foo bar")
+ (explanation-to-str ["foo" "bar"]) => "foo bar")
 
 ```
 Non-strings are treated as s-expressions and are stringified with budget 3.
 ```clojure
 (fact
- (explanation-to-str ["foo" 3 '(x/bar 1 2 3)] {}) => "foo 3 (bar 1 2 ...)")
+ (explanation-to-str ["foo" 3 '(x/bar 1 2 3)]) => "foo 3 (bar 1 2 ...)")
 
 ```
 ## Code Location

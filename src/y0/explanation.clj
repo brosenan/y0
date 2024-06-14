@@ -23,7 +23,7 @@
     (nil? expr) "_"
     :else (pr-str expr)))
 
-(defn explanation-to-str [why-not ps]
+(defn explanation-to-str [why-not]
   (->> why-not
        (map #(if (string? %)
                %
