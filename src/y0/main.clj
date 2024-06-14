@@ -37,7 +37,7 @@
         status (apply-statements statements)]
     (if (:err status)
       (let [explanation (:err status)
-            message (explanation-to-str explanation {})
+            message (explanation-to-str explanation)
             location (code-location explanation)]
         (binding [*out* *err*]
           (println (str (:path location) ":" (:row location) ": " (red "Error") ":") message))
