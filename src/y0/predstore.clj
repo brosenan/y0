@@ -63,7 +63,8 @@
   (if (empty? keys)
     (if (-> head first str (ends-with? "?"))
       {:ok pd}
-      {:err `(specific-rule-without-base ~head)})
+      {:err ["A specific rule for" head
+             "is defined without first defining a base rule for the predicate with a free variable as its first argument"]})
     (let [[key & keys] keys]
       (if (contains? pd key)
         {:ok pd}
@@ -102,8 +103,11 @@
          (if (contains? pd key)
            (let [existing (get pd key)]
              (cond
-               (map? existing) {:err `(must-come-before ~head ~(:overriden-by existing))}
-               (fn? existing) {:err `(conflicting-defs ~head ~(-> existing meta :head))}))
+               (map? existing) {:err ["Rule" head "is defined before rule"
+                                      (:overriden-by existing) "despite being more generic"]}
+               (fn? existing) {:err ["The rule for" head
+                                     "conflicts with a previous rule defining"
+                                     (-> existing meta :head)]}))
            (->s 
             (ok pd)
             (pd-update-tags arg)
@@ -129,5 +133,6 @@
 (defn match-rule [ps goal]
   (->s (ok ps)
        (get-or-err (pred-key goal) 
-                   `(undefined-predicate ~(first goal) ~(-> goal count dec)))
+                   ["Undefined predicate" (first goal) 
+                    "with arity" (-> goal count dec)])
        (ok pd-match goal)))

@@ -198,7 +198,8 @@ we get an error.
 (fact
  (let [x (atom nil)]
    (pd-store-rule {} `(my-pred :foo ~x 7) (constantly 42)) =>
-   {:err `(specific-rule-without-base (my-pred :foo ~x 7))}))
+   {:err ["A specific rule for" `(my-pred :foo ~x 7) 
+          "is defined without first defining a base rule for the predicate with a free variable as its first argument"]}))
 
 ```
 One exception to this rule are predicates whose names end with `?`. These are called _partial predicates_ and
@@ -242,8 +243,8 @@ When this order is violated, however, an error is returned.
         (pd-store-rule `(my-pred ~x ~z 7) (constantly 42))
         (pd-store-rule `(my-pred (foo ~x ~y) ~z 7) (constantly 44))
         (pd-store-rule `(my-pred (foo ~x y0.core/& ~y) ~z 7) (constantly 43)))
-   => {:err `(must-come-before (my-pred (foo ~x y0.core/& ~y) ~z 7)
-                               (my-pred (foo ~x ~y) ~z 7))}))
+   => {:err ["Rule" `(my-pred (foo ~x y0.core/& ~y) ~z 7) "is defined before rule"
+             `(my-pred (foo ~x ~y) ~z 7) "despite being more generic"]}))
 
 ```
 And of course, if two rules have the exact same first-arg pattern, this is a conflict.
@@ -256,8 +257,9 @@ And of course, if two rules have the exact same first-arg pattern, this is a con
         (pd-store-rule `(my-pred ~x ~z 7) (constantly 42))
         (pd-store-rule `(my-pred (foo ~x ~y) ~z 7) (constantly 44))
         (pd-store-rule `(my-pred (foo ~x ~z) ~y 8) (constantly 43)))
-   => {:err `(conflicting-defs (my-pred (foo ~x ~z) ~y 8)
-                               (my-pred (foo ~x ~y) ~z 7))}))
+   => {:err ["The rule for" `(my-pred (foo ~x ~z) ~y 8)
+             "conflicts with a previous rule defining"
+             `(my-pred (foo ~x ~y) ~z 7)]}))
 
 ```
 #### Ambiguous Generalizations
@@ -405,6 +407,7 @@ store and a goal and returns a status with the best match's body.
 If the goal is for a predicate that does not exist, an `:err` is returned.
 ```clojure
 (fact
- (match-rule {} `(my-pred (foo 1) (bar 2) ~(atom nil))) => {:err `(undefined-predicate my-pred 3)})
+ (match-rule {} `(my-pred (foo 1) (bar 2) ~(atom nil))) =>
+ {:err ["Undefined predicate" `my-pred "with arity" 3]})
 ```
 
