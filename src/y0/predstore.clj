@@ -122,7 +122,9 @@
             :else (recur keys)))))
 
 (defn store-rule [ps head body]
-  (update-with-status ps (pred-key head) #(pd-store-rule % head body)))
+  (update-with-status ps (pred-key head) #(pd-store-rule % head body)
+                      (fn [err {:keys [name arity]}]
+                        (concat err ["in predicate" name "with arity" arity]))))
 
 (defn- get-or-err [m k err]
   (let [v (get m k)]

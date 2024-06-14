@@ -25,12 +25,12 @@
     
     ))
 
-(defn update-with-status [m k f]
+(defn update-with-status [m k f ef]
   (let [v (get m k)
         {:keys [ok err]} (f v)]
     (if (nil? err)
       {:ok (assoc m k ok)}
-      {:err (list on-key err k)})))
+      {:err (ef err k)})))
 
 (defmacro let-s [bindings expr]
   (if (empty? bindings)

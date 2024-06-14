@@ -33,7 +33,7 @@ For example, the following function returns a status:
 ```clojure
 (defn safe-divide [x y]
   (if (= y 0)
-    {:err (list 'cannot 'divide x 'by 0)}
+    {:err `(cannot divide ~x by 0)}
     {:ok (/ x y)}))
 
 ```
@@ -41,7 +41,7 @@ Now, dividing by nonzero numbers succeeds, while dividing by zero returns an exp
 ```clojure
 (fact
  (safe-divide 6 3) => {:ok 2}
- (safe-divide 6 0) => {:err '(cannot divide 6 by 0)})
+ (safe-divide 6 0) => {:err `(cannot divide 6 by 0)})
 
 ```
 The macro `ok` can be used to turn a regular function into a status-returning function.
@@ -105,7 +105,7 @@ With this function, the first argument (threaded by `->s`) determines success or
       (safe-divide-rev 6) ;; => 3
       (ok - 3) ;; => 0
       (safe-divide-rev 4) ;; error!
-      (safe-divide-rev 3)) => {:err '(cannot divide 4 by 0)})
+      (safe-divide-rev 3)) => {:err `(cannot divide 4 by 0)})
 
 ```
 ## The `let-s` Macro
@@ -127,26 +127,29 @@ If at any point in the bindings an `:err` is returned, the entire `let-s` expres
 (fact
  (let-s [two (safe-divide 6 0)
          three (ok two + 1)]
-        (ok three)) => {:err '(cannot divide 6 by 0)})
+        (ok three)) => {:err `(cannot divide 6 by 0)})
 
 ```
 ## Updating with Statuses
 
-`update-with-status` is similar to Clojure's `update`. It takes a map, a key and a function
-as arguments and applies the function to the value corresponding to the given key, returning
-the map with the value replaced. However, in the case of `update-with-status`, the function
-is a status-returning function. For `:ok`, it will replace the value just like `update`.
+`update-with-status` is similar to Clojure's `update`. It takes a map, a key and two functions
+as arguments and applies the first function to the value corresponding to the given key,
+returning the map with the value replaced. However, in the case of `update-with-status`, the
+function is a status-returning function. For `:ok`, it will replace the value just like
+`update`.
 ```clojure
 (fact
  (let [m {:a 4 :b 5}]
-   (update-with-status m :a #(safe-divide % 2)) => {:ok {:a 2 :b 5}}))
+   (update-with-status m :a #(safe-divide % 2) (constantly :foo)) => {:ok {:a 2 :b 5}}))
 
 ```
-If the function returns `:err`, the error is propagagated, specifying the key for context.
+If the function returns `:err`, the error is propagated through the second function,
+which also takes the key as its second argument. The value returned by the function is
+returned.
 ```clojure
 (fact
  (let [m {:a 4 :b 5}]
-   (update-with-status m :a #(safe-divide % 0)) => 
-   {:err '(on-key (cannot divide 4 by 0) :a)}))
+   (update-with-status m :a #(safe-divide % 0) (fn [err key] `(on-key ~err ~key))) => 
+   {:err `(on-key (cannot divide 4 by 0) :a)}))
 ```
 
