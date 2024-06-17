@@ -91,19 +91,19 @@ The predstore should have rules to match goals of the form `(amount x y)`.
  amount-r2 => fn?)
 
 ```
-A rule's body is a function that takes a goal and a "why not" explanation as parameters. It tries
-to _satisfy_ the goal by finding an assignment for its variables. It returns a status. `{:ok nil}`
-means that the goal was satisfied. In such a case, the free variables in the goal are bound to the
-result.
+A rule's body is a function that takes a goal, a "why not" explanation and the predstore as parameters.
+It tries to _satisfy_ the goal by finding an assignment for its variables. It returns a status.
+`{:ok nil}` means that the goal was satisfied. In such a case, the free variables in the goal are bound
+to the result.
 ```clojure
 (fact
  (let [x (atom nil)
        goal `(amount 0 ~x)]
-   (amount-r0 goal '(just-because)) => {:ok nil}
+   (amount-r0 goal ["just-because"] amount-ps) => {:ok nil}
    @x => :zero)
  (let [x (atom nil)
        goal `(amount 2 ~x)]
-   (amount-r2 goal '(just-because)) => {:ok nil}
+   (amount-r2 goal ["just-because"] amount-ps) => {:ok nil}
    @x => :many))
 
 ```
@@ -112,7 +112,7 @@ returned.
 ```clojure
 (fact
  (let [goal `(amount 2 :two)]
-   (amount-r2 goal '(just-because)) => {:err '(just-because)}))
+   (amount-r2 goal '(just-because) amount-ps) => {:err '(just-because)}))
 
 ```
 Calls to rules are independent. A rule can be called with different values each time independently.
@@ -120,9 +120,9 @@ Calls to rules are independent. A rule can be called with different values each 
 (fact
  (let [x1 (atom nil)
        x2 (atom nil)]
-   (amount-r2 `(amount 2 ~x1) '(because-of-1)) => {:ok nil}
+   (amount-r2 `(amount 2 ~x1) ["because-of-1"] amount-ps) => {:ok nil}
    @x1 => :many
-   (amount-r2 `(amount 3 ~x2) '(because-of-2)) => {:ok nil}
+   (amount-r2 `(amount 3 ~x2) ["because-of-2"] amount-ps) => {:ok nil}
    @x2 => :many))
 
 ```
@@ -131,14 +131,14 @@ returns `(:ok nil)` and assigns the assigns values to free variables in the goal
 ```clojure
 (fact
  (let [x (atom nil)]
-   (satisfy-goal amount-ps `(amount 1 ~x) '(just-because)) => {:ok nil}
+   (satisfy-goal amount-ps `(amount 1 ~x) ["just-because"]) => {:ok nil}
    @x => :one))
 
 ```
 On failure it returns the given explanation.
 ```clojure
 (fact
- (satisfy-goal amount-ps `(amount 1 :uno) '(just-because)) => {:err '(just-because)})
+ (satisfy-goal amount-ps `(amount 1 :uno) ["just-because"]) => {:err ["just-because"]})
 
 ```
 ### Providing Why-Not Explanations
@@ -148,14 +148,14 @@ the `!`.
 ```clojure
 (fact
  (let [x (atom nil)]
-   (satisfy-goal amount-ps `(amount 1 ~x ! "some explanation") '(just-because)) => {:ok nil}
+   (satisfy-goal amount-ps `(amount 1 ~x ! "some explanation") ["just-because"]) => {:ok nil}
    @x => :one))
 
 ```
 The terms after the `!` override the provided why-not explanation in case of a failure.
 ```clojure
 (fact
- (satisfy-goal amount-ps `(amount 1 :uno ! "the" "correct" "explanation") '(wrong-explanation)) =>
+ (satisfy-goal amount-ps `(amount 1 :uno ! "the" "correct" "explanation") ["wrong-explanation"]) =>
  {:err ["the" "correct" "explanation"]})
 
 ```
@@ -171,7 +171,7 @@ To demonstrate this, we extend the `amount` example to have a failing case for `
  (let [x (atom nil)]
    (->s (ok amount-ps)
         (add-rule `(all [x] (amount -1 x ! "Cannot have negative amounts")))
-        (satisfy-goal `(amount -1 ~x) '(wrong-explanation)))) => {:err ["Cannot have negative amounts"]})
+        (satisfy-goal `(amount -1 ~x) ["wrong-explanation"]))) => {:err ["Cannot have negative amounts"]})
 
 ```
 The provided explanation may contain variables shared with the head. These make the explanation
@@ -182,7 +182,7 @@ and explains that it cannot provide an amount for a vector containing that value
  (let [y (atom nil)
        status (->s (ok amount-ps)
                    (add-rule `(all [x xs y] (amount [x y0.core/& xs] y ! "Cannot provide an amount for a vector containing" x)))
-                   (satisfy-goal `(amount [6] ~y) '(wrong-explanation)))]
+                   (satisfy-goal `(amount [6] ~y) ["wrong-explanation"]))]
    (explanation-to-str (:err status)) => "Cannot provide an amount for a vector containing 6"))
 
 ```

@@ -26,12 +26,12 @@
         vars (new-vars {} bindings)
         head' (postwalk-replace vars head)
         body (if why-not
-               (fn [goal _why-not]
+               (fn [goal _why-not _ps]
                  (let [why-not (postwalk-replace vars why-not)
                        head (postwalk-replace vars head)]
                    (unify goal head)
                    {:err why-not}))
-               (fn [goal why-not]
+               (fn [goal why-not ps]
                  (let [vars (new-vars {} bindings)
                        head (postwalk-replace vars head)]
                    (if (unify goal head)
@@ -42,4 +42,4 @@
 (defn satisfy-goal [ps goal why-not]
   (let [[goal why-not] (split-goal goal why-not)]
     (let-s [rule (match-rule ps goal)]
-           (rule goal why-not))))
+           (rule goal why-not ps))))

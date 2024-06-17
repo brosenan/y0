@@ -77,45 +77,45 @@
  amount-r1 => fn?
  amount-r2 => fn?)
 
-;; A rule's body is a function that takes a goal and a "why not" explanation as parameters. It tries
-;; to _satisfy_ the goal by finding an assignment for its variables. It returns a status. `{:ok nil}`
-;; means that the goal was satisfied. In such a case, the free variables in the goal are bound to the
-;; result.
+;; A rule's body is a function that takes a goal, a "why not" explanation and the predstore as parameters.
+;; It tries to _satisfy_ the goal by finding an assignment for its variables. It returns a status.
+;; `{:ok nil}` means that the goal was satisfied. In such a case, the free variables in the goal are bound
+;; to the result.
 (fact
  (let [x (atom nil)
        goal `(amount 0 ~x)]
-   (amount-r0 goal '(just-because)) => {:ok nil}
+   (amount-r0 goal ["just-because"] amount-ps) => {:ok nil}
    @x => :zero)
  (let [x (atom nil)
        goal `(amount 2 ~x)]
-   (amount-r2 goal '(just-because)) => {:ok nil}
+   (amount-r2 goal ["just-because"] amount-ps) => {:ok nil}
    @x => :many))
 
 ;; However, if the given goal does not match the rule's head, an `:err` with the reason wny not is
 ;; returned.
 (fact
  (let [goal `(amount 2 :two)]
-   (amount-r2 goal '(just-because)) => {:err '(just-because)}))
+   (amount-r2 goal '(just-because) amount-ps) => {:err '(just-because)}))
 
 ;; Calls to rules are independent. A rule can be called with different values each time independently.
 (fact
  (let [x1 (atom nil)
        x2 (atom nil)]
-   (amount-r2 `(amount 2 ~x1) '(because-of-1)) => {:ok nil}
+   (amount-r2 `(amount 2 ~x1) ["because-of-1"] amount-ps) => {:ok nil}
    @x1 => :many
-   (amount-r2 `(amount 3 ~x2) '(because-of-2)) => {:ok nil}
+   (amount-r2 `(amount 3 ~x2) ["because-of-2"] amount-ps) => {:ok nil}
    @x2 => :many))
 
 ;; The function `satisfy-goal` takes a predstore, a goal and a why-not explanation. On success it
 ;; returns `(:ok nil)` and assigns the assigns values to free variables in the goal.
 (fact
  (let [x (atom nil)]
-   (satisfy-goal amount-ps `(amount 1 ~x) '(just-because)) => {:ok nil}
+   (satisfy-goal amount-ps `(amount 1 ~x) ["just-because"]) => {:ok nil}
    @x => :one))
 
 ;; On failure it returns the given explanation.
 (fact
- (satisfy-goal amount-ps `(amount 1 :uno) '(just-because)) => {:err '(just-because)})
+ (satisfy-goal amount-ps `(amount 1 :uno) ["just-because"]) => {:err ["just-because"]})
 
 ;; ### Providing Why-Not Explanations
 
@@ -123,12 +123,12 @@
 ;; the `!`.
 (fact
  (let [x (atom nil)]
-   (satisfy-goal amount-ps `(amount 1 ~x ! "some explanation") '(just-because)) => {:ok nil}
+   (satisfy-goal amount-ps `(amount 1 ~x ! "some explanation") ["just-because"]) => {:ok nil}
    @x => :one))
 
 ;; The terms after the `!` override the provided why-not explanation in case of a failure.
 (fact
- (satisfy-goal amount-ps `(amount 1 :uno ! "the" "correct" "explanation") '(wrong-explanation)) =>
+ (satisfy-goal amount-ps `(amount 1 :uno ! "the" "correct" "explanation") ["wrong-explanation"]) =>
  {:err ["the" "correct" "explanation"]})
 
 ;; A rule can provide its own why not explanation. Rules can be provided to always fail, providing
@@ -142,7 +142,7 @@
  (let [x (atom nil)]
    (->s (ok amount-ps)
         (add-rule `(all [x] (amount -1 x ! "Cannot have negative amounts")))
-        (satisfy-goal `(amount -1 ~x) '(wrong-explanation)))) => {:err ["Cannot have negative amounts"]})
+        (satisfy-goal `(amount -1 ~x) ["wrong-explanation"]))) => {:err ["Cannot have negative amounts"]})
 
 ;; The provided explanation may contain variables shared with the head. These make the explanation
 ;; refer to the arguments that were given. For example, the following rule takes a 1-place vector
@@ -151,6 +151,6 @@
  (let [y (atom nil)
        status (->s (ok amount-ps)
                    (add-rule `(all [x xs y] (amount [x y0.core/& xs] y ! "Cannot provide an amount for a vector containing" x)))
-                   (satisfy-goal `(amount [6] ~y) '(wrong-explanation)))]
+                   (satisfy-goal `(amount [6] ~y) ["wrong-explanation"]))]
    (explanation-to-str (:err status)) => "Cannot provide an amount for a vector containing 6"))
 
