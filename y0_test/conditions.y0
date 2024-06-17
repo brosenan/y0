@@ -75,12 +75,13 @@
 (test
  (peano z)
  (peano (s z))
- (peano (s (s z)))
- (peano (s y) ! y "is not a Peano number"))
+ (peano (s (s (s (s z)))))
+ (peano (s y) ! y "is not a Peano number")
+ (peano (s (s (k (s z)))) ! (k (s z)) "is not a Peano number"))
 
-;; The first two examples are positive examples, showing us that both
-;; `z` and `(s z)` are Peano numbers. The third example shows that
-;; anything that isn't a Peano number is rejected.
+;; The first three examples are positive examples, showing us that the
+;; Peano equivalents of 0, 1 and 4 are indeed Peano numbers. The last
+;; two example shows that anything that isn't a Peano number is rejected.
 
 ;; Please note that the rejection is done at the lowest level possible.
 ;; The error message does not state that `(s y)` is not a Peano number
@@ -102,9 +103,3 @@
 ;; the program is committed to the chosen rule. And if something fails
 ;; down the line, we know there is no alternative. We know the AST is
 ;; invalid.
-
-;; But we digress. Being recursive, our `peano` predicate is able to
-;; identify good and bad Peano numbers at any depth.
-(test
- (peano (s (s z)))
- (peano (s y) ! y "is not a Peano number"))

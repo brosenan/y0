@@ -37,7 +37,8 @@
         head' (postwalk-replace vars head)
         body (if why-not
                (fn [goal _why-not _ps]
-                 (let [why-not (postwalk-replace vars why-not)
+                 (let [vars (new-vars {} bindings)
+                       why-not (postwalk-replace vars why-not)
                        head (postwalk-replace vars head)]
                    (unify goal head)
                    {:err why-not}))
