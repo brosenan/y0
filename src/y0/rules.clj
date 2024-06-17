@@ -20,8 +20,18 @@
       [goal why-not]
       [(take bang-index goal) (-> bang-index inc (drop goal) vec)])))
 
+(declare satisfy-goal)
+
+(defn- check-conditions [conditions ps vars]
+  (if (empty? conditions)
+    (ok nil)
+    (let-s [[condition & conditions] (ok conditions)
+            condition (ok vars postwalk-replace condition)
+            _ (satisfy-goal ps condition nil)]
+           (recur conditions ps vars))))
+
 (defn add-rule [ps rule]
-  (let [[_all bindings head] rule
+  (let [[_all bindings head op & conditions] rule
         [head why-not] (split-goal head nil)
         vars (new-vars {} bindings)
         head' (postwalk-replace vars head)
@@ -35,7 +45,7 @@
                  (let [vars (new-vars {} bindings)
                        head (postwalk-replace vars head)]
                    (if (unify goal head)
-                     {:ok nil}
+                     (check-conditions conditions ps vars)
                      {:err why-not}))))]
     (store-rule ps head' body)))
 
