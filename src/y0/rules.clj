@@ -2,7 +2,7 @@
   (:require [y0.status :refer [->s ok let-s]]
             [y0.predstore :refer [store-rule match-rule]]
             [y0.unify :refer [unify]]
-            [y0.core :refer [!]]
+            [y0.core :refer [! exist]]
             [clojure.walk :refer [postwalk-replace]]))
 
 (defn new-vars [bindings symbols]
@@ -20,14 +20,21 @@
       [goal why-not]
       [(take bang-index goal) (-> bang-index inc (drop goal) vec)])))
 
-(declare satisfy-goal)
+(declare satisfy-goal check-conditions)
+
+(defn- check-condition [condition ps vars]
+  (cond
+    (-> condition first (= `exist)) (let [[_exist bindings & conditions] condition
+                                          vars (merge vars (new-vars {} bindings))]
+                                      (check-conditions conditions ps vars))
+    :else (let [condition (postwalk-replace vars condition)]
+            (satisfy-goal ps condition nil))))
 
 (defn- check-conditions [conditions ps vars]
   (if (empty? conditions)
     (ok nil)
     (let-s [[condition & conditions] (ok conditions)
-            condition (ok vars postwalk-replace condition)
-            _ (satisfy-goal ps condition nil)]
+            _ (check-condition condition ps vars)]
            (recur conditions ps vars))))
 
 (defn add-rule [ps rule]
