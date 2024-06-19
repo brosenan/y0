@@ -1,7 +1,6 @@
 (ns y0.status-test
   (:require [midje.sweet :refer [fact => throws]]
-            [y0.status :refer [unwrap-status ok ->s let-s update-with-status]]
-            [y0.core :refer [on-key]]))
+            [y0.status :refer [unwrap-status ok ->s let-s update-with-status]]))
 
 ;; One key aspect of $y_0$ is the fact that evaluation can result in either a value or an explanation _why not_.
 ;; In Clojure, we could represent this using return values and exceptions respectively. However, exceptions

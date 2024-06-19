@@ -1,5 +1,4 @@
-(ns y0.status
-  (:require [y0.core :refer [on-key]]))
+(ns y0.status)
 
 (defn unwrap-status [{:keys [ok err]}]
   (if (nil? err)

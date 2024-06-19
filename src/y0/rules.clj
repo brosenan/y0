@@ -2,7 +2,7 @@
   (:require [y0.status :refer [->s ok let-s]]
             [y0.predstore :refer [store-rule match-rule]]
             [y0.unify :refer [unify]]
-            [y0.core :refer [! exist]]
+            [y0.core :refer [! exist <- =>]]
             [clojure.walk :refer [postwalk-replace]]))
 
 (defn new-vars [bindings symbols]
@@ -37,9 +37,8 @@
             _ (check-condition condition ps vars)]
            (recur conditions ps vars))))
 
-(defn add-rule [ps rule]
-  (let [[_all bindings head op & conditions] rule
-        [head why-not] (split-goal head nil)
+(defn- add-deduction-rule [ps bindings head conditions]
+  (let [[head why-not] (split-goal head nil)
         vars (new-vars {} bindings)
         head' (postwalk-replace vars head)
         body (if why-not
@@ -56,6 +55,16 @@
                      (check-conditions conditions ps vars)
                      {:err why-not}))))]
     (store-rule ps head' body)))
+
+(defn- add-translation-rule [ps bindings head terms]
+  (let [vars (new-vars {} bindings)]
+    `ps))
+
+(defn add-rule [ps rule]
+  (let [[_all bindings head op & terms] rule]
+    (cond
+      (or (nil? op) (= op `<-)) (add-deduction-rule ps bindings head terms)
+      (= op `=>) (add-translation-rule ps bindings head terms))))
 
 (defn satisfy-goal [ps goal why-not]
   (let [[goal why-not] (split-goal goal why-not)]
