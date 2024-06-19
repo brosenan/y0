@@ -1,5 +1,5 @@
 (ns y0.predstore
-  (:require [y0.core :refer [& specific-rule-without-base must-come-before conflicting-defs undefined-predicate]]
+  (:require [y0.core :refer [&]]
             [y0.status :refer [let-s ok ->s update-with-status]]
             [clojure.string :refer [ends-with?]]
             [clojure.set :refer [union]]))
@@ -138,3 +138,19 @@
                    ["Undefined predicate" (first goal) 
                     "with arity" (-> goal count dec)])
        (ok pd-match goal)))
+
+(defn store-translation-rule [ps head body]
+  (let [key {:translations (arg-key head)}]
+    {:ok (merge-with union ps {key #{body}})}))
+
+(defn store-statement [ps statement]
+  (let [key {:statements (arg-key statement)}]
+    {:ok (merge-with union ps {key #{statement}})}))
+
+(defn get-rules-to-match [ps statement]
+  (let [key {:translations (arg-key statement)}]
+    (get ps key #{})))
+
+(defn get-statements-to-match [ps head]
+  (let [key {:statements (arg-key head)}]
+    (get ps key #{})))

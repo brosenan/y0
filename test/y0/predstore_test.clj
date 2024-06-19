@@ -1,9 +1,11 @@
 (ns y0.predstore-test
   (:require [midje.sweet :refer [fact =>]]
             [y0.predstore :refer [pred-key arg-key arg-key-generalizations
-                                  pd-store-rule pd-match store-rule match-rule generalize-arg]]
-            [y0.core :refer [& specific-rule-without-base must-come-before conflicting-defs undefined-predicate]]
-            [y0.status :refer [ok ->s]]))
+                                  pd-store-rule pd-match store-rule match-rule generalize-arg
+                                  store-translation-rule store-statement get-rules-to-match
+                                  get-statements-to-match]]
+            [y0.core :refer [&]]
+            [y0.status :refer [ok ->s let-s]]))
 
 ;; ## Goal Keys
 
@@ -335,3 +337,73 @@
 (fact
  (match-rule {} `(my-pred (foo 1) (bar 2) ~(atom nil))) =>
  {:err ["Undefined predicate" `my-pred "with arity" 3]})
+
+;; ## Storage and Retreival of Statements and Translation Rules
+
+;; Translation rules translate applicable statements to zero or more other statements.
+;; Translation rules are stored in the predstore based on their heads. We use `arg-key`
+;; on the head to determine `k` in the key `{:translations k}`. This key is mapped to
+;; a _set of functions_, each representing a translation rule on statements that match
+;; the key.
+
+;; The function `store-translation-rule` takes a predstore, a head (s-expression) and
+;; a function which represents the body and stores it under said key. It returns a
+;; status containing the updated predstore.
+(fact
+ (let-s [res (->s {}
+                  (store-translation-rule `(defoo (atom nil)) (constantly 42))
+                  (store-translation-rule `(defoo (atom nil)) (constantly 43))
+                  (ok get {:translations {:list 2 :symbol "y0.predstore-test/defoo"}}))]
+        (do res => set?
+            (->> res
+                 (map #(apply % []))
+                 (into #{})) => #{42 43})))
+
+;; Statements are also stored in a similar manner. `store-statement` takes a predstore
+;; and a statement (s-expression) and adds it to a key. The key is of the form:
+;; `{:statements k}`, where `k` is the result of `arg-key` applied to the statement.
+;; The key maps to a set of statements that share the same key.
+(fact
+ (let-s [res (->s {}
+                  (store-statement `(defoo 1))
+                  (store-statement `(defoo 2))
+                  (ok get {:statements {:list 2 :symbol "y0.predstore-test/defoo"}}))]
+        res => #{`(defoo 1) `(defoo 2)}))
+
+;; `get-rules-to-match` takes a predstore and a statement and returns the rules that
+;; (may) match it. Matching is done by the key, so it is up to the rule function to
+;; really determine if it really matches the statement.
+(fact
+ (let-s [res (->s {}
+                  (store-translation-rule `(defoo (atom nil)) (constantly 42))
+                  (store-translation-rule `(defoo (atom nil)) (constantly 43))
+                  (ok get-rules-to-match `(defoo 1)))]
+        (do res => set?
+            (->> res
+                 (map #(apply % []))
+                 (into #{})) => #{42 43})))
+
+;; If the statement doesn't match any rules, an empty set is returned.
+(fact
+ (let-s [res (->s {}
+                  (store-translation-rule `(defoo (atom nil)) (constantly 42))
+                  (store-translation-rule `(defoo (atom nil)) (constantly 43))
+                  (ok get-rules-to-match `(defbar 1)))]
+        res => #{}))
+
+;; Similarly, `get-statements-to-match` take a head of a translation rule and returns
+;; all matching statements (again, matching by the key).
+(fact
+ (let-s [res (->s {}
+                  (store-statement `(defoo 1))
+                  (store-statement `(defoo 2))
+                  (ok get-statements-to-match `(defoo (atom nil))))]
+        res => #{`(defoo 1) `(defoo 2)}))
+
+;; Or an empty set if no such statements were found.
+(fact
+ (let-s [res (->s {}
+                  (store-statement `(defoo 1))
+                  (store-statement `(defoo 2))
+                  (ok get-statements-to-match `(defbar (atom nil))))]
+        res => #{}))
