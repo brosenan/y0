@@ -1,9 +1,6 @@
 (ns y0.main
-  (:require [y0.core :refer [all test]]
-            [y0.modules :refer [load-with-dependencies]]
-            [y0.rules :refer [add-rule]]
-            [y0.status :refer [ok let-s]]
-            [y0.testing :refer [apply-test-block]]
+  (:require [y0.modules :refer [load-with-dependencies]]
+            [y0.rules :refer [apply-statements]]
             [y0.explanation :refer [explanation-to-str code-location]]
             [clojure.tools.cli :refer [parse-opts]]
             [clojure.term.colors :refer [red green]])
@@ -16,25 +13,9 @@
     :update-fn conj]
    ["-h" "--help"]])
 
-(defn- apply-statement [statement ps]
-  (let [[form & _] statement]
-    (case form
-      y0.core/all (add-rule ps statement)
-      y0.core/test (apply-test-block ps statement)
-      (ok ps))))
-
-(defn- apply-statements [statements]
-  (loop [statements statements
-         ps {}]
-    (if (empty? statements)
-      ps
-      (let [[statement & statements] statements]
-        (let-s [ps (apply-statement statement ps)]
-               (recur statements ps))))))
-
 (defn- main [modules path]
   (let [[statements _] (load-with-dependencies modules path)
-        status (apply-statements statements)]
+        status (apply-statements statements {} {})]
     (if (:err status)
       (let [explanation (:err status)
             message (explanation-to-str explanation)

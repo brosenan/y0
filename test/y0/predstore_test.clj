@@ -1,9 +1,11 @@
 (ns y0.predstore-test
   (:require [midje.sweet :refer [fact =>]]
             [y0.predstore :refer [pred-key arg-key arg-key-generalizations
-                                  pd-store-rule pd-match store-rule match-rule generalize-arg]]
+                                  pd-store-rule pd-match store-rule match-rule generalize-arg
+                                  store-translation-rule store-statement get-rules-to-match
+                                  get-statements-to-match]]
             [y0.core :refer [&]]
-            [y0.status :refer [ok ->s]]))
+            [y0.status :refer [ok ->s let-s]]))
 
 ;; ## Goal Keys
 

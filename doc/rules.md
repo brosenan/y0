@@ -45,8 +45,8 @@ with the new fresh variables.
 ```
 ## Rule Parsing
 
-The function `add-rule` takes a predstore and an s-expression which represents a logic rule
-and returns a status containing the predstore, with the rule added.
+The function `add-rule` takes a predstore, an s-expression which represents a logic rule and
+an initial varmap and returns a status containing the predstore, with the rule added.
 
 ### Trivial Rules
 
@@ -74,9 +74,9 @@ The predstore should have rules to match goals of the form `(amount x y)`.
 ```clojure
 (fact
  (let-s [ps (->s (ok {})
-                 (add-rule amount-base)
-                 (add-rule amount0)
-                 (add-rule amount1))
+                 (add-rule amount-base {})
+                 (add-rule amount0 {})
+                 (add-rule amount1 {}))
          x (ok nil atom)
          r0 (match-rule ps `(amount 0 ~x))
          r1 (match-rule ps `(amount 1 ~x))
@@ -170,7 +170,7 @@ To demonstrate this, we extend the `amount` example to have a failing case for `
 (fact
  (let [x (atom nil)]
    (->s (ok amount-ps)
-        (add-rule `(all [x] (amount -1 x ! "Cannot have negative amounts")))
+        (add-rule `(all [x] (amount -1 x ! "Cannot have negative amounts")) {})
         (satisfy-goal `(amount -1 ~x) ["wrong-explanation"]))) => {:err ["Cannot have negative amounts"]})
 
 ```
@@ -181,7 +181,7 @@ and explains that it cannot provide an amount for a vector containing that value
 (fact
  (let [y (atom nil)
        status (->s (ok amount-ps)
-                   (add-rule `(all [x xs y] (amount [x y0.core/& xs] y ! "Cannot provide an amount for a vector containing" x)))
+                   (add-rule `(all [x xs y] (amount [x y0.core/& xs] y ! "Cannot provide an amount for a vector containing" x)) {})
                    (satisfy-goal `(amount [6] ~y) ["wrong-explanation"]))]
    (explanation-to-str (:err status)) => "Cannot provide an amount for a vector containing 6"))
 

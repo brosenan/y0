@@ -4,11 +4,9 @@
 ```clojure
 (ns y0.testing-test
   (:require [midje.sweet :refer [fact =>]]
-            [y0.testing :refer [apply-test-block]]
-            [y0.rules :refer [new-vars add-rule satisfy-goal]]
+            [y0.rules :refer [apply-test-block add-rule]]
             [y0.core :refer [all test !]]
-            [y0.status :refer [->s ok let-s]]
-            [y0.predstore :refer [match-rule pred-key]]))
+            [y0.status :refer [->s ok let-s]]))
 
 ```
 Testing is an important aspect of any programming environment, and it is for this
@@ -30,14 +28,14 @@ this value, as a string.
 ```clojure
 (fact
  (let-s [ps (->s (ok {})
-                 (add-rule `(all [x y] (name x y ! "I don't know how to name" x)))
-                 (add-rule `(all [] (name 1 "one")))
-                 (add-rule `(all [] (name 2 "two")))
-                 (add-rule `(all [y] (name 3 y ! "3 is not real")))
-                 (add-rule `(all [] (name [] "empty vec")))
-                 (add-rule `(all [x xs] (name [x & xs] "nonempty vec")))
-                 (add-rule `(all [x] (name [x] "vec of length 1")))
-                 (add-rule `(all [x y] (name [x y] "vec of length 2"))))]
+                 (add-rule `(all [x y] (name x y ! "I don't know how to name" x)) {})
+                 (add-rule `(all [] (name 1 "one")) {})
+                 (add-rule `(all [] (name 2 "two")) {})
+                 (add-rule `(all [y] (name 3 y ! "3 is not real")) {})
+                 (add-rule `(all [] (name [] "empty vec")) {})
+                 (add-rule `(all [x xs] (name [x & xs] "nonempty vec")) {})
+                 (add-rule `(all [x] (name [x] "vec of length 1")) {})
+                 (add-rule `(all [x y] (name [x y] "vec of length 2")) {}))]
         (do
           (def name-ps ps)
           (ok nil))) => {:ok nil})
