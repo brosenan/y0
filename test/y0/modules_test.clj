@@ -132,24 +132,46 @@
 
 ;; ## Loading a Complete Program
 
-;; The loading of a complete program is done module-by-module.
-;; The state of the loading consists of the following:
-;; * A list of the modules waiting to be loaded.
-;; * A list of the statements loaded so far.
-;; * A set of the modules loaded so far.
-;;
-;; A loading step takes the first pending module and loads it.
-;; It prepends its statements to the statement list and prepends the modules it requires to the pending module list.
-;; It also adds the loaded module to the loaded modules set to avoid loading this module again.
-;;
-;; `load-with-dependencies` takes names of initial modules and a list of `y0-path` and returns a pair (`statements`,
-;; `modules`) where `statements` is an aggregated list of statements that were loaded and `modules` is a set of modules
-;; that were loaded.
+;; Loading a program is performed in two stages. First the function `load-all-modules` loads all
+;; the requested modules and their recursive dependencies, to populate a map, mapping module names
+;; to `[statements deps]` pairs.
 (fact
- (load-with-dependencies ["test.a"] ["/some/path"]) => '[[(test.c/baz 42)
-                                                        (test.b/bar test.c/baz)
-                                                        (test.a/foo test.b/bar test.c/baz)]
-                                                       #{"test.a" "test.b" "test.c"}]
+ (def loaded-modules (load-all-modules ["a" "b"] ["/some/path"])) => var?
+ (provided
+  (read-module "a" ["/some/path"]) => ["(ns a (:require [b :refer [B]] [c :refer [C]]))
+                                         A* B C" "a.y0"]
+  (read-module "b" ["/some/path"]) => ["(ns b (:require [c :refer [C]] [d :refer [D]]))
+                                         B* C D" "b.y0"]
+  (read-module "c" ["/some/path"]) => ["(ns c (:require [d :refer [D]]))
+                                         C* D" "c.y0"]
+  (read-module "d" ["/some/path"]) => ["(ns d)
+                                         D*" "d.y0"])
+ loaded-modules => {"a" ['[a/A* b/B c/C] ["b" "c"]]
+                    "b" ['[b/B* c/C d/D] ["c" "d"]]
+                    "c" ['[c/C* d/D] ["d"]]
+                    "d" ['[d/D*] []]})
+
+;; The second step involves topologically-sorting the statements loaded from the modules to a single
+;; stream of statements that respects dependencies such as the statements from dependencies of a given
+;; module will appear before the module's statements.
+
+;; The function `sort-statements-by-deps` takes the map returned by load-all-modules and returns a
+;; combined list of topologically-sotred statements.
+(fact
+ (sort-statements-by-deps loaded-modules) => '[d/D*
+                                               c/C* d/D
+                                               b/B* c/C d/D
+                                               a/A* b/B c/C])
+
+;; `load-with-dependencies` combines the two operations to read all requested modules along with
+;; their dependencies.
+
+(fact
+ (load-with-dependencies ["test.a"] ["/some/path"]) =>
+ '[[(test.c/baz 42)
+    (test.b/bar test.c/baz)
+    (test.a/foo test.b/bar test.c/baz)]
+   #{"test.a" "test.b" "test.c"}]
  (provided
   (read-module "test.a" ["/some/path"]) => ["(ns test.a
                                               (:require [test.b :as b]

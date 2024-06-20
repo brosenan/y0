@@ -1,6 +1,7 @@
 (ns y0.modules
   (:require [clojure.string :as str]
             [clojure.java.io :as io]
+            [clojure.set :refer [union difference]]
             [edamame.core :as e :refer [parse-string-all]]
             [y0.core :refer [y0-symbols]]))
 
@@ -100,17 +101,43 @@
        (convert-ns statement ns-map refer-map))
      module-list]))
 
-(defn load-with-dependencies [modules-to-load y0-path]
+(defn load-all-modules [modules-to-load y0-path]
   (loop [modules-to-load modules-to-load
-         statements []
-         modules-loaded #{}]
+         loaded {}]
     (if (empty? modules-to-load)
-      [statements modules-loaded]
-      (if (modules-loaded (first modules-to-load))
-        (recur (rest modules-to-load) statements modules-loaded)
-        (let [module-name (first modules-to-load)
-              modules-to-load (rest modules-to-load)
-              [module-statements module-deps] (load-single-module module-name y0-path)]
-          (recur (concat module-deps modules-to-load)
-                 (concat module-statements statements)
-                 (conj modules-loaded module-name)))))))
+      loaded
+      (let [newly-loaded (->> (for [module modules-to-load]
+                                [module (load-single-module module y0-path)])
+                              (into {}))
+            new-deps (difference (set (apply concat (for [[_module [_statements deps]] newly-loaded]
+                                                      deps)))
+                                 (set (keys loaded)))]
+        (recur new-deps (merge loaded newly-loaded))))))
+
+(defn- remove-all-keys [m keys]
+  (loop [m m
+         keys keys]
+    (if (empty? keys)
+      m
+      (recur (dissoc m (first keys))
+             (rest keys)))))
+
+(defn sort-statements-by-deps [loaded]
+  (loop [statements []
+         remaining loaded
+         added #{}]
+    (if (empty? remaining)
+      statements
+      (let [available (for [[module [_statements deps]] remaining
+                            :when (empty? (difference (set deps) added))]
+                        module)
+            new-statements (for [module available
+                                 statement (-> remaining (get module) first)]
+                             statement)]
+        (recur (concat statements new-statements)
+               (remove-all-keys remaining available)
+               (union added (set available)))))))
+
+(defn load-with-dependencies [modules-to-load y0-path]
+  (let [module-map (load-all-modules modules-to-load y0-path)]
+    [(sort-statements-by-deps module-map) (set (keys module-map))]))
