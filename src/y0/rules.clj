@@ -1,9 +1,11 @@
 (ns y0.rules
-  (:require [y0.status :refer [->s ok let-s]]
-            [y0.predstore :refer [store-rule match-rule store-translation-rule get-rules-to-match]]
-            [y0.unify :refer [unify]]
-            [y0.core :refer [! exist <- =>]]
-            [clojure.walk :refer [postwalk-replace]]))
+  (:require [clojure.walk :refer [postwalk-replace]]
+            [y0.core :refer [! <- => exist]]
+            [y0.predstore :refer [get-rules-to-match get-statements-to-match
+                                  match-rule store-rule store-statement
+                                  store-translation-rule]]
+            [y0.status :refer [->s let-s ok]]
+            [y0.unify :refer [unify]]))
 
 (defn new-vars [bindings symbols]
   (loop [bindings bindings
@@ -79,18 +81,23 @@
                         (satisfy-goal ps test ["Test failed without explanation"]) why-not test)]
                  (recur tests)))))))
 
+(defn- apply-normal-statement [ps statement vars]
+  (let-s [statement (ok vars postwalk-replace statement)
+          ps (store-statement ps statement)]
+    (loop [trans-rules (seq (get-rules-to-match ps statement))
+           ps ps]
+      (if (empty? trans-rules)
+        (ok ps)
+        (let-s [[rule & rules] (ok trans-rules)
+                ps (rule statement ps)]
+               (recur rules ps))))))
+
 (defn- apply-statement [statement ps vars]
   (let [[form & _] statement]
     (case form
       y0.core/all (add-rule ps statement vars)
       y0.core/test (apply-test-block ps statement)
-      (loop [trans-rules (seq (get-rules-to-match ps statement))
-             ps ps]
-        (if (empty? trans-rules)
-          (ok ps)
-          (let-s [[rule & rules] (ok trans-rules)
-                  ps (rule statement ps)]
-            (recur rules ps)))))))
+      (apply-normal-statement ps statement vars))))
 
 (defn apply-statements [statements ps vars]
   (loop [statements statements
@@ -101,22 +108,31 @@
         (let-s [ps (apply-statement statement ps vars)]
                (recur statements ps))))))
 
-(defn- add-translation-rule [ps bindings head terms]
-  (let [vars (new-vars {} bindings)
-        head' (postwalk-replace vars head)]
-    (store-translation-rule ps head'
-                            (fn [statement ps]
-                              (let [vars (new-vars {} bindings)
-                                    head (postwalk-replace vars head)]
-                                (if (unify statement head)
-                                  (apply-statements terms ps vars)
-                                  (ok ps)))))))
+(defn- apply-rule-to-statements [ps head body]
+  (loop [statements (seq (get-statements-to-match ps head))
+         ps ps]
+    (if (empty? statements)
+      (ok ps)
+      (let-s [ps (body (first statements) ps)]
+             (recur (rest statements) ps)))))
+
+(defn- add-translation-rule [ps bindings head terms vars]
+  (let [vars' (new-vars {} bindings)
+        head' (postwalk-replace vars' head)
+        body (fn [statement ps]
+               (let [vars (new-vars vars bindings)
+                     head (postwalk-replace vars head)]
+                 (if (unify statement head)
+                   (apply-statements terms ps vars)
+                   (ok ps))))]
+    (->s (store-translation-rule ps head' body)
+         (apply-rule-to-statements head' body))))
 
 (defn add-rule [ps rule vars]
   (let [[_all bindings head op & terms] rule]
     (cond
       (or (nil? op) (= op `<-)) (add-deduction-rule ps bindings head terms vars)
-      (= op `=>) (add-translation-rule ps bindings head terms))))
+      (= op `=>) (add-translation-rule ps bindings head terms vars))))
 
 (defn satisfy-goal [ps goal why-not]
   (let [[goal why-not] (split-goal goal why-not)]

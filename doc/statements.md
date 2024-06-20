@@ -2,7 +2,8 @@
   * [Translation Rules](#translation-rules)
     * [An Example](#an-example)
 ```clojure
-(ns statements)
+(ns statements
+  (:require [hello :refer [classify]]))
 
 ```
 # Statements and Translation Rules
@@ -64,16 +65,70 @@ the value provided in the statement as either foo or bar.
 
 Now we can use the newly-created statements...
 ```clojure
-(defoo 1)
-(defbar 2)
+(defoo fig)
+(defbar banana)
 
 ```
 And expect to see their effect.
 ```clojure
 (test
- (foo 1)
- (bar 2)
- (foo 2 ! 2 "is not foo")
- (bar 1 ! 1 "is not bar"))
+ (foo fig)
+ (bar banana)
+ (foo banana ! banana "is not foo")
+ (bar fig ! fig "is not bar"))
+
+```
+Rules apply to statements made after _and before_ they were introduced.
+In the following example we define a rule that will take existing
+`defoo` statements and will create a
+[classification](hello.md#rule-specialization) of the defined object.
+```clojure
+(all [x]
+     (defoo x) => (all [] (classify x "A foo thingy")))
+
+```
+This retrospectively appies to `fig`, which was previously defined as
+foo.
+```clojure
+(test
+ (classify fig "A foo thingy"))
+
+```
+A translation rule may translate a single statement into multiple
+statements. For example, we define the statement `defoobar` to
+stand for both `defoo` and `defbar` statements.
+```clojure
+(all [x]
+     (defoobar x) => (defoo x) (defbar x))
+
+(defoobar fabian)
+
+(test
+ (foo fabian)
+ (bar fabian))
+
+```
+Translation rules can translate statements into other translation
+rules. This is useful for making predicates depend on two or more
+statements.
+
+For example, we can define the predicate `foobar`, which requires
+the something is defined both as foo and as bar. We could have
+used a [deduction rule](conditions.md#deduction-rules) with
+conditions on `foo` and on `bar`, but if we want to depend on the
+definitions directly, we can do this as follows:
+```clojure
+(all [x] (foobar x ! x "needs to be defined as both foo and bar"))
+(all [x] (defoo x) =>
+     (all [] (defbar x) =>
+          (all [] (foobar x))))
+
+```
+Now, anything that is defined as both `foo` and `bar` should be
+`foobar`.
+```clojure
+(test
+ (foobar fabian)
+ (foobar banana ! banana "needs to be defined as both foo and bar"))
 ```
 
