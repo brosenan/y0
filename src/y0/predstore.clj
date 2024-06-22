@@ -80,7 +80,8 @@
     (let [other (get pd marker)]
       {:err ["A rule with the pattern" arg
              "cannot coexist with a rule with the pattern" other
-             "within the same predicate due to ambiguous generalizations"]})))
+             "within the same predicate due to ambiguous generalizations"]})
+    (ok pd)))
 
 (defn- pd-update-tags [pd arg]
   (cond (seq? arg) (cond

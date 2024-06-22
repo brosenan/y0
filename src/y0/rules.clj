@@ -1,6 +1,6 @@
 (ns y0.rules
   (:require [clojure.walk :refer [postwalk-replace]]
-            [y0.core :refer [! <- => exist]]
+            [y0.core :refer [! <- => exist given]]
             [y0.predstore :refer [get-rules-to-match get-statements-to-match
                                   match-rule store-rule store-statement
                                   store-translation-rule]]
@@ -22,13 +22,16 @@
       [goal why-not]
       [(take bang-index goal) (-> bang-index inc (drop goal) vec)])))
 
-(declare satisfy-goal check-conditions add-rule)
+(declare satisfy-goal check-conditions add-rule apply-statement)
 
 (defn- check-condition [condition ps vars]
   (cond
     (-> condition first (= `exist)) (let [[_exist bindings & conditions] condition
-                                          vars (merge vars (new-vars {} bindings))]
+                                          vars (new-vars vars bindings)]
                                       (check-conditions conditions ps vars))
+    (-> condition first (= `given)) (let-s [[_given statement _op & conditions] (ok condition)
+                                            ps' (apply-statement statement ps vars)]
+                                           (check-conditions conditions ps' vars))
     :else (let [condition (postwalk-replace vars condition)]
             (satisfy-goal ps condition nil))))
 
@@ -97,6 +100,11 @@
     (case form
       y0.core/all (add-rule ps statement vars)
       y0.core/test (apply-test-block ps statement)
+      ;; Debugging utility. Keeping for the time being.
+      y0.core/? (let [[_? pred arity] statement
+                      pd (get ps {:name (str pred) :arity arity})]
+                  (println "?" pd)
+                  {:ok ps})
       (apply-normal-statement ps statement vars))))
 
 (defn apply-statements [statements ps vars]
@@ -117,7 +125,7 @@
              (recur (rest statements) ps)))))
 
 (defn- add-translation-rule [ps bindings head terms vars]
-  (let [vars' (new-vars {} bindings)
+  (let [vars' (new-vars vars bindings)
         head' (postwalk-replace vars' head)
         body (fn [statement ps]
                (let [vars (new-vars vars bindings)

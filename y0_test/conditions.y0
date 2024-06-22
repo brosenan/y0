@@ -209,3 +209,95 @@
 
 ;; The build-in predicate `=` replaces the need to define predicates
 ;; such as `my=`, but on that later.
+
+;; ## `given` Conditions
+
+;; One important aspect of semantic analysis is the notion of scope.
+;; Not everything that is true in one context is true in other
+;; contexts. There are different ways in which scope can be captured.
+;; One common method is to hold a data structure that propagates
+;; through the analysis, containing information on things in scope.
+
+;; However, in $y_0$, scopes are built into the language, in a
+;; natural way, using `given` conditions.
+
+;; A `given` condition is a condition of the form:
+;; `(given statements... -> conditions...)`, where `statements...`
+;; are one or more statements and `conditions...` are one or more
+;; conditions.
+
+;; The meaning of this condition is, given that we apply
+;; `statements...`, all of `conditions...` must be hold.
+
+;; ### Example: The Lambda Calculus
+
+;; To motivate and demonstrate the power and elegance of the
+;; `given` condition, let us consider a predicate that accepts
+;; expressions in the lambda calculus.
+
+;; Syntactically, the lambda calculus is simple. An expression
+;; can be one of three things:
+
+;; 1. A symbol `var`, representing a variable,
+;; 2. A lambda abstraction `(lambda var expr)`, where `var` is a
+;;    symbols and `expr` is a lambda-calculus expression, and
+;; 3. An application `(func arg)`, where both `func` and `arg`
+;;    are lambda-calculus expressions.
+
+;; Semanically, however, it is harder to know if a given expression
+;; is valid. Variables cannot be used unless they are defined.
+;; Constants can be defined using a `(defconst var expr)` statement,
+;; or they can be introduced by a lambda abstraction, as the
+;; parameter. The following definitions define the validity of a
+;; lambda-calculus expression.
+
+;; As usual, we begin with the base case, defining an error to be
+;; provided for non-lambda expressions.
+(all [x]
+     (lambda-expr x ! x "is not a lambda-calulus expression"))
+(test
+ (lambda-expr foo ! foo "is not a lambda-calulus expression"))
+
+;; Next, let us define the `defconst` statement, which contributes
+;; a symbol to `lambda-expr`.
+(all [var expr]
+     (defconst var expr) => (all [] (lambda-expr var)))
+
+(defconst id (lambda x x))
+(test
+ (lambda-expr id))
+
+;; Now we define the rules for application, which is a simple
+;; deduction rule with goal conditions.
+(all [func arg]
+     (lambda-expr (func arg)) <-
+     (lambda-expr func)
+     (lambda-expr arg))
+
+(test
+ (lambda-expr (id id)))
+
+;; This is a [translation rule](statements.md) which gives meaning
+;; to `defconst` statements by translating them into a rule for
+;; `lambda-expr`.
+
+;; And now we come to the lambda expression. Here, the challenge
+;; is making the parameter symbol valid within the body, but only
+;; there. In other words, we would like to _temporarily_ add
+;; a rule for `lambda-expr`, making the parameter symbol valid
+;; when evaluating the body, but remove it just after.
+
+;; This is where the `given` condition comes in.
+(all [var expr]
+     (lambda-expr (lambda var expr)) <-
+     (given (all [] (lambda-expr var)) ->
+            (lambda-expr expr)))
+
+(test
+ (lambda-expr (lambda x x))
+ (lambda-expr (lambda x y) ! y "is not a lambda-calulus expression"))
+
+;; So now we can check complex lambda expressions, such as the
+;; y-combinator.
+(test
+ (lambda-expr (lambda f ((lambda x (f (x x))) (lambda x (f (x x)))))))

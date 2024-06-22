@@ -9,8 +9,10 @@
 (def-symbols
   all
   test
-  exist 
+  exist
+  given
   &
   <-
   =>
-  !)
+  !
+  ?)
