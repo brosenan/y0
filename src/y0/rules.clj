@@ -24,7 +24,7 @@
 
 (declare satisfy-goal check-conditions add-rule apply-statement)
 
-(defn- check-condition [condition ps vars]
+(defn- check-condition [condition ps vars why-not]
   (cond
     (-> condition first (= `exist)) (let [[_exist bindings & conditions] condition
                                           vars (new-vars vars bindings)]
@@ -33,13 +33,13 @@
                                             ps' (apply-statement statement ps vars)]
                                            (check-conditions conditions ps' vars))
     :else (let [condition (postwalk-replace vars condition)]
-            (satisfy-goal ps condition nil))))
+            (satisfy-goal ps condition why-not))))
 
 (defn- check-conditions [conditions ps vars]
   (if (empty? conditions)
     (ok nil)
     (let-s [[condition & conditions] (ok conditions)
-            _ (check-condition condition ps vars)]
+            _ (check-condition condition ps vars nil)]
            (recur conditions ps vars))))
 
 (defn- add-deduction-rule [ps bindings head conditions vars]
@@ -73,7 +73,7 @@
                                            ["Wrong explanation is given:" (:err status) "instead of" why-not]}
       :else (ok nil))))
 
-(defn apply-test-block [ps test-block]
+(defn apply-test-block [ps test-block vars]
   (let [[_test & tests] test-block]
     (loop [tests tests]
       (let [[test & tests] tests]
@@ -81,7 +81,8 @@
           (ok ps)
           (let-s [[test why-not] (ok  test split-goal nil)
                   _nil (expect-status
-                        (satisfy-goal ps test ["Test failed without explanation"]) why-not test)]
+                        (check-condition test ps vars 
+                                         ["Test failed without explanation"]) why-not test)]
                  (recur tests)))))))
 
 (defn- apply-normal-statement [ps statement vars]
@@ -99,7 +100,7 @@
   (let [[form & _] statement]
     (case form
       y0.core/all (add-rule ps statement vars)
-      y0.core/test (apply-test-block ps statement)
+      y0.core/test (apply-test-block ps statement vars)
       ;; Debugging utility. Keeping for the time being.
       y0.core/? (let [[_? pred arity] statement
                       pd (get ps {:name (str pred) :arity arity})]

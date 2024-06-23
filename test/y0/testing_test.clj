@@ -11,9 +11,9 @@
 ;; in `tests` is a goal, expecting to either succeed or fail. In case of failure,
 ;; an expected explanation is provided using the `!` symbol.
 
-;; The function `apply-test-block` takes a predstore and a test-block and returns
-;; the given predstore if all tests have passed, or an appropriate explanation if
-;; something failed.
+;; The function `apply-test-block` takes a predstore, a test-block and a map of free
+;; variables and returns the given predstore if all tests have passed, or an
+;; appropriate explanation if something failed.
 
 ;; ## Running Example
 
@@ -44,7 +44,7 @@
 ;; behavior is for it to succeed.
 (fact
  (apply-test-block name-ps `(test (name 1 "one")
-                                  (name 2 "two"))) => {:ok name-ps})
+                                  (name 2 "two")) {}) => {:ok name-ps})
 
 ;; However, if a goal expected to succeed fails, the explanation provided by the goal's
 ;; evaluation is returned.
@@ -52,7 +52,7 @@
  (apply-test-block name-ps `(test (name 1 "one")
                                   (name 2 "two")
                                   (name 3 "three")
-                                  (name [] "empty vec"))) => {:err ["3 is not real" "in test" `(name 3 "three")]})
+                                  (name [] "empty vec")) {}) => {:err ["3 is not real" "in test" `(name 3 "three")]})
 
 ;; ## Testing for Failure
 
@@ -64,16 +64,16 @@
 (fact
  (apply-test-block name-ps 
                    `(test (name 3 "three" ! "3 is not real")
-                          (name 5 "five" ! "I don't know how to name" 5))) => {:ok name-ps})
+                          (name 5 "five" ! "I don't know how to name" 5)) {}) => {:ok name-ps})
 
 ;; The expression(s) after the `!` must match the error. For example, this test will fail:
 (fact
  (apply-test-block name-ps
-                   `(test (name 3 "three" ! "3 has no name"))) =>
+                   `(test (name 3 "three" ! "3 has no name")) {}) =>
  {:err ["Wrong explanation is given:" ["3 is not real"] "instead of" ["3 has no name"]]})
 
 ;; If a goal is expected to fail but passes, the test fails too.
 (fact
  (apply-test-block name-ps
-                   `(test (name 2 "two" ! "2 is not real"))) =>
+                   `(test (name 2 "two" ! "2 is not real")) {}) =>
  {:err ["Expected failure for goal" `(name 2 "two") "but it succeeded"]})

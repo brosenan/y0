@@ -210,6 +210,23 @@
 ;; The build-in predicate `=` replaces the need to define predicates
 ;; such as `my=`, but on that later.
 
+;; `exist` conditions are useful in tests, as they allow us to
+;; introduce free variable. Recall the test above:
+;; `(foobar-type (** foo bar) barley ! ...)`. In this test we had to
+;; "guess" the result (`barley`) returned by `foobar-type` despite it
+;; not being actually returned. However, putting anything else there
+;; would cause `foobar-test` to just fail:
+(test
+ (foobar-type (** foo bar) something-else
+              ! "Test failed without explanation"))
+
+;; So, how do we express that we do not know or care what the type
+;; should be? We pass a free variable.
+(test
+ (exist [type]
+        (foobar-type (** foo bar) type)
+        ! "Type mismatch. Expression" foo "is" foolish "but" bar "is" barley))
+
 ;; ## `given` Conditions
 
 ;; One important aspect of semantic analysis is the notion of scope.
