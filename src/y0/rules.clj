@@ -61,16 +61,22 @@
                      {:err why-not}))))]
     (store-rule ps head' body)))
 
-(defn- expect-status [status why-not test]
+(defn- replace-vars [vars why-not]
+  (if (nil? why-not)
+    why-not
+    (postwalk-replace vars why-not)))
+
+(defn- expect-status [status why-not test vars]
   (if (nil? why-not)
     (cond
       (contains? status :err) {:err (concat (:err status) ["in test" test])}
       :else status)
     (cond
       (contains? status :ok) {:err
-                              ["Expected failure for goal" test "but it succeeded"]}
-      (not (unify (:err status) why-not)) {:err
-                                           ["Wrong explanation is given:" (:err status) "instead of" why-not]}
+                              ["Expected failure for goal" (replace-vars vars test) "but it succeeded"]}
+      (not (unify (:err status) (replace-vars vars why-not)))
+      {:err
+       ["Wrong explanation is given:" (:err status) "instead of" why-not]}
       :else (ok nil))))
 
 (defn apply-test-block [ps test-block vars]
@@ -82,7 +88,8 @@
           (let-s [[test why-not] (ok  test split-goal nil)
                   _nil (expect-status
                         (check-condition test ps vars 
-                                         ["Test failed without explanation"]) why-not test)]
+                                         ["Test failed without explanation"])
+                        why-not test vars)]
                  (recur tests)))))))
 
 (defn- apply-normal-statement [ps statement vars]

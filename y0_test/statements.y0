@@ -108,3 +108,44 @@
 (test
  (foobar fabian)
  (foobar banana ! banana "needs to be defined as both foo and bar"))
+
+;; ## Translating into Tests
+
+;; Translation rules can translate a statement to any other type
+;; of statement, including test blocks. This can be used to add
+;; verification of statements.
+
+;; Imagine we wish to extend our example with a third statement
+;; type, `defquux`, which, like `defoo` and `defbar` will define
+;; a caes for a predicate (`quux`, in this case). However,
+;; for this new statement type we insist that whatever is defined
+;; using `defquux` is _not_ defined as either foo or bar.
+
+;; As usual, we start with a base case for `quux`.
+(all [x]
+     (quux x ! x "is not quux"))
+
+;; Then we define our translation rule. It translate each
+;; `defquux` statement into two statements: a solution for `quux`
+;; and a test.
+(all [x]
+     (defquux x) =>
+     (all [] (quux x))
+     (test
+      (foo x ! x "is not foo")
+      (bar x ! x "is not bar")))
+
+;; Please note that we had to mention which explanation we expect
+;; from `foo` and `bar`, since we want to make sure they fail for
+;; the right reason.
+
+;; Now we try to define a unique value as quux (and succeed), and
+;; values that are already either foo or bar and fail. We use
+;; `given` conditions in order to catch errors returned by attempts
+;; to introduce statements.
+(test
+ (given (defquux quill) -> (quux quill))
+ (given (defquux fig) -> (quux quill)
+        ! "Expected failure for goal" (foo fig) "but it succeeded")
+ (given (defquux banana) -> (quux quill)
+        ! "Expected failure for goal" (bar banana) "but it succeeded")) 
