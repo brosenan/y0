@@ -148,4 +148,4 @@
  (given (defquux fig) -> (quux quill)
         ! "Expected failure for goal" (foo fig) "but it succeeded")
  (given (defquux banana) -> (quux quill)
-        ! "Expected failure for goal" (bar banana) "but it succeeded")) 
+        ! "Expected failure for goal" (bar banana) "but it succeeded"))
