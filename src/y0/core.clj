@@ -8,7 +8,7 @@
 
 (def-symbols
   all
-  test
+  assert
   exist
   given
   &

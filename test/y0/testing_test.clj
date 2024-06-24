@@ -1,18 +1,18 @@
 (ns y0.testing-test
   (:require [midje.sweet :refer [fact =>]]
-            [y0.rules :refer [apply-test-block add-rule]]
-            [y0.core :refer [all test !]]
+            [y0.rules :refer [apply-assert-block add-rule]]
+            [y0.core :refer [all assert !]]
             [y0.status :refer [->s ok let-s]]))
 
 ;; Testing is an important aspect of any programming environment, and it is for this
 ;; reason that we bake testing into $y_0$, rather than leaving it as an afterthought.
 
-;; $y_0$ testing is based on _test blocks_, or the form `(test tests...)`. Each test
-;; in `tests` is a goal, expecting to either succeed or fail. In case of failure,
+;; $y_0$ testing is based on _assert blocks_, or the form `(assert assertions...)`.
+;; Each assertion in `asserts` is a goal, expecting to either succeed or fail. In case of failure,
 ;; an expected explanation is provided using the `!` symbol.
 
-;; The function `apply-test-block` takes a predstore, a test-block and a map of free
-;; variables and returns the given predstore if all tests have passed, or an
+;; The function `apply-assert-block` takes a predstore, an assert-block and a map of free
+;; variables and returns the given predstore if all assertions have passed, or an
 ;; appropriate explanation if something failed.
 
 ;; ## Running Example
@@ -40,40 +40,40 @@
 
 ;; ## Testing for Success
 
-;; A test withing a `test` block can be a simple goal. In such a case, the expected
+;; An assertion withing a `assert` block can be a simple goal. In such a case, the expected
 ;; behavior is for it to succeed.
 (fact
- (apply-test-block name-ps `(test (name 1 "one")
-                                  (name 2 "two")) {}) => {:ok name-ps})
+ (apply-assert-block name-ps `(assert (name 1 "one")
+                                      (name 2 "two")) {}) => {:ok name-ps})
 
 ;; However, if a goal expected to succeed fails, the explanation provided by the goal's
 ;; evaluation is returned.
 (fact
- (apply-test-block name-ps `(test (name 1 "one")
-                                  (name 2 "two")
-                                  (name 3 "three")
-                                  (name [] "empty vec")) {}) => {:err ["3 is not real" "in test" `(name 3 "three")]})
+ (apply-assert-block name-ps `(assert (name 1 "one")
+                                      (name 2 "two")
+                                      (name 3 "three")
+                                      (name [] "empty vec")) {}) => {:err ["3 is not real" "in assertion" `(name 3 "three")]})
 
 ;; ## Testing for Failure
 
-;; A test block may also contain tests that expect failure of goals. This is important
-;; in order to make sure the $y_0$ program can correctly identify invalid input and
+;; An assert block may also contain assertions that expect failure of goals. This 
+;;is important in order to make sure the $y_0$ program can correctly identify invalid input and
 ;; provide a correct explanation.
 
 ;; Expecting failure is done using the `!` symbol.
 (fact
- (apply-test-block name-ps 
-                   `(test (name 3 "three" ! "3 is not real")
-                          (name 5 "five" ! "I don't know how to name" 5)) {}) => {:ok name-ps})
+ (apply-assert-block name-ps
+                     `(assert (name 3 "three" ! "3 is not real")
+                              (name 5 "five" ! "I don't know how to name" 5)) {}) => {:ok name-ps})
 
-;; The expression(s) after the `!` must match the error. For example, this test will fail:
+;; The expression(s) after the `!` must match the error. For example, this assertion will fail:
 (fact
- (apply-test-block name-ps
-                   `(test (name 3 "three" ! "3 has no name")) {}) =>
+ (apply-assert-block name-ps
+                   `(assert (name 3 "three" ! "3 has no name")) {}) =>
  {:err ["Wrong explanation is given:" ["3 is not real"] "instead of" ["3 has no name"]]})
 
-;; If a goal is expected to fail but passes, the test fails too.
+;; If a goal is expected to fail but passes, the assertion fails too.
 (fact
- (apply-test-block name-ps
-                   `(test (name 2 "two" ! "2 is not real")) {}) =>
+ (apply-assert-block name-ps
+                     `(assert (name 2 "two" ! "2 is not real")) {}) =>
  {:err ["Expected failure for goal" `(name 2 "two") "but it succeeded"]})

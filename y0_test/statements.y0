@@ -5,15 +5,15 @@
 
 ;; Statements are top-level s-expressions in a $y_0$ program. In the
 ;; [introduction](hello.md) we have encountered two types of statements:
-;; A _rule_, using the keyword `all`, and a _test block_, using the
-;; keyword `test`.
+;; A _rule_, using the keyword `all`, and a _assert block_, using the
+;; keyword `assert`.
 
 ;; However, $y_0$ is extensible with regard to statements, allowing
 ;; modules to define new types of statements, by giving them meaning.
 
 ;; The way to give meaning to a statement is to define how it
 ;; _translates_ to other types of statements, and eventually to rules
-;; and test blocks, which already have meaning in $y_0$.
+;; and assert blocks, which already have meaning in $y_0$.
 
 ;; ## Translation Rules
 
@@ -26,7 +26,7 @@
 ;; of the statement type being defined, possibly containing symbols
 ;; from `vars...`. `statements...` represents zero or more
 ;; s-expressions that represent statements. These could be rules,
-;; test blocks or other statements defined through their own 
+;; assert blocks or other statements defined through their own 
 ;; translation rules.
 
 ;; ### An Example
@@ -59,7 +59,7 @@
 (defbar banana)
 
 ;; And expect to see their effect.
-(test
+(assert
  (foo fig)
  (bar banana)
  (foo banana ! banana "is not foo")
@@ -74,7 +74,7 @@
 
 ;; This retrospectively appies to `fig`, which was previously defined as
 ;; foo.
-(test
+(assert
  (classify fig "A foo thingy"))
 
 ;; A translation rule may translate a single statement into multiple
@@ -85,7 +85,7 @@
 
 (defoobar fabian)
 
-(test
+(assert
  (foo fabian)
  (bar fabian))
 
@@ -105,14 +105,14 @@
 
 ;; Now, anything that is defined as both `foo` and `bar` should be
 ;; `foobar`.
-(test
+(assert
  (foobar fabian)
  (foobar banana ! banana "needs to be defined as both foo and bar"))
 
-;; ## Translating into Tests
+;; ## Translating into Assertions
 
 ;; Translation rules can translate a statement to any other type
-;; of statement, including test blocks. This can be used to add
+;; of statement, including assert blocks. This can be used to add
 ;; verification of statements.
 
 ;; Imagine we wish to extend our example with a third statement
@@ -127,11 +127,11 @@
 
 ;; Then we define our translation rule. It translate each
 ;; `defquux` statement into two statements: a solution for `quux`
-;; and a test.
+;; and an assertion.
 (all [x]
      (defquux x) =>
      (all [] (quux x))
-     (test
+     (assert
       (foo x ! x "is not foo")
       (bar x ! x "is not bar")))
 
@@ -143,7 +143,7 @@
 ;; values that are already either foo or bar and fail. We use
 ;; `given` conditions in order to catch errors returned by attempts
 ;; to introduce statements.
-(test
+(assert
  (given (defquux quill) -> (quux quill))
  (given (defquux fig) -> (quux quill)
         ! "Expected failure for goal" (foo fig) "but it succeeded")

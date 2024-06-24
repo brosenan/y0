@@ -69,7 +69,7 @@
 (defn- expect-status [status why-not test vars]
   (if (nil? why-not)
     (cond
-      (contains? status :err) {:err (concat (:err status) ["in test" test])}
+      (contains? status :err) {:err (concat (:err status) ["in assertion" test])}
       :else status)
     (cond
       (contains? status :ok) {:err
@@ -79,7 +79,7 @@
        ["Wrong explanation is given:" (:err status) "instead of" why-not]}
       :else (ok nil))))
 
-(defn apply-test-block [ps test-block vars]
+(defn apply-assert-block [ps test-block vars]
   (let [[_test & tests] test-block]
     (loop [tests tests]
       (let [[test & tests] tests]
@@ -107,7 +107,7 @@
   (let [[form & _] statement]
     (case form
       y0.core/all (add-rule ps statement vars)
-      y0.core/test (apply-test-block ps statement vars)
+      y0.core/test (apply-assert-block ps statement vars)
       ;; Debugging utility. Keeping for the time being.
       y0.core/? (let [[_? pred arity] statement
                       pd (get ps {:name (str pred) :arity arity})]

@@ -1,7 +1,7 @@
 * [Statements and Translation Rules](#statements-and-translation-rules)
   * [Translation Rules](#translation-rules)
     * [An Example](#an-example)
-  * [Translating into Tests](#translating-into-tests)
+  * [Translating into Assertions](#translating-into-assertions)
 ```clojure
 (ns statements
   (:require [hello :refer [classify]]))
@@ -11,15 +11,15 @@
 
 Statements are top-level s-expressions in a $y_0$ program. In the
 [introduction](hello.md) we have encountered two types of statements:
-A _rule_, using the keyword `all`, and a _test block_, using the
-keyword `test`.
+A _rule_, using the keyword `all`, and a _assert block_, using the
+keyword `assert`.
 
 However, $y_0$ is extensible with regard to statements, allowing
 modules to define new types of statements, by giving them meaning.
 
 The way to give meaning to a statement is to define how it
 _translates_ to other types of statements, and eventually to rules
-and test blocks, which already have meaning in $y_0$.
+and assert blocks, which already have meaning in $y_0$.
 
 ## Translation Rules
 
@@ -32,7 +32,7 @@ or more symbols representing free variables, `head` is a pattern
 of the statement type being defined, possibly containing symbols
 from `vars...`. `statements...` represents zero or more
 s-expressions that represent statements. These could be rules,
-test blocks or other statements defined through their own 
+assert blocks or other statements defined through their own 
 translation rules.
 
 ### An Example
@@ -72,7 +72,7 @@ Now we can use the newly-created statements...
 ```
 And expect to see their effect.
 ```clojure
-(test
+(assert
  (foo fig)
  (bar banana)
  (foo banana ! banana "is not foo")
@@ -91,7 +91,7 @@ In the following example we define a rule that will take existing
 This retrospectively appies to `fig`, which was previously defined as
 foo.
 ```clojure
-(test
+(assert
  (classify fig "A foo thingy"))
 
 ```
@@ -104,7 +104,7 @@ stand for both `defoo` and `defbar` statements.
 
 (defoobar fabian)
 
-(test
+(assert
  (foo fabian)
  (bar fabian))
 
@@ -128,15 +128,15 @@ definitions directly, we can do this as follows:
 Now, anything that is defined as both `foo` and `bar` should be
 `foobar`.
 ```clojure
-(test
+(assert
  (foobar fabian)
  (foobar banana ! banana "needs to be defined as both foo and bar"))
 
 ```
-## Translating into Tests
+## Translating into Assertions
 
 Translation rules can translate a statement to any other type
-of statement, including test blocks. This can be used to add
+of statement, including assert blocks. This can be used to add
 verification of statements.
 
 Imagine we wish to extend our example with a third statement
@@ -153,12 +153,12 @@ As usual, we start with a base case for `quux`.
 ```
 Then we define our translation rule. It translate each
 `defquux` statement into two statements: a solution for `quux`
-and a test.
+and an assertion.
 ```clojure
 (all [x]
      (defquux x) =>
      (all [] (quux x))
-     (test
+     (assert
       (foo x ! x "is not foo")
       (bar x ! x "is not bar")))
 
@@ -172,11 +172,11 @@ values that are already either foo or bar and fail. We use
 `given` conditions in order to catch errors returned by attempts
 to introduce statements.
 ```clojure
-(test
+(assert
  (given (defquux quill) -> (quux quill))
  (given (defquux fig) -> (quux quill)
         ! "Expected failure for goal" (foo fig) "but it succeeded")
  (given (defquux banana) -> (quux quill)
-        ! "Expected failure for goal" (bar banana) "but it succeeded")) 
+        ! "Expected failure for goal" (bar banana) "but it succeeded"))
 ```
 

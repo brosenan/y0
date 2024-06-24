@@ -103,12 +103,12 @@
 (fact
  (load-single-module "foo.bar" ["/some/path"]) => ['[(y0.core/<- (foo.bar/a :x)
                                                               (foo.bar/b :x))
-                                                     (y0.core/test)
+                                                     (y0.core/assert)
                                                      (y0.core/all [] foo.bar/foo)] []]
  (provided
   (read-module "foo.bar" ["/some/path"]) => ["(ns foo.bar)
                                               (<- (a :x) (b :x))
-                                              (test)
+                                              (assert)
                                               (all [] foo)" "bar.y0"]))
 
 ;; When reading the module, the source location of expressions is recorded as metadata.
