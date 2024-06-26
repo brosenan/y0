@@ -3,20 +3,8 @@
             [clojure.java.io :as io]
             [clojure.set :refer [union difference]]
             [edamame.core :as e :refer [parse-string-all]]
-            [y0.core :refer [y0-symbols]]))
-
-(defn postwalk-with-meta [f x]
-  (let [m (meta x)
-        x' (cond
-             (vector? x) (->> x (map #(postwalk-with-meta f %)) vec)
-             (seq? x) (->> x (map #(postwalk-with-meta f %)) seq)
-             (map? x) (->> x (map #(postwalk-with-meta f %)) (into {}))
-             (set? x) (->> x (map #(postwalk-with-meta f %)) set)
-             :else x)
-        y (f x')]
-    (if (instance? clojure.lang.IObj y)
-      (with-meta y m)
-      y)))
+            [y0.core :refer [y0-symbols]]
+            [y0.term-utils :refer [postwalk-with-meta]]))
 
 (defn convert-ns [expr ns-map refer-map]
   (postwalk-with-meta

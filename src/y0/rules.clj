@@ -1,11 +1,11 @@
 (ns y0.rules
-  (:require [clojure.walk :refer [postwalk-replace]]
-            [y0.core :refer [! <- => exist given]]
+  (:require [y0.core :refer [! <- => exist given]]
             [y0.predstore :refer [get-rules-to-match get-statements-to-match
                                   match-rule store-rule store-statement
                                   store-translation-rule]]
             [y0.status :refer [->s let-s ok]]
-            [y0.unify :refer [unify]]))
+            [y0.unify :refer [unify]]
+            [y0.term-utils :refer [replace-vars]]))
 
 (defn new-vars [bindings symbols]
   (loop [bindings bindings
@@ -32,7 +32,7 @@
     (-> condition first (= `given)) (let-s [[_given statement & conditions] (ok condition)
                                             ps' (apply-statement statement ps vars)]
                                            (check-conditions conditions ps' vars))
-    :else (let [condition (postwalk-replace vars condition)]
+    :else (let [condition (replace-vars condition vars)]
             (satisfy-goal ps condition why-not))))
 
 (defn- check-conditions [conditions ps vars]
@@ -45,26 +45,21 @@
 (defn- add-deduction-rule [ps bindings head conditions vars]
   (let [[head why-not] (split-goal head nil)
         vars' (new-vars vars bindings)
-        head' (postwalk-replace vars' head)
+        head' (replace-vars head vars')
         body (if why-not
                (fn [goal _why-not _ps]
                  (let [vars (new-vars vars bindings)
-                       why-not (postwalk-replace vars why-not)
-                       head (postwalk-replace vars head)]
+                       why-not (replace-vars why-not vars)
+                       head (replace-vars head vars)]
                    (unify goal head)
                    {:err why-not}))
                (fn [goal why-not ps]
                  (let [vars (new-vars vars bindings)
-                       head (postwalk-replace vars head)]
+                       head (replace-vars head vars)]
                    (if (unify goal head)
                      (check-conditions conditions ps vars)
                      {:err why-not}))))]
     (store-rule ps head' body)))
-
-(defn- replace-vars [vars why-not]
-  (if (nil? why-not)
-    why-not
-    (postwalk-replace vars why-not)))
 
 (defn- expect-status [status why-not test vars]
   (if (nil? why-not)
@@ -73,8 +68,8 @@
       :else status)
     (cond
       (contains? status :ok) {:err
-                              ["Expected failure for goal" (replace-vars vars test) "but it succeeded"]}
-      (not (unify (:err status) (replace-vars vars why-not)))
+                              ["Expected failure for goal" (replace-vars test vars) "but it succeeded"]}
+      (not (unify (:err status) (replace-vars why-not vars)))
       {:err
        ["Wrong explanation is given:" (:err status) "instead of" why-not]}
       :else (ok nil))))
@@ -93,7 +88,7 @@
                  (recur tests)))))))
 
 (defn- apply-normal-statement [ps statement vars]
-  (let-s [statement (ok vars postwalk-replace statement)
+  (let-s [statement (ok statement replace-vars vars)
           ps (store-statement ps statement)]
     (loop [trans-rules (seq (get-rules-to-match ps statement))
            ps ps]
@@ -134,10 +129,10 @@
 
 (defn- add-translation-rule [ps bindings head terms vars]
   (let [vars' (new-vars vars bindings)
-        head' (postwalk-replace vars' head)
+        head' (replace-vars head vars')
         body (fn [statement ps]
                (let [vars (new-vars vars bindings)
-                     head (postwalk-replace vars head)]
+                     head (replace-vars head vars)]
                  (if (unify statement head)
                    (apply-statements terms ps vars)
                    (ok ps))))]
