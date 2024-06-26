@@ -29,7 +29,7 @@
     (-> condition first (= `exist)) (let [[_exist bindings & conditions] condition
                                           vars (new-vars vars bindings)]
                                       (check-conditions conditions ps vars))
-    (-> condition first (= `given)) (let-s [[_given statement _op & conditions] (ok condition)
+    (-> condition first (= `given)) (let-s [[_given statement & conditions] (ok condition)
                                             ps' (apply-statement statement ps vars)]
                                            (check-conditions conditions ps' vars))
     :else (let [condition (postwalk-replace vars condition)]
@@ -107,7 +107,7 @@
   (let [[form & _] statement]
     (case form
       y0.core/all (add-rule ps statement vars)
-      y0.core/test (apply-assert-block ps statement vars)
+      y0.core/assert (apply-assert-block ps statement vars)
       ;; Debugging utility. Keeping for the time being.
       y0.core/? (let [[_? pred arity] statement
                       pd (get ps {:name (str pred) :arity arity})]

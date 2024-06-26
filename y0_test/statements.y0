@@ -141,11 +141,12 @@
 
 ;; Now we try to define a unique value as quux (and succeed), and
 ;; values that are already either foo or bar and fail. We use
-;; `given` conditions in order to catch errors returned by attempts
-;; to introduce statements.
+;; `given` conditions with only a statement (and zero conditions)
+;; in order to catch errors returned by attempts to introduce
+;; statements.
 (assert
- (given (defquux quill) -> (quux quill))
- (given (defquux fig) -> (quux quill)
+ (given (defquux quill))
+ (given (defquux fig)
         ! "Expected failure for goal" (foo fig) "but it succeeded")
- (given (defquux banana) -> (quux quill)
+ (given (defquux banana)
         ! "Expected failure for goal" (bar banana) "but it succeeded"))

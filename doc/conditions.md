@@ -275,12 +275,11 @@ However, in $y_0$, scopes are built into the language, in a
 natural way, using `given` conditions.
 
 A `given` condition is a condition of the form:
-`(given statements... -> conditions...)`, where `statements...`
-are one or more statements and `conditions...` are one or more
-conditions.
+`(given statement conditions...)`, where `statement` is a statement
+and `conditions...` are zero or more conditions.
 
-The meaning of this condition is, given that we apply
-`statements...`, all of `conditions...` must be hold.
+The meaning of this condition is, given that we apply `statement`,
+all of `conditions...` must be hold.
 
 ### Example: The Lambda Calculus
 
@@ -350,7 +349,7 @@ This is where the `given` condition comes in.
 ```clojure
 (all [var expr]
      (lambda-expr (lambda var expr)) <-
-     (given (all [] (lambda-expr var)) ->
+     (given (all [] (lambda-expr var))
             (lambda-expr expr)))
 
 (assert
