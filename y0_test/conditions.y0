@@ -14,7 +14,7 @@
 
 ;; This rule defines a predicate (`twice` with two arguments) that associates
 ;; anything with a vector containing that thing twice. For example:
-(test
+(assert
  (twice 1 [1 1])
  (twice "two" ["two" "two"])
  (twice (x (y z)) [(x (y z)) (x (y z))]))
@@ -72,7 +72,7 @@
 ;; every `n` that is a Peano number itself.
 
 ;; Now let us test this predicate.
-(test
+(assert
  (peano z)
  (peano (s z))
  (peano (s (s (s (s z)))))
@@ -154,7 +154,7 @@
 ;; to a concrete type (either `foolish` or `barley`). If the two
 ;; operands do not have the same type, this explanation will be
 ;; provided.
-(test
+(assert
  (foobar-type foo foolish)
  (foobar-type bar barley)
  (foobar-type (+ foo foo) foolish)
@@ -177,7 +177,7 @@
                          ! "Type mismatch. Expression" a "is" type "but" b "is not")))
 
 ;; This small difference changes everything.
-(test
+(assert
  (foobar-type (++ foo foo) foolish ! _ "is not a foobar expression"))
 
 ;; Variable `a` introduced at the rule level, the one that is bound
@@ -203,7 +203,7 @@
             (my= a-type b-type
                  ! "Type mismatch. Expression" a "is" a-type "but" b "is" b-type)))
 
-(test
+(assert
  (foobar-type (** foo bar) barley
               ! "Type mismatch. Expression" foo "is" foolish "but" bar "is" barley))
 
@@ -216,13 +216,13 @@
 ;; "guess" the result (`barley`) returned by `foobar-type` despite it
 ;; not being actually returned. However, putting anything else there
 ;; would cause `foobar-test` to just fail:
-(test
+(assert
  (foobar-type (** foo bar) something-else
               ! "Test failed without explanation"))
 
 ;; So, how do we express that we do not know or care what the type
 ;; should be? We pass a free variable.
-(test
+(assert
  (exist [type]
         (foobar-type (** foo bar) type)
         ! "Type mismatch. Expression" foo "is" foolish "but" bar "is" barley))
@@ -272,7 +272,7 @@
 ;; provided for non-lambda expressions.
 (all [x]
      (lambda-expr x ! x "is not a lambda-calulus expression"))
-(test
+(assert
  (lambda-expr foo ! foo "is not a lambda-calulus expression"))
 
 ;; Next, let us define the `defconst` statement, which contributes
@@ -281,7 +281,7 @@
      (defconst var expr) => (all [] (lambda-expr var)))
 
 (defconst id (lambda x x))
-(test
+(assert
  (lambda-expr id))
 
 ;; Now we define the rules for application, which is a simple
@@ -291,7 +291,7 @@
      (lambda-expr func)
      (lambda-expr arg))
 
-(test
+(assert
  (lambda-expr (id id)))
 
 ;; This is a [translation rule](statements.md) which gives meaning
@@ -310,11 +310,11 @@
      (given (all [] (lambda-expr var)) ->
             (lambda-expr expr)))
 
-(test
+(assert
  (lambda-expr (lambda x x))
  (lambda-expr (lambda x y) ! y "is not a lambda-calulus expression"))
 
 ;; So now we can check complex lambda expressions, such as the
 ;; y-combinator.
-(test
+(assert
  (lambda-expr (lambda f ((lambda x (f (x x))) (lambda x (f (x x)))))))

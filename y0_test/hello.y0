@@ -52,7 +52,7 @@
 
 ;; For one, we can test it. We first want to test that both `0` and `1` are accepted.
 ;; We will do so in the following `test` block.
-(test
+(assert
  (bit 0)
  (bit 1))
 
@@ -69,7 +69,7 @@
 ;; you can be sure these goals succeed, telling us that both `0` and `1` are `bit`s.
 
 ;; We can also test for the error message we expect for non-bits.
-(test
+(assert
  (bit 2 ! "Expected a bit, received" 2))
 
 ;; Here the meaning of the `!` symbol is different: it means that an error is _expected_.
@@ -93,7 +93,7 @@
 
 ;; This makes sure that even if the classifier doesn't have a specific answer for a given
 ;; input, it will still provide an answer, albeit not a useful one.
-(test
+(assert
  (classify 1 "I don't know what it is"))
 
 ;; Now we can define special cases. We start with a special case for the number `1`.
@@ -101,7 +101,7 @@
      (classify 1 "The number one"))
 
 ;; Now, if we run the test again, we get a usefule answer.
-(test
+(assert
  (classify 1 "The number one"))
 
 ;; Next, we will define a rule for `()`, an empty list.
@@ -121,7 +121,7 @@
 ;; Note that the `&` symbol means that everything that the variable that follows it
 ;; is matched to the _list of elements_ from this position on. This rule is therefore
 ;; a match to `foo` nodes with any number of arguments:
-(test
+(assert
  (classify (foo 1) "A foo node with some number of arguments")
  (classify (foo 1 2 3 4 5) "A foo node with some number of arguments"))
 
@@ -134,7 +134,7 @@
 (all [x1 x2 x3]
      (classify (foo x1 x2 x3) "A foo node with exactly three arguments"))
 
-(test
+(assert
  (classify (foo 1) "A foo node with exactly one argument")
  (classify (foo 1 2) "A foo node with exactly two arguments")
  (classify (foo 1 2 3) "A foo node with exactly three arguments")
@@ -152,7 +152,7 @@
      (classify [x1 x2] "A vector with two elements"))
 (all [x1 x2 x3]
      (classify [x1 x2 x3] "A vector with three elements"))
-(test
+(assert
  (classify [] "An empty vector")
  (classify ["foo"] "A vector with one element")
  (classify ["foo" "bar"] "A vector with two elements")

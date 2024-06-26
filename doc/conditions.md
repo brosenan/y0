@@ -25,7 +25,7 @@ may contain the symbols in `vars...`. To recap, here is an example for a rule:
 This rule defines a predicate (`twice` with two arguments) that associates
 anything with a vector containing that thing twice. For example:
 ```clojure
-(test
+(assert
  (twice 1 [1 1])
  (twice "two" ["two" "two"])
  (twice (x (y z)) [(x (y z)) (x (y z))]))
@@ -91,7 +91,7 @@ every `n` that is a Peano number itself.
 
 Now let us test this predicate.
 ```clojure
-(test
+(assert
  (peano z)
  (peano (s z))
  (peano (s (s (s (s z)))))
@@ -177,7 +177,7 @@ to a concrete type (either `foolish` or `barley`). If the two
 operands do not have the same type, this explanation will be
 provided.
 ```clojure
-(test
+(assert
  (foobar-type foo foolish)
  (foobar-type bar barley)
  (foobar-type (+ foo foo) foolish)
@@ -204,7 +204,7 @@ existentially-quantified variables.
 ```
 This small difference changes everything.
 ```clojure
-(test
+(assert
  (foobar-type (++ foo foo) foolish ! _ "is not a foobar expression"))
 
 ```
@@ -234,7 +234,7 @@ better-explained definition of `*`:
             (my= a-type b-type
                  ! "Type mismatch. Expression" a "is" a-type "but" b "is" b-type)))
 
-(test
+(assert
  (foobar-type (** foo bar) barley
               ! "Type mismatch. Expression" foo "is" foolish "but" bar "is" barley))
 
@@ -249,7 +249,7 @@ introduce free variable. Recall the test above:
 not being actually returned. However, putting anything else there
 would cause `foobar-test` to just fail:
 ```clojure
-(test
+(assert
  (foobar-type (** foo bar) something-else
               ! "Test failed without explanation"))
 
@@ -257,7 +257,7 @@ would cause `foobar-test` to just fail:
 So, how do we express that we do not know or care what the type
 should be? We pass a free variable.
 ```clojure
-(test
+(assert
  (exist [type]
         (foobar-type (** foo bar) type)
         ! "Type mismatch. Expression" foo "is" foolish "but" bar "is" barley))
@@ -309,7 +309,7 @@ provided for non-lambda expressions.
 ```clojure
 (all [x]
      (lambda-expr x ! x "is not a lambda-calulus expression"))
-(test
+(assert
  (lambda-expr foo ! foo "is not a lambda-calulus expression"))
 
 ```
@@ -320,7 +320,7 @@ a symbol to `lambda-expr`.
      (defconst var expr) => (all [] (lambda-expr var)))
 
 (defconst id (lambda x x))
-(test
+(assert
  (lambda-expr id))
 
 ```
@@ -332,7 +332,7 @@ deduction rule with goal conditions.
      (lambda-expr func)
      (lambda-expr arg))
 
-(test
+(assert
  (lambda-expr (id id)))
 
 ```
@@ -353,7 +353,7 @@ This is where the `given` condition comes in.
      (given (all [] (lambda-expr var)) ->
             (lambda-expr expr)))
 
-(test
+(assert
  (lambda-expr (lambda x x))
  (lambda-expr (lambda x y) ! y "is not a lambda-calulus expression"))
 
@@ -361,7 +361,7 @@ This is where the `given` condition comes in.
 So now we can check complex lambda expressions, such as the
 y-combinator.
 ```clojure
-(test
+(assert
  (lambda-expr (lambda f ((lambda x (f (x x))) (lambda x (f (x x)))))))
 ```
 
