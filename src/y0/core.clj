@@ -11,8 +11,10 @@
   assert
   exist
   given
+  fail
   &
   <-
   =>
   !
-  ?)
+  ?
+  !?)

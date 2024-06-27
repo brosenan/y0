@@ -1,5 +1,5 @@
 (ns y0.rules
-  (:require [y0.core :refer [! <- => exist given]]
+  (:require [y0.core :refer [! <- => exist given fail ? !?]]
             [y0.predstore :refer [get-rules-to-match get-statements-to-match
                                   match-rule store-rule store-statement
                                   store-translation-rule]]
@@ -22,7 +22,30 @@
       [goal why-not]
       [(take bang-index goal) (-> bang-index inc (drop goal) vec)])))
 
-(declare satisfy-goal check-conditions add-rule apply-statement)
+(declare satisfy-goal check-conditions check-condition add-rule apply-statement)
+
+(defn- nest-explanation [why-not cause-why-not vars]
+  (if (nil? why-not)
+    cause-why-not
+    (let [vars (assoc vars `!? cause-why-not)]
+      (replace-vars why-not vars))))
+
+(defn- check-fail-condition [condition ps vars why-not]
+  (let [[condition why-not] (split-goal condition why-not)
+        [_fail cond-to-fail op & expected-why-not] condition
+        expected-why-not (vec (replace-vars expected-why-not vars))
+        status (check-condition cond-to-fail ps vars why-not)]
+    (if (:err status)
+      (if (= op `?)
+        (if (unify expected-why-not (:err status))
+          {:ok nil}
+          (if (nil? why-not)
+            status
+            {:err (nest-explanation why-not (:err status) vars)}))
+        {:ok nil})
+      {:err (nest-explanation why-not 
+                              [(replace-vars cond-to-fail vars) "succeeded when it should have failed"]
+                              vars)})))
 
 (defn- check-condition [condition ps vars why-not]
   (cond
@@ -32,6 +55,7 @@
     (-> condition first (= `given)) (let-s [[_given statement & conditions] (ok condition)
                                             ps' (apply-statement statement ps vars)]
                                            (check-conditions conditions ps' vars))
+    (-> condition first (= `fail)) (check-fail-condition condition ps vars why-not)
     :else (let [condition (replace-vars condition vars)]
             (satisfy-goal ps condition why-not))))
 
@@ -71,6 +95,7 @@
                               ["Expected failure for goal" (replace-vars test vars) "but it succeeded"]}
       (not (unify (:err status) (replace-vars why-not vars)))
       {:err
+       ;; TODO: (concat ["Wrong explanation is given:"] (:err status) ["instead of"] why-not)
        ["Wrong explanation is given:" (:err status) "instead of" why-not]}
       :else (ok nil))))
 
