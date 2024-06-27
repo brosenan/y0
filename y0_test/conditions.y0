@@ -159,10 +159,14 @@
 (all [x]
      (notpeano3 x) <-
      (fail (peano x) ? x "is not a Peano number"
-           ! x "is not a proper notpeano because" !?))
+           ! x "is not a proper notpeano. Reason:" & !?))
+
+;; Note that we use the `&` symbol to make the cause (`!?`) the tail of
+;; the explanation. As a result, the cause is not added as a vector to
+;; the explanation but is rather concatenated to it.  
 (assert
- (notpeano3 0 ! 0 "is not a proper notpeano because" ["Please use z instead of 0"])
- (notpeano3 z ! z "is not a proper notpeano because" [(peano z) "succeeded when it should have failed"])
+ (notpeano3 0 ! 0 "is not a proper notpeano. Reason:" "Please use z instead of 0")
+ (notpeano3 z ! z "is not a proper notpeano. Reason:" (peano z) "succeeded when it should have failed")
  (notpeano3 1))
 
 ;; ## `exist` Conditions
