@@ -1,4 +1,5 @@
 * [Built-ins](#built-ins)
+  * [`=`](#`=`)
   * [`inspect`](#`inspect`)
 ```clojure
 (ns builtins)
@@ -8,6 +9,16 @@
 
 In this module we define the built-in predicates that are provided by $y_0$.
 
+## `=`
+
+`=` is the unification predicate. It takes two arguments and succeeds if
+they unify.
+```clojure
+(assert
+ (= 1 1)
+ (= 1 2 ! "Test failed without explanation"))
+
+```
 ## `inspect`
 
 `inspect` takes an s-expression and a _kind_, which is bound to a keyword

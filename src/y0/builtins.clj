@@ -1,7 +1,16 @@
 (ns y0.builtins 
   (:require [y0.unify :refer [unify]]))
 
-(defn inspect [goal why-not ps]
+(defn- unify-or-err [a b why-not]
+  (if (unify a b)
+      {:ok nil}
+      {:err why-not}))
+
+(defn eq [goal why-not _ps]
+  (let [[_= a b] goal]
+    (unify-or-err a b why-not)))
+
+(defn inspect [goal why-not _ps]
   (let [[_inspect term kind] goal
         inspected (cond
                     (int? term) :int
@@ -14,13 +23,12 @@
                     (set? term) :set
                     (map? term) :map
                     :else :unknown)]
-    (if (unify kind inspected)
-      {:ok nil}
-      {:err why-not})))
+    (unify-or-err kind inspected why-not)))
 
 (defn add-builtin [ps name arity func]
   (assoc ps {:name (str "y0.core/" name) :arity arity} {{} func}))
 
 (defn add-builtins [ps]
   (-> ps
+      (add-builtin "=" 2 eq)
       (add-builtin "inspect" 2 inspect)))

@@ -197,15 +197,17 @@
 (all [] (foobar-type foo foolish))
 (all [] (foobar-type bar barley))
 (all [a b] (foobar-type (+ a b) foolish) <-
-     (exist [type]
-            (foobar-type a type)
-            (foobar-type b type
-                         ! "Type mismatch. Expression" a "is" type "but" b "is not")))
+     (exist [type-a type-b]
+            (foobar-type a type-a)
+            (foobar-type b type-b)
+            (= type-a type-b ! "Type mismatch. Expression" a "is" type-a
+               "but" b "is" type-b)))
 (all [a b] (foobar-type (* a b) barley) <-
-     (exist [type]
-            (foobar-type a type)
-            (foobar-type b type
-                         ! "Type mismatch. Expression" a "is" type "but" b "is not")))
+     (exist [type-a type-b]
+            (foobar-type a type-a)
+            (foobar-type b type-b)
+            (= type-a type-b ! "Type mismatch. Expression" a "is" type-a
+               "but" b "is" type-b)))
 
 ;; The first rule provides an explanation for all terms that are
 ;; structurally not in the language. The second and third rules are
@@ -227,7 +229,7 @@
  (foobar-type (* bar bar) barley)
  (foobar-type (* foo foo) barley)
  (foobar-type (+ foo bar) foolish
-              ! "Type mismatch. Expression" foo "is" foolish "but" bar "is not"))
+              ! "Type mismatch. Expression" foo "is" foolish "but" bar "is" barley))
 
 ;; Variables introduced in an `exist` condition override variables
 ;; of the same name introduced at the rule level (or outer `exist`
@@ -236,10 +238,11 @@
 ;; `+`, with only one exception. We add `a` to the list of
 ;; existentially-quantified variables.
 (all [a b] (foobar-type (++ a b) foolish) <-
-     (exist [type a]
-            (foobar-type a type)
-            (foobar-type b type
-                         ! "Type mismatch. Expression" a "is" type "but" b "is not")))
+     (exist [type-a type-b a]
+            (foobar-type a type-a)
+            (foobar-type b type-b)
+            (= type-a type-b ! "Type mismatch. Expression" a "is" type-a
+               "but" b "is" type-b)))
 
 ;; This small difference changes everything.
 (assert
@@ -250,47 +253,6 @@
 ;; existentially-quantified variable. This means that when trying to
 ;; figure-out `a`'s type, we call `foobar-type` on an unbound
 ;; variable, which makes us fall back to the base rule.
-
-;; As a side-note, the explanation we provided for mis-typed `+` and
-;; `*` is lacking. We knew the type of `a`, but not the type of `b`.
-
-;; To fix this, let us first introduce the predicate `my=`:
-(all [x] (my= x x))
-
-;; This predicate simply unifies the values of its two arguments.
-
-;; Now consider the following definition of operator `**`, a
-;; better-explained definition of `*`:
-(all [a b] (foobar-type (** a b) barley) <-
-     (exist [a-type b-type]
-            (foobar-type a a-type)
-            (foobar-type b b-type)
-            (my= a-type b-type
-                 ! "Type mismatch. Expression" a "is" a-type "but" b "is" b-type)))
-
-(assert
- (foobar-type (** foo bar) barley
-              ! "Type mismatch. Expression" foo "is" foolish "but" bar "is" barley))
-
-;; The build-in predicate `=` replaces the need to define predicates
-;; such as `my=`, but on that later.
-
-;; `exist` conditions are useful in tests, as they allow us to
-;; introduce free variable. Recall the test above:
-;; `(foobar-type (** foo bar) barley ! ...)`. In this test we had to
-;; "guess" the result (`barley`) returned by `foobar-type` despite it
-;; not being actually returned. However, putting anything else there
-;; would cause `foobar-test` to just fail:
-(assert
- (foobar-type (** foo bar) something-else
-              ! "Test failed without explanation"))
-
-;; So, how do we express that we do not know or care what the type
-;; should be? We pass a free variable.
-(assert
- (exist [type]
-        (foobar-type (** foo bar) type)
-        ! "Type mismatch. Expression" foo "is" foolish "but" bar "is" barley))
 
 ;; ## `given` Conditions
 
