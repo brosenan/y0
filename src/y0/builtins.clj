@@ -10,19 +10,23 @@
   (let [[_= a b] goal]
     (unify-or-err a b why-not)))
 
+(defn kind-of [term]
+  (cond
+    (instance? clojure.lang.Atom term) (recur @term)
+    (int? term) :int
+    (double? term) :float
+    (string? term) :string
+    (symbol? term) :symbol
+    (keyword? term) :keyword
+    (vector? term) :vector
+    (seq? term) :list
+    (set? term) :set
+    (map? term) :map
+    :else :unknown))
+
 (defn inspect [goal why-not _ps]
   (let [[_inspect term kind] goal
-        inspected (cond
-                    (int? term) :int
-                    (double? term) :float
-                    (string? term) :string
-                    (symbol? term) :symbol
-                    (keyword? term) :keyword
-                    (vector? term) :vector
-                    (seq? term) :list
-                    (set? term) :set
-                    (map? term) :map
-                    :else :unknown)]
+        inspected (kind-of term)]
     (unify-or-err kind inspected why-not)))
 
 (defn add-builtin [ps name arity func]

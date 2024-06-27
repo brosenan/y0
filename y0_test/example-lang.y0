@@ -2,8 +2,75 @@
 
 ;; # Example Language
 
-;; In this module we define the semantics of an example language. The language
-;; will syntactically resemble Clojure, but will be statically-typed.
+;; In this module we define the semantics of an example language: $y_1$. The
+;; language will syntactically resemble Clojure, but will be statically-typed.
 
 ;; Most of the semantics of the language will revolve around its type system.
 ;; In the following we will define it, step by step.
+
+;; ## Expression Types
+
+;; We begin with defining `typeof`, a predicate to associate types to
+;; expressions. In a way, the predicate `typeof` _defines_ the sub-language
+;; of expressions because everything that can be given a type _is a valid
+;; expression_.
+
+;; We first define the base-case for this predicate. It uses the [built-in
+;; predicate `inspect`](builtins.md#inspect) to understand the _kind_ of
+;; expression, and calls `typeof-inspected` to pattern-match on the kind.
+(all [x t]
+     (typeof x t) <-
+     (exist [k]
+            (inspect x k ! "foo bar")
+            (typeof-inspected k x t)))
+
+;; Now we define the base cases for `typeof-inspected`, starting with the base
+;; case, rejecting kinds that are not supported by a specific rule.
+(all [k x t]
+     (typeof-inspected k x t ! x "is not a y1 expression"))
+
+;; Now things that are not explicitly defined as $y_1$ expressions (so, all
+;; things at this point) will result in this error message.
+(assert
+ (exist [t] (typeof foo t) ! foo "is not a y1 expression"))
+
+;; Next, we add cases for the different literal types.
+(all [x]
+     (typeof-inspected :int x int))
+(all [x]
+     (typeof-inspected :float x float))
+(all [x]
+     (typeof-inspected :string x string))
+
+(assert
+ (typeof 42 int)
+ (typeof 3.141593 float)
+ (typeof "foo bar" string))
+
+;; Vectors are assumed to have the same type for all elements. The type of
+;; the first element is inferred and all elements need to match.
+(all [v t]
+     (typeof-inspected :vector v (vector t)) <-
+     (all-typesof v t))
+
+;; It uses a new predicate, `all-typesof` to unify the types of all elements in
+;; the vector to a single type `t`.
+(all [x t]
+     (all-typesof x t ! "all-typesof does not support value" x))
+(all [x xs t]
+     (all-typesof [x & xs] t) <-
+     (exist [t']
+            (typeof x t)
+            (all-typesof xs t')
+            (= t t' ! "type mismatch between elements in a vector." x "is" t "while" xs "are" t')))
+(all [t]
+     (all-typesof [] t))
+
+
+(assert
+ (typeof [1] (vector int))
+ (typeof [1 2 3] (vector int))
+ (exist [t]
+        (typeof [1 2 "three"] t)
+        ! "type mismatch between elements in a vector." 2 "is" int
+        "while" ["three"] "are" string))
