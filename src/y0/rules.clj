@@ -168,7 +168,8 @@
   (let [[_all bindings head op & terms] rule]
     (cond
       (or (nil? op) (= op `<-)) (add-deduction-rule ps bindings head terms vars)
-      (= op `=>) (add-translation-rule ps bindings head terms vars))))
+      (= op `=>) (add-translation-rule ps bindings head terms vars)
+      :else {:err ["Invalid rule operator" op]})))
 
 (defn satisfy-goal [ps goal why-not]
   (let [[goal why-not] (split-goal goal why-not)]

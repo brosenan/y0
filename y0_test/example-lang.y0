@@ -74,3 +74,69 @@
         (typeof [1 2 "three"] t)
         ! "type mismatch between elements in a vector." 2 "is" int
         "while" ["three"] "are" string))
+
+;; ## Built-in Operators
+
+;; $y_0$ defines a few operators that can be used in expressions.
+
+;; Arithmetic (binary) operators are defined for numeric types (`int` and
+;; `float`), and require that the operands are of the same type. The returnede
+;; type is the same as the operands.
+(all [a b t]
+     (typeof (+ a b) t) <-
+     (typeof a t)
+     (exist [t']
+            (typeof b t')
+            (= t t' ! "Type mismatch in +." a "has type" t "while" b "has type" t')
+            (numeric-type t)))
+
+;; This definition provides a match for the `typeof` predicate directly. It
+;; requires that both operands are of the same type. Then it requires that the
+;; common type is numeric, using the `numeric-type` predicate that is defined
+; as follows:
+
+(all [x]
+     (numeric-type x ! x "is not a numeric type"))
+(all [] (numeric-type int))
+(all [] (numeric-type float))
+
+(assert
+ (typeof (+ 1 (+ 2 3)) int)
+ (typeof (+ 1.1 (+ 2.2 3.3)) float)
+ (exist [t]
+        (typeof (+ 1 (+ 2.2 3.3)) t)
+        ! "Type mismatch in +." 1 "has type" int "while" (+ 2.2 3.3) "has type" float)
+ (exist [t]
+        (typeof (+ "1" (+ "2" "3")) t)
+        ! string "is not a numeric type"))
+
+;; Since we have at least three more operators to define, let's automate the
+;; process using the following [translation rule](statements.md):
+(all [op]
+     (defbinumop op) =>
+     (all [a b t]
+          (typeof (op a b) t) <-
+          (typeof a t)
+          (exist [t']
+                 (typeof b t')
+                 (= t t' ! "Type mismatch in" op ":" a "has type" t "while" b "has type" t')
+                 (numeric-type t))))
+
+;; This repeats the rule for `(+ a b)`, but applies it to any operator that
+;; will be defined using `defbinumop`.
+
+;; Now we can define the rest of the operators and check that they are defined.
+(defbinumop -)
+(defbinumop *)
+(defbinumop /)
+(defbinumop mod)
+
+(assert
+ (typeof (- 1 (* 2 3)) int)
+ (typeof (/ 1.1 (mod 2.2 3.3)) float)
+ (exist [t]
+        (typeof (* 1 (/ 2.2 3.3)) t)
+        ! "Type mismatch in" * ":" 1 "has type" int "while" (/ 2.2 3.3) "has type" float)
+ (exist [t]
+        (typeof (mod "1" (- "2" "3")) t)
+        ! string "is not a numeric type"))
