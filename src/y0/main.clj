@@ -1,9 +1,10 @@
 (ns y0.main
-  (:require [y0.modules :refer [load-with-dependencies]]
-            [y0.rules :refer [apply-statements]]
-            [y0.explanation :refer [explanation-to-str code-location]]
+  (:require [clojure.term.colors :refer [green red]]
             [clojure.tools.cli :refer [parse-opts]]
-            [clojure.term.colors :refer [red green]])
+            [y0.builtins :refer [add-builtins]]
+            [y0.explanation :refer [code-location explanation-to-str]]
+            [y0.modules :refer [load-with-dependencies]]
+            [y0.rules :refer [apply-statements]])
   (:gen-class))
 
 (def cli-options
@@ -15,7 +16,8 @@
 
 (defn- main [modules path]
   (let [[statements _] (load-with-dependencies modules path)
-        status (apply-statements statements {} {})]
+        ps (add-builtins {})
+        status (apply-statements statements ps {})]
     (if (:err status)
       (let [explanation (:err status)
             message (explanation-to-str explanation)

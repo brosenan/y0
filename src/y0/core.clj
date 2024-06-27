@@ -17,4 +17,6 @@
   =>
   !
   ?
-  !?)
+  !?
+  ;; Built-ins
+  inspect)
