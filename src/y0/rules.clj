@@ -56,6 +56,9 @@
                                             ps' (apply-statement statement ps vars)]
                                            (check-conditions conditions ps' vars))
     (-> condition first (= `fail)) (check-fail-condition condition ps vars why-not)
+    (-> condition first (= `?)) (do
+                                  (apply println "?" (replace-vars (rest condition) vars))
+                                  {:ok nil})
     :else (let [condition (replace-vars condition vars)]
             (satisfy-goal ps condition why-not))))
 

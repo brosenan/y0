@@ -427,7 +427,7 @@ a function which represents the body and stores it under said key. It returns a
 status containing the updated predstore.
 ```clojure
 (fact
- (let-s [res (->s {}
+ (let-s [res (->s (ok {})
                   (store-translation-rule `(defoo (atom nil)) (constantly 42))
                   (store-translation-rule `(defoo (atom nil)) (constantly 43))
                   (ok get {:translations {:list 2 :symbol "y0.predstore-test/defoo"}}))]
@@ -443,7 +443,7 @@ and a statement (s-expression) and adds it to a key. The key is of the form:
 The key maps to a set of statements that share the same key.
 ```clojure
 (fact
- (let-s [res (->s {}
+ (let-s [res (->s (ok {})
                   (store-statement `(defoo 1))
                   (store-statement `(defoo 2))
                   (ok get {:statements {:list 2 :symbol "y0.predstore-test/defoo"}}))]
@@ -455,7 +455,7 @@ The key maps to a set of statements that share the same key.
 really determine if it really matches the statement.
 ```clojure
 (fact
- (let-s [res (->s {}
+ (let-s [res (->s (ok {})
                   (store-translation-rule `(defoo (atom nil)) (constantly 42))
                   (store-translation-rule `(defoo (atom nil)) (constantly 43))
                   (ok get-rules-to-match `(defoo 1)))]
@@ -468,7 +468,7 @@ really determine if it really matches the statement.
 If the statement doesn't match any rules, an empty set is returned.
 ```clojure
 (fact
- (let-s [res (->s {}
+ (let-s [res (->s (ok {})
                   (store-translation-rule `(defoo (atom nil)) (constantly 42))
                   (store-translation-rule `(defoo (atom nil)) (constantly 43))
                   (ok get-rules-to-match `(defbar 1)))]
@@ -479,7 +479,7 @@ Similarly, `get-statements-to-match` take a head of a translation rule and retur
 all matching statements (again, matching by the key).
 ```clojure
 (fact
- (let-s [res (->s {}
+ (let-s [res (->s (ok {})
                   (store-statement `(defoo 1))
                   (store-statement `(defoo 2))
                   (ok get-statements-to-match `(defoo (atom nil))))]
@@ -489,7 +489,7 @@ all matching statements (again, matching by the key).
 Or an empty set if no such statements were found.
 ```clojure
 (fact
- (let-s [res (->s {}
+ (let-s [res (->s (ok {})
                   (store-statement `(defoo 1))
                   (store-statement `(defoo 2))
                   (ok get-statements-to-match `(defbar (atom nil))))]

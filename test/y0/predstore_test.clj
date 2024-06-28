@@ -350,7 +350,7 @@
 ;; a function which represents the body and stores it under said key. It returns a
 ;; status containing the updated predstore.
 (fact
- (let-s [res (->s {}
+ (let-s [res (->s (ok {})
                   (store-translation-rule `(defoo (atom nil)) (constantly 42))
                   (store-translation-rule `(defoo (atom nil)) (constantly 43))
                   (ok get {:translations {:list 2 :symbol "y0.predstore-test/defoo"}}))]
@@ -364,7 +364,7 @@
 ;; `{:statements k}`, where `k` is the result of `arg-key` applied to the statement.
 ;; The key maps to a set of statements that share the same key.
 (fact
- (let-s [res (->s {}
+ (let-s [res (->s (ok {})
                   (store-statement `(defoo 1))
                   (store-statement `(defoo 2))
                   (ok get {:statements {:list 2 :symbol "y0.predstore-test/defoo"}}))]
@@ -374,7 +374,7 @@
 ;; (may) match it. Matching is done by the key, so it is up to the rule function to
 ;; really determine if it really matches the statement.
 (fact
- (let-s [res (->s {}
+ (let-s [res (->s (ok {})
                   (store-translation-rule `(defoo (atom nil)) (constantly 42))
                   (store-translation-rule `(defoo (atom nil)) (constantly 43))
                   (ok get-rules-to-match `(defoo 1)))]
@@ -385,7 +385,7 @@
 
 ;; If the statement doesn't match any rules, an empty set is returned.
 (fact
- (let-s [res (->s {}
+ (let-s [res (->s (ok {})
                   (store-translation-rule `(defoo (atom nil)) (constantly 42))
                   (store-translation-rule `(defoo (atom nil)) (constantly 43))
                   (ok get-rules-to-match `(defbar 1)))]
@@ -394,7 +394,7 @@
 ;; Similarly, `get-statements-to-match` take a head of a translation rule and returns
 ;; all matching statements (again, matching by the key).
 (fact
- (let-s [res (->s {}
+ (let-s [res (->s (ok {})
                   (store-statement `(defoo 1))
                   (store-statement `(defoo 2))
                   (ok get-statements-to-match `(defoo (atom nil))))]
@@ -402,7 +402,7 @@
 
 ;; Or an empty set if no such statements were found.
 (fact
- (let-s [res (->s {}
+ (let-s [res (->s (ok {})
                   (store-statement `(defoo 1))
                   (store-statement `(defoo 2))
                   (ok get-statements-to-match `(defbar (atom nil))))]

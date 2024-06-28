@@ -27,7 +27,7 @@ expression, and calls `typeof-inspected` to pattern-match on the kind.
 (all [x t]
      (typeof x t) <-
      (exist [k]
-            (inspect x k ! "foo bar")
+            (inspect x k)
             (typeof-inspected k x t)))
 
 ```

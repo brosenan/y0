@@ -16,6 +16,10 @@
  (unwrap-status {:ok 42}) => 42
  (unwrap-status {:err '(this is an explanation)}) => (throws "(this is an explanation)"))
 
+;; A `nil` error is still considered an error.
+(fact
+ (unwrap-status {:err nil}) => (throws ""))
+
 ;; ## Status-Returning Functions
 
 ;; A _status-returning function_ is, as the name suggests, a function that returns a status.
