@@ -1,11 +1,15 @@
 (ns y0.rules
-  (:require [y0.core :refer [! <- => exist given fail ? !?]]
+  (:require [clojure.string :refer [join]]
+            [y0.core :refer [! !? <- => ? exist fail given trace]]
             [y0.predstore :refer [get-rules-to-match get-statements-to-match
                                   match-rule store-rule store-statement
                                   store-translation-rule]]
             [y0.status :refer [->s let-s ok]]
-            [y0.unify :refer [unify]]
-            [y0.term-utils :refer [replace-vars]]))
+            [y0.term-utils :refer [replace-vars]]
+            [y0.unify :refer [unify reify-term]]))
+
+(def ^:dynamic *do-trace* false)
+(def ^:dynamic *trace-indent* ">")
 
 (defn new-vars [bindings symbols]
   (loop [bindings bindings
@@ -48,19 +52,30 @@
                               vars)})))
 
 (defn- check-condition [condition ps vars why-not]
-  (cond
-    (-> condition first (= `exist)) (let [[_exist bindings & conditions] condition
-                                          vars (new-vars vars bindings)]
-                                      (check-conditions conditions ps vars))
-    (-> condition first (= `given)) (let-s [[_given statement & conditions] (ok condition)
-                                            ps' (apply-statement statement ps vars)]
-                                           (check-conditions conditions ps' vars))
-    (-> condition first (= `fail)) (check-fail-condition condition ps vars why-not)
-    (-> condition first (= `?)) (do
-                                  (apply println "?" (replace-vars (rest condition) vars))
-                                  {:ok nil})
-    :else (let [condition (replace-vars condition vars)]
-            (satisfy-goal ps condition why-not))))
+  (when *do-trace*
+    (println *trace-indent* 
+             (-> condition (replace-vars vars) reify-term)))
+  (let [res (with-bindings {#'*trace-indent* (str *trace-indent* "  ")}
+              (cond
+                (-> condition first (= `exist)) (let [[_exist bindings & conditions] condition
+                                                      vars (new-vars vars bindings)]
+                                                  (check-conditions conditions ps vars))
+                (-> condition first (= `given)) (let-s [[_given statement & conditions] (ok condition)
+                                                        ps' (apply-statement statement ps vars)]
+                                                       (check-conditions conditions ps' vars))
+                (-> condition first (= `fail)) (check-fail-condition condition ps vars why-not)
+                (-> condition first (= `?)) (do
+                                              (apply println "?" (replace-vars (rest condition) vars))
+                                              {:ok nil})
+                (-> condition first (= `trace)) (let [[_trace & conditions] condition]
+                                                  (with-bindings {#'*do-trace* true}
+                                                    (check-conditions conditions ps vars)))
+                :else (let [condition (replace-vars condition vars)]
+                        (satisfy-goal ps condition why-not))))]
+    (when *do-trace*
+      (println *trace-indent*
+               res))
+    res))
 
 (defn- check-conditions [conditions ps vars]
   (if (empty? conditions)

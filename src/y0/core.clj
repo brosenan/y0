@@ -12,6 +12,7 @@
   exist
   given
   fail
+  trace
   &
   <-
   =>
