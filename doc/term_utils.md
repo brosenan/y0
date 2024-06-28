@@ -48,18 +48,20 @@ the numbers. Metadata on the lists and vectors will be preserved.
  (let [tree (with-meta [1 
                         (with-meta [2 3] {:vec :bottom})
                         (with-meta '(4 5) {:seq :foo})
+                        (with-meta '() {:seq :empty})
                         (with-meta {6 [7] 8 [9]} {:map :bar})
                         (with-meta #{[10] 11} {:set :baz})]
               {:vec :top})
        res (postwalk-with-meta #(if (int? %)
                                   (inc %)
                                   %) tree)]
-   res => [2 [3 4] '(5 6) {7 [8] 9 [10]} #{[11] 12}]
+   res => [2 [3 4] '(5 6) '() {7 [8] 9 [10]} #{[11] 12}]
    (-> res meta) => {:vec :top}
    (-> res second meta) => {:vec :bottom}
    (-> res (nth 2) meta) => {:seq :foo}
-   (-> res (nth 3) meta) => {:map :bar}
-   (-> res (nth 4) meta) => {:set :baz}))
+   (-> res (nth 3) meta) => {:seq :empty}
+   (-> res (nth 4) meta) => {:map :bar}
+   (-> res (nth 5) meta) => {:set :baz}))
 
 ```
 ## Replacing Variables in Terms

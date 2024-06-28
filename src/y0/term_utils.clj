@@ -4,7 +4,7 @@
   (let [m (meta x)
         x' (cond
              (vector? x) (->> x (map #(postwalk-with-meta f %)) vec)
-             (seq? x) (->> x (map #(postwalk-with-meta f %)) seq)
+             (seq? x) (->> x (map #(postwalk-with-meta f %)) sequence)
              (map? x) (->> x (map #(postwalk-with-meta f %)) (into {}))
              (set? x) (->> x (map #(postwalk-with-meta f %)) set)
              :else x)
