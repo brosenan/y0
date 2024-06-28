@@ -387,20 +387,14 @@ This is where the `given` condition comes in.
             (lambda-expr expr)))
 
 (assert
- (trace (lambda-expr (lambda x x)))
+ (lambda-expr (lambda x x))
  (lambda-expr (lambda x y) ! y "is not a lambda-calulus expression"))
 
 ```
 So now we can check complex lambda expressions, such as the
 y-combinator.
 ```clojure
-(asserto
+(assert
  (lambda-expr (lambda f ((lambda x (f (x x))) (lambda x (f (x x)))))))
-
-```
-TODO: Reenable the above assertion. Minimal breakage example: (lambda-expr ((lambda x x) (lambda x x)))
-```clojure
-(assert0
- (trace (lambda-expr ((lambda x x) (lambda x x)))))
 ```
 

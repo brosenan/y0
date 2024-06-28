@@ -25,7 +25,8 @@
   (let [seq-key (if (has-tail? arg)
                   {attr :any}
                   {attr (count arg)})]
-    (if (nil? (first arg))
+    (if (or (nil? (first arg))
+            (sequential? (first arg)))
       seq-key
       (merge seq-key (arg-key (first arg))))))
 

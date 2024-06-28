@@ -92,6 +92,13 @@ The key of the first element in the list is merged with the list's key, to give 
  (arg-key `(42 y0.core/& ~(atom nil))) => {:list :any :value 42})
 
 ```
+For list whose first element is a list, the outer list's attributes take precidence, and
+we do not recurse into the first element of the first element.
+```clojure
+(fact
+ (arg-key `((foo 2 3 4) 2 3)) => {:list 3}) 
+
+```
 Vectors are similar to lists, but use the `:vec` attribute rather than `:list`.
 ```clojure
 (fact
