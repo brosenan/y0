@@ -233,5 +233,9 @@ Now we can check if our `let` expression behaves as expected.
  (typeof (let [n 42] (+ n 2)) int)
  (typeof (let [n 42.0
                m (+ n 2.0)] (* n m)) float))
+
+(all [x]
+     (defoo x) => (assert (exist [t] (typeof x t))))
+(defoo 42)
 ```
 

@@ -103,10 +103,12 @@
                      {:err why-not}))))]
     (store-rule ps head' body)))
 
-(defn- expect-status [status why-not test vars]
+(defn- expect-status [status why-not test vars primary]
   (if (nil? why-not)
     (cond
-      (contains? status :err) {:err (concat (:err status) ["in assertion" test])}
+      (contains? status :err) (if primary
+                                {:err (concat (:err status) ["in assertion" test])}
+                                status)
       :else status)
     (cond
       (contains? status :ok) {:err
@@ -117,18 +119,19 @@
        ["Wrong explanation is given:" (:err status) "instead of" why-not]}
       :else (ok nil))))
 
-(defn apply-assert-block [ps test-block vars]
-  (let [[_test & tests] test-block]
-    (loop [tests tests]
-      (let [[test & tests] tests]
-        (if (nil? test)
+(defn apply-assert-block [ps assert-block vars]
+  (let [[_assert & assertions] assert-block]
+    (loop [assertions assertions]
+      (let [[assertion & assertions] assertions]
+        (if (nil? assertion)
           (ok ps)
-          (let-s [[test why-not] (ok  test split-goal nil)
+          (let-s [[assertion why-not] (ok  assertion split-goal nil)
                   _nil (expect-status
-                        (check-condition test ps vars 
+                        (check-condition assertion ps vars 
                                          ["Test failed without explanation"])
-                        why-not test vars)]
-                 (recur tests)))))))
+                        why-not assertion vars
+                        (-> assert-block meta :origin nil?))]
+                 (recur assertions)))))))
 
 (defn- apply-normal-statement [ps statement vars]
   (let-s [statement (ok statement replace-vars vars)
@@ -174,7 +177,8 @@
   (let [vars' (new-vars vars bindings)
         head' (replace-vars head vars')
         body (fn [statement ps]
-               (let [vars (new-vars vars bindings)
+               (let [terms (map #(vary-meta % assoc :origin statement) terms)
+                     vars (new-vars vars bindings)
                      head (replace-vars head vars)]
                  (if (unify statement head)
                    (apply-statements terms ps vars)
