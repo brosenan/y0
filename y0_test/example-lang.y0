@@ -140,3 +140,60 @@
  (exist [t]
         (typeof (mod "1" (- "2" "3")) t)
         ! string "is not a numeric type"))
+
+;; ## `let` Expressions
+
+;; Similar to Clojure, `let` expressions in $y_1$ have the following structure:
+;; `(let [var-expr-pairs...] expr)` where `var-expr-pairs...` are zero or more
+;; pairs of symbol and an expression and `expr` is an expression.
+
+;; The type of such an expression is defined using the `typeof-let` predicate.
+(all [var-expr-pairs expr t]
+     (typeof (let var-expr-pairs expr) t) <-
+     (typeof-let var-expr-pairs expr t))
+
+;; The base rule for `typeof-let` handles the case where the `let` expression
+;; does not get a vector as its first argument.
+(all [x expr t]
+     (typeof-let x expr t ! "let requires a vector as its first argument." x "is given"))
+
+(assertx
+ (exist [t] (typeof (let 2 3) t)
+        ! "let requires a vector as its first argument." 2 "is given"))
+
+;; Now we provide rules for a vector of at least two elements.
+(all [var var-expr var-expr-pairs expr t]
+     (typeof-let [var var-expr & var-expr-pairs] expr t) <-
+     (inspect var :symbol
+              ! "Variable names in let expressions must be symbols." var "is given")
+     (exist [var-t]
+            (typeof var-expr var-t)
+            (given (all [] (typeof var var-t))
+                   (typeof-let var-expr-pairs expr t))))
+
+
+;; Given a variable name `var` and an expression to assign to it `var-expr`,
+;; we start by checking that `var` is a symbol. Then we infer the type of `
+;; var-expr` and then [inject](conditions.md##given-conditions) a rule defining
+;; the type of `var` as the type inferred for `var-expr` before recursing for
+;; the rest of the list.
+
+;; The termination condition is the case for an empty vector, which simply
+;; infers the type of `let`'s second argument.
+(all [expr t]
+     (typeof-let [] expr t) <-
+     (typeof expr t))
+
+;; Finally, we wish to provide an error for a case where the number of element
+;; in the vector is odd.
+(all [x expr t]
+     (typeof-let [x] expr t
+                 ! "The vector in a let expression must consist of var,expression pairs." 
+                 x "is extra"))
+
+;; Now we can check if our `let` expression behaves as expected.
+(assert
+ (typeof (let [] 42) int)
+ (typeof (let [n 42] (+ n 2)) int)
+ (typeof (let [n 42.0
+               m (+ n 2.0)] (* n m)) float))
