@@ -136,8 +136,8 @@ Now, anything that is defined as both `foo` and `bar` should be
 ## Translating into Assertions
 
 Translation rules can translate a statement to any other type
-of statement, including assert blocks. This can be used to add
-verification of statements.
+of statement, including `assert` blocks. This can be used to
+add verification of statements.
 
 Imagine we wish to extend our example with a third statement
 type, `defquux`, which, like `defoo` and `defbar` will define

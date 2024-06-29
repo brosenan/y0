@@ -98,6 +98,8 @@
                (fn [goal why-not ps]
                  (let [vars (new-vars vars bindings)
                        head (replace-vars head vars)]
+                   (when *do-trace*
+                     (println *trace-indent* goal head (unify goal head)))
                    (if (unify goal head)
                      (check-conditions conditions ps vars)
                      {:err why-not}))))]
