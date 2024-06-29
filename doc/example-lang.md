@@ -367,6 +367,9 @@ We will start with conversion functions between primitive types.
 Now let us use some of these functions in expressions.
 ```clojure
 (assert
- (typeof (round (+ (parse-float "3.0") (float 2))) int))
+ (typeof (round (+ (parse-float "3.0") (float 2))) int)
+ (typeof (round (+ (parse-int "3.0") (float "2"))) int
+         ! "Type mismatch in parameter for function" float
+         ": argument" "2" "is of type" string "but" int "is required"))
 ```
 
