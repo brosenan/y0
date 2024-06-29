@@ -301,8 +301,8 @@
 (assert
  (typeof (round (+ (parse-float "3.0") (float 2))) int)
  (typeof (round (+ (parse-int "3.0") (float "2"))) int
-         ! "Type mismatch in parameter for function" float
-         ": argument" "2" "is of type" string "but" int "is required"))
+         ! "Type mismatch in call to function" float
+           "2" "has type" string "while" int "is expected"))
 
 ;; ### Defining Monomorphic Functions
 
@@ -352,10 +352,8 @@
                            (typeof body type)))))
      (all [args type]
           (typeof (name & args) type) <-
+          (check-defn-types params args name)
           (given (declvars- params)
-                 (exist [arg-types]
-                        (typesof args arg-types)
-                        (check-def-types params arg-types args name))
                  (typeof body type))))
 
 ;; A `defn` statement is translated into two statements. The first is an
@@ -380,11 +378,49 @@
           (+ a b))
         ! "Type mismatch in +." a "has type" int "while" b "has type" float))
 
-;; The second statement is a rule that accepts calls to this function as $y_1$
-;; expressions. It repeats the same `given` condition as in the assertion, but
-;; this time type `type` is bound to the expression's type.
+;; The second statement is a rule that accepts calls to the defined function as
+;; $y_1$ expressions. It first checks that the argument types match the
+;; parameter definition, then it repeats the same `given` condition as in the
+;; assertion, but this time type `type` is bound to the expression's type.
+
+;; The argument check is done using `check-defn-types`, which we define next.
+(all [params args name]
+     (check-defn-types params args name
+                       ! "check-defn-types requires a params vector as its first argument."
+                       params "is given"))
+(all [var var-type params args name]
+     (check-defn-types [var var-type & params] args name) <-
+     (exist [arg args']
+            (= args (arg & args')
+               ! "Too few arguments in call to function" name "."
+               "missing argument for parameter" var)
+            (exist [arg-type]
+                   (typeof arg arg-type)
+                   (= arg-type var-type
+                      ! "Type mismatch for argument" var "of function" name "."
+                      "The given argument" arg "is of type" arg-type
+                      "while" var-type "is required")
+                   (check-defn-types params args' name))))
+(all [args name]
+     (check-defn-types [] args name) <-
+     (= args ()
+        ! "Too many argument given to function" name "."
+        args "are extra"))
 
 ;; We demonstrate it by inferring the type of an expression containing
 ;; `square`, as we defined it above.
 (assert
- (typeof (square 2.0) float))
+ (typeof (square 2.0) float)
+ (exist [type]
+        (typeof (square 2) type)
+        ! "Type mismatch for argument" x "of function" square "."
+        "The given argument" 2 "is of type" int
+        "while" float "is required")
+ (exist [type]
+        (typeof (square) type)
+        ! "Too few arguments in call to function" square "."
+        "missing argument for parameter" x)
+ (exist [type]
+        (typeof (square 2.0 "please round up") type)
+        ! "Too many argument given to function" square "."
+          ("please round up") "are extra"))

@@ -54,7 +54,7 @@
 (defn- check-condition [condition ps vars why-not]
   (when *do-trace*
     (println *trace-indent* 
-             (-> condition (replace-vars vars) reify-term)))
+             (-> condition (replace-vars vars))))
   (let [res (with-bindings {#'*trace-indent* (str *trace-indent* "  ")}
               (cond
                 (-> condition first (= `exist)) (let [[_exist bindings & conditions] condition
