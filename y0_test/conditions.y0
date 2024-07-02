@@ -344,3 +344,91 @@
 ;; y-combinator.
 (assert
  (lambda-expr (lambda f ((lambda x (f (x x))) (lambda x (f (x x)))))))
+
+;; ## Meta Variables and `exist-meta` Conditions
+
+;; Many programming languages give symbols a meaning equivalent to free
+;; variables in $y_0$. Generics are one example of this. In the Java
+;; definition of `Map<K, V>`, `K` and `V` are symbols representing
+;; types. They are unbound in the definition of `Map`, i.e., each of
+;; them can receive any value (type). However, when a concrete instance
+;; is created, it has concrete values (types) assigned to `K` and `V`.
+;; These types are known at compile-time and are used when verifying
+;; that the program is well-typed.
+
+;; If we were to use $y_0$ to define Java's type-system, it would have
+;; been desirable to have `K` and `V` as free variables in the $y_0$
+;; definition. Unfortunately, given that `Map` is defined in Java,
+;; this is not possible with the constructs we have developed so far.
+
+;; We call free variables that are assigned at compile-time and are
+;; specified by the program being analyzed (and not explicitly by the
+;; $y_0$ definition), _meta variables_. The `exist-within` condition
+;; is designed to support meta variables.
+
+;; To better motivate meta variables and `exist-within`, Let us
+;; consider the following example. Consider we want to define a
+;; language for term transformation. A transformation expression in
+;; our example looks as follows: `(trans [vars...] from to)`, where
+;; `vars...` are zero or more variable symbols and `from` and `to` are
+;; patterns (s-expressions) that contain the variables in `vars...`.
+;; The predicate `apply-trans` takes a transformation expression and
+;; two expressions and transforms the first into the other.
+
+;; With meta-varialbes, such a predicate is very easy to define.
+
+;; As always, we start with a base-rule that rejects all
+;; non-transformation expressions.
+(all [trans x y]
+     (apply-trans trans x y ! trans "is not a transformation expression"))
+
+;; Now we define how `apply-trans` processes a transformation
+;; expression.
+(all [vars from to x y]
+     (apply-trans (trans vars from to) x y) <-
+     (inspect vars :vector
+              ! "trans expressions require variable vectors." vars "is given")
+     (exist-within [vars [from to]]
+            (= from x ! x "does not match the pattern" from)
+            (= to y)))
+
+;; This rule first checks that `vars` is a vector. Then, the
+;; `exist-within` condition makes its first appearance.
+
+;; The `exist-within` block has the following syntax:
+;; `(exist-within [meta-vars [patterns...]] conditions...)`, where
+;; `meta-vars` is a _variable_ that is bound to a collection (list
+;; or vector) of objects of any type that represent meta variables.
+;; `patterns...` are zero or more _variables_ bound to s-expressions
+;; that may contain elements of `meta-vars`. `conditions...` are zero
+;; or more conditions, which may reference `patterns...`.
+
+;; An `exist-within` condition is evaluated by first creating free
+;; variables for all elements in `meta-vars`. Then they are replaced in
+;; `patterns...`. The new s-expressions, with the meta variables
+;; replaced, are then assigned as the new values of `patterns...` before
+;; evaluating `conditions...`. This, of course has no effect on the
+;; values of `patterns...` outside the `exist-within` block.
+
+;; This is applied in practice in the second condition in the rule
+;; above. We take `vars` from the `trans` expression and use it to
+;; replace meta-variables in `from` and `to`, both coming from the
+;; `trans` expression. Then we use `=` to first try to match the input
+;; to `from`, which binds the meta-variables to concrete values and then
+;; to generate the output using `to`.
+(assert
+ (exist [y]
+        (apply-trans foo bar y) ! foo "is not a transformation expression")
+ (apply-trans (trans [a b] (foo a b) (bar b a)) (foo 1 2) (bar 2 1)))
+
+;; If we remove one of the meta-variables (say `b`) from `meta-vars...`,
+;; that symbol is no longer understood as a meta-variable and is treated
+;; as itself.
+(assert
+ (apply-trans (trans [a] (foo a b) (bar b a)) (foo 1 2) (bar 2 1)
+              ! (foo 1 2) "does not match the pattern" (foo 1 b)))
+
+;; Meta-variables are not limited to being symbols. Other objects can be
+;; used.
+(assert
+ (apply-trans (trans [:a "b"] (foo :a "b") (bar "b" :a)) (foo 1 2) (bar 2 1)))
