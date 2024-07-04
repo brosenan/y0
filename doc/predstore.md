@@ -482,6 +482,21 @@ If the statement doesn't match any rules, an empty set is returned.
         res => #{}))
 
 ```
+It uses `arg-key-generalizations` to match rules that are more general than the
+given statement.
+```clojure
+(fact
+ (let-s [res (->s (ok {})
+                  (store-translation-rule (list `defoo 'y0.core/& (atom nil)) (constantly "any-length"))
+                  (store-translation-rule `(defoo (atom nil)) (constantly "length-1"))
+                  (store-translation-rule `(defoo (atom nil) (atom nil)) (constantly "length-2"))
+                  (ok get-rules-to-match `(defoo 1)))]
+        (do res => set?
+            (->> res
+                 (map #(apply % []))
+                 (into #{})) => #{"any-length" "length-1"})))
+
+```
 Similarly, `get-statements-to-match` take a head of a translation rule and returns
 all matching statements (again, matching by the key).
 ```clojure

@@ -2,6 +2,7 @@
   * [Translation Rules](#translation-rules)
     * [An Example](#an-example)
   * [Translating into Assertions](#translating-into-assertions)
+  * [Variadic Statements](#variadic-statements)
 ```clojure
 (ns statements
   (:require [hello :refer [classify]]))
@@ -44,7 +45,7 @@ To demonstrate this, we will walk through an example. The statement
 The predicates `foo` and `bar` succeed on things that are either
 foo or bar respectively, and fail for all others.
 
-We begin by defining the base cases for `is-foo` and `is-bar`:
+We begin by defining the base cases for `foo` and `bar`:
 ```clojure
 (all [x]
      (foo x ! x "is not foo"))
@@ -179,5 +180,35 @@ statements.
         ! "Expected failure for goal" (foo fig) "but it succeeded")
  (given (defquux banana)
         ! "Expected failure for goal" (bar banana) "but it succeeded"))
+
+```
+## Variadic Statements
+
+Statements can be variadic, i.e., have a variable number of elements. This
+is important for defining things that have "bodies", such as `defn` in
+Clojure, which has a name, a parameter list and a body of zero or more
+expressions.
+
+Variadic statements are defined using the `&` operator to distinguish
+between the elements that must exist and the _tail_, a variable bound to the
+list of other elements.
+
+In the following example, we define the `defbaz` statement, which takes two
+or more elements. The first is condiered the key. The predicate `baz` that
+is defined as a result maches the key to the rest of the elements, given as
+a list.
+```clojure
+(all [x l]
+     (baz x l ! x "is not a baz"))
+(all [x l]
+     (defbaz x & l) =>
+     (all []
+          (baz x l)))
+
+(defbaz a b c d e)
+(defbaz b c d e)
+(assert
+ (baz a (b c d e))
+ (baz b (c d e)))
 ```
 

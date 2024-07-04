@@ -166,9 +166,11 @@
       y0.core/all (add-rule ps statement vars)
       y0.core/assert (apply-assert-block ps statement vars)
       ;; Debugging utility. Keeping for the time being.
-      y0.core/? (let [[_? pred arity] statement
-                      pd (get ps {:name (str pred) :arity arity})]
-                  (println "?" pd)
+      y0.core/? (let [[_? key] statement]
+                  (if (nil? key)
+                    (println "?" (keys ps))
+                    (let [pd (get ps key)]
+                      (println "?" pd)))
                   {:ok ps})
       (apply-normal-statement ps statement vars))))
 

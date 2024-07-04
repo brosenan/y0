@@ -150,8 +150,11 @@
     {:ok (merge-with union ps {key #{statement}})}))
 
 (defn get-rules-to-match [ps statement]
-  (let [key {:translations (arg-key statement)}]
-    (get ps key #{})))
+  (->> statement
+       arg-key
+       arg-key-generalizations
+       (map #(get ps {:translations %} #{}))
+       (apply union)))
 
 (defn get-statements-to-match [ps head]
   (let [key {:statements (arg-key head)}]
