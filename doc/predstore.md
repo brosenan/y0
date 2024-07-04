@@ -32,7 +32,7 @@ a corresponding _predicate key_ consisting of these two attributes.
  (pred-key '(foo 1 2 3)) => {:name "foo" :arity 3})
 
 ```
-`pred-key` supports the case when the predicate name is a bound variable.
+`pred-key` supports the case when the predicate name is contained in a bound variable.
 ```clojure
 (fact
  (pred-key (list (atom 'foo) 1 2 3)) => {:name "foo" :arity 3})

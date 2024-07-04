@@ -424,3 +424,116 @@
         (typeof (square 2.0 "please round up") type)
         ! "Too many argument given to function" square "."
           ("please round up") "are extra"))
+
+;; ## Type Classes
+
+;; In contrast to monomorphic functions, whose type signatures are constant,
+;; _polimorphic functions_ are functions whose signature may change. Two types
+;; of polimorphism supported by $y_1$: _parametric polimorphism_, in which some
+;; types in the signature are completely open and can take any value, and
+;; _ad-hoc polimorphism_, where some types in the signature can take certain
+;; values, as long as some properties are guarantees for them.
+
+;; Ad-hoc polimorphism is implemented using _type classes_, which we cover
+;; here.
+
+;; ### Type Class Definition
+
+;; A type-class is defined using the `defclass` statement, defined as follows.
+(all [name types methods]
+     (defclass name types
+       & methods) =>
+     (assert
+      (exist []
+             (inspect name :symbol
+                      ! "A class name needs to be a symbol." name "is given")
+             (class-type-symbols types name)
+             (class-methods methods)))
+     (all [type' types']
+          (name type' types'
+                ! type' "is not a type in class" name))
+     (all []
+          (methods-for-class name types methods)))
+
+;; This definition translates a `defclass` statement into three things:
+;; 1. An assertion that checks that the `name` is a symbol, `types` is a vector
+;;    of symbols and that the `methods` are valid method definitions (we will
+;;    define `class-type-symbols` and `class-methods` later).
+;; 2. A base rule for a predicate named after the class. This predicate takes
+;;    two arguments, the `type` that is supposed to be a member of the class
+;;    and `types`, auxiliary types that are derived from this type.
+;; 3. A rule for `methods-for-class`, providing the methods defined for this
+;;    class. The base rule for this predicate is provided below.
+(all [class types methods]
+     (methods-for-class class types methods
+                        ! class "is not defined as a type-class"))
+
+;; `class-type-symbols` is defined as follows.
+(all [syms class]
+     (class-type-symbols syms class
+                         ! "A class types list needs to be a vector."
+                         syms "is given"))
+(all [sym syms class]
+     (class-type-symbols [sym & syms] class) <-
+     (inspect sym :symbol ! "A symbol expected." sym "was given")
+     (class-type-symbols syms class))
+(all [sym class]
+     (class-type-symbols [sym] class) <-
+     (inspect sym :symbol ! "A symbol expected." sym "was given"))
+(all [class]
+     (class-type-symbols [] class ! "Empty types list for class" class))
+
+;; We will now define `class-methods`.
+(all [methods]
+     (class-methods methods
+                    ! "class-methods requires a list of methods." methods "is given"))
+(all [method methods]
+     (class-methods (method & methods)) <-
+     (class-method method)
+     (class-methods methods))
+(all []
+     (class-methods ()))
+
+;; This definition applies `class-method` on each element. So let us define
+;; `class-method`, and by that define what is legal as a method in a class.
+(all [method]
+     (class-method method
+                   ! method "is not a legal class method declaration"))
+(all [name params type]
+     (class-method (declfn name params type)) <-
+     (inspect name :symbol
+              ! "The name of a method must be a symbol." name "is given")
+     (inspect params :vector
+              ! "The parameter list of a method must be a vector." params "is given"))
+
+;; After the base definition that rejects everything, we define a rule to
+;; accept declarations similar to
+;; [those of monomorphic functions](#declaring-monomorphic-functions).
+;; Polymorphic functions are supported too, but we defer their definition until
+;; later.
+
+;; Now we can define our first type class. `Showable` is a class with one
+;; method: `show`, which takes a single argument of a member type and returns
+;; a string representing it.
+(defclass Show [t]
+  (declfn show [t] string))
+
+;; This defines a case for `methods-for-class` and a base rule for predicate
+;; `Show`.
+(assert
+ (methods-for-class Show [t] ((declfn show [t] string)))
+ (Show foo [] ! foo "is not a type in class" Show))
+
+;; Let us test a few bad definitions.
+(assert
+ (given (defclass :Show [t])
+        ! "A class name needs to be a symbol." :Show "is given")
+ (given (defclass Show (t))
+        ! "A class types list needs to be a vector." (t) "is given")
+ (given (defclass Show [])
+        ! "Empty types list for class" Show)
+ (given (defclass Show [:t])
+        ! "A symbol expected." :t "was given")
+ (given (defclass Show [t]
+          (not a declfn))
+        ! (not a declfn) "is not a legal class method declaration"))
