@@ -18,6 +18,10 @@
 (fact
  (pred-key '(foo 1 2 3)) => {:name "foo" :arity 3})
 
+;; `pred-key` supports the case when the predicate name is a bound variable.
+(fact
+ (pred-key (list (atom 'foo) 1 2 3)) => {:name "foo" :arity 3})
+
 ;; ### Argument Keys
 
 ;; Within a single predicate, goals are keyed by the first argument. The function `arg-key` returns a key

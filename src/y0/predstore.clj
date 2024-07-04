@@ -5,8 +5,11 @@
             [clojure.set :refer [union]]))
 
 (defn pred-key [[name-sym & args]]
-  {:name (str name-sym)
-   :arity (count args)})
+  (let [name-sym (cond
+                   (instance? clojure.lang.Atom name-sym) @name-sym
+                   :else name-sym)]
+    {:name (str name-sym)
+     :arity (count args)}))
 
 (defn- free-var? [v]
   (and (instance? clojure.lang.Atom v)
