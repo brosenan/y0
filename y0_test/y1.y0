@@ -452,8 +452,11 @@
      (all [type' types']
           (name type' types'
                 ! type' "is not a type in class" name))
-     (all []
-          (methods-for-class name types methods)))
+     (all [types' methods']
+          (methods-for-class name types' methods') <-
+          (exist-within [types [types methods]]
+                        (= types types')
+                        (= methods methods'))))
 
 ;; This definition translates a `defclass` statement into three things:
 ;; 1. An assertion that checks that the `name` is a symbol, `types` is a vector
@@ -521,8 +524,12 @@
 ;; This defines a case for `methods-for-class` and a base rule for predicate
 ;; `Show`.
 (assert
- (methods-for-class Show [t] ((declfn show [t] string)))
+ (methods-for-class Show [x] ((declfn show [x] string)))
  (Show foo [] ! foo "is not a type in class" Show))
+
+;; Note that in the call to `methods-for-class` we can use any value in the
+;; type list (we used `x`). A corresponding value will appear in the method
+;; declaration.
 
 ;; Let us test a few bad definitions.
 (assert
