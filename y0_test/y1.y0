@@ -466,7 +466,8 @@
 ;;    two arguments, the `type` that is supposed to be a member of the class
 ;;    and `types`, auxiliary types that are derived from this type.
 ;; 3. A rule for `methods-for-class`, providing the methods defined for this
-;;    class. The base rule for this predicate is provided below.
+;;    class. The base rule for this predicate is provided below. It replaces
+;;    the symbols representing the types with free variables.
 (all [class types methods]
      (methods-for-class class types methods
                         ! class "is not defined as a type-class"))
