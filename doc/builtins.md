@@ -67,5 +67,14 @@ The variable symbol list may, in part or in full, consist of bound variables.
  (exist [x]
         (= x b)
         (replace-meta [a x] [[a b] [b a]] [[1 2] [2 1]])))
+
+```
+The term that contains the symbols may be constructed of bound variables.
+```clojure
+(assert
+ (exist [from to]
+        (= from [a b])
+        (= to [b a])
+        (replace-meta [a b] [from to] [[1 2] [2 1]])))
 ```
 

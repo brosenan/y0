@@ -1,6 +1,6 @@
 (ns y0.rules
   (:require [clojure.string :refer [join]]
-            [y0.core :refer [! !? <- => ? exist exist-within fail given trace]]
+            [y0.core :refer [! !? <- => ? exist fail given trace]]
             [y0.predstore :refer [get-rules-to-match get-statements-to-match
                                   match-rule store-rule store-statement
                                   store-translation-rule]]
@@ -51,17 +51,6 @@
                               [(replace-vars cond-to-fail vars) "succeeded when it should have failed"]
                               vars)})))
 
-(defn update-meta-vars [vars meta-vars patterns]
-  (let [meta-vars (-> meta-vars (replace-vars vars) reify-term)
-        mvars (new-vars {} meta-vars)
-        pattern-map (->> (for [pattern patterns]
-                           [pattern (-> pattern
-                                        vars
-                                        deref
-                                        (replace-vars mvars))])
-                         (into {}))]
-    (merge vars pattern-map)))
-
 (defn- check-condition [condition ps vars why-not]
   (when *do-trace*
     (println *trace-indent* 
@@ -74,9 +63,6 @@
                 (-> condition first (= `given)) (let-s [[_given statement & conditions] (ok condition)
                                                         ps' (apply-statement statement ps vars)]
                                                        (check-conditions conditions ps' vars))
-                (-> condition first (= `exist-within)) (let [[_exist-within [meta-vars patterns] & conditions] condition
-                                                             vars (update-meta-vars vars meta-vars patterns)]
-                                                         (check-conditions conditions ps vars))
                 (-> condition first (= `fail)) (check-fail-condition condition ps vars why-not)
                 (-> condition first (= `?)) (do
                                               (apply println "?" (replace-vars (rest condition) vars))

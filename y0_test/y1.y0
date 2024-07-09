@@ -455,9 +455,8 @@
      (defmethods- name types methods)
      (all [types' methods']
           (methods-for-class name types' methods') <-
-          (exist-within [types [types methods]]
-                        (= types types')
-                        (= methods methods'))))
+          (replace-meta types [types methods] [types' methods'])))
+
 
 ;; This definition translates a `defclass` statement into three things:
 ;; 1. An assertion that checks that the `name` is a symbol, `types` is a vector
@@ -580,12 +579,12 @@
      (defmethod- class types (declfn method params ret-type)) =>
      (all [args ret-type']
           (typeof (method & args) ret-type') <-
-          (exist-within [types [types params ret-type]]
-                        (check-decl-types params args method)
-                        (exist [self-type aux-types]
-                               (= types [self-type & aux-types])
-                               (class self-type aux-types)
-                               (= ret-type ret-type')))))
+          (exist [self-type aux-types params']
+                 (replace-meta types
+                               [types params ret-type]
+                               [[self-type & aux-types] params' ret-type'])
+                 (check-decl-types params' args method)
+                 (class self-type aux-types))))
 
 ;; With the above definition of the `Show` class (and no instances), we expect
 ;; type-checking on the `show` function to fail on the call to the class

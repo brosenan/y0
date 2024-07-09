@@ -53,3 +53,10 @@
  (exist [x]
         (= x b)
         (replace-meta [a x] [[a b] [b a]] [[1 2] [2 1]])))
+
+;; The term that contains the symbols may be constructed of bound variables.
+(assert
+ (exist [from to]
+        (= from [a b])
+        (= to [b a])
+        (replace-meta [a b] [from to] [[1 2] [2 1]])))

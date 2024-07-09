@@ -34,6 +34,7 @@
 (defn replace-meta [goal why-not _ps]
   (let [[_replace-meta bindings symbolic term] goal
         bindings (reify-term bindings)
+        symbolic (reify-term symbolic)
         vars (new-vars {} bindings)
         term' (replace-vars symbolic vars)]
     (unify-or-err term term' why-not)))
