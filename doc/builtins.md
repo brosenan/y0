@@ -35,5 +35,37 @@ that corresponds to the kind of s-expression the first argument is of.
  (inspect (1 2 3) :list)
  (inspect #{a b c} :set)
  (inspect {foo bar} :map))
+
+```
+`replace-meta` is $y_0$'s way of dealing with meta variables. Meta variables
+are free variables that are introduced by the input, the AST being analyzed
+rather than by the rules themselves. Because they are data, they can be
+handled by a builtin predicate.
+
+`replace-meta` takes a list or a vector of varaibles symbols, a term that
+contains these symbols and a similar term, in which it will replace the
+variable symbols with actual variables.
+```clojure
+(assert
+ (replace-meta [a b] [[a b] [b a]] [[1 2] [2 1]])
+ (replace-meta [a b] [[a b] [b a]] [[1 2] [2 3]] ! "Test failed without explanation"))
+
+```
+The variable symbols can be introduced in a list or a vector.
+```clojure
+(assert
+ (replace-meta (a b) [[a b] [b a]] [[1 2] [2 1]])
+ (replace-meta (a b) [[a b] [b a]] [[1 2] [2 3]] ! "Test failed without explanation"))
+
+```
+The variable symbol list may, in part or in full, consist of bound variables.
+```clojure
+(assert
+ (exist [l]
+        (= l [a b])
+        (replace-meta l [[a b] [b a]] [[1 2] [2 1]]))
+ (exist [x]
+        (= x b)
+        (replace-meta [a x] [[a b] [b a]] [[1 2] [2 1]])))
 ```
 

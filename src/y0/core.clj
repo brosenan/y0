@@ -22,4 +22,5 @@
   !?
   ;; Built-ins
   =
-  inspect)
+  inspect
+  replace-meta)

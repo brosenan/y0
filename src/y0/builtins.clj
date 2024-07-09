@@ -1,5 +1,7 @@
 (ns y0.builtins 
-  (:require [y0.unify :refer [unify]]))
+  (:require [y0.rules :refer [new-vars]]
+            [y0.term-utils :refer [replace-vars]]
+            [y0.unify :refer [reify-term unify]]))
 
 (defn- unify-or-err [a b why-not]
   (if (unify a b)
@@ -29,10 +31,18 @@
         inspected (kind-of term)]
     (unify-or-err kind inspected why-not)))
 
+(defn replace-meta [goal why-not _ps]
+  (let [[_replace-meta bindings symbolic term] goal
+        bindings (reify-term bindings)
+        vars (new-vars {} bindings)
+        term' (replace-vars symbolic vars)]
+    (unify-or-err term term' why-not)))
+
 (defn add-builtin [ps name arity func]
   (assoc ps {:name (str "y0.core/" name) :arity arity} {{} func}))
 
 (defn add-builtins [ps]
   (-> ps
       (add-builtin "=" 2 eq)
-      (add-builtin "inspect" 2 inspect)))
+      (add-builtin "inspect" 2 inspect)
+      (add-builtin "replace-meta" 3 replace-meta)))
