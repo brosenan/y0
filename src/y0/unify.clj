@@ -2,7 +2,7 @@
   (:require [y0.core :refer [&]]
             [clojure.walk :as walk]))
 
-(declare unify)
+(declare unify reify-term)
 
 (defn- tail? [a]
   (and (= (count a) 2)
@@ -28,9 +28,9 @@
   (let [a (resolve-var a)
         b (resolve-var b)]
     (cond
-      (instance? clojure.lang.Atom a) (do (reset! a b)
+      (instance? clojure.lang.Atom a) (do (reset! a (reify-term b))
                                           true)
-      (instance? clojure.lang.Atom b) (do (reset! b a)
+      (instance? clojure.lang.Atom b) (do (reset! b (reify-term a))
                                           true)
       (seq? a) (and (seq? b)
                     (unify-all a b sequence))
@@ -39,11 +39,16 @@
                        (unify-all a b vec))
       :else (= a b))))
 
-(declare reify-term)
+(defn- free-var? [tail]
+  (and (instance? clojure.lang.Atom tail)
+       (nil? @tail)))
 
 (defn- reify-terms [ts]
   (cond (empty? ts) ts
-        (tail? ts) (reify-term (second ts))
+        (tail? ts) (let [tail (second ts)]
+                     (if (free-var? tail)
+                       ts
+                       (reify-term tail)))
         :else (let [[e & es] ts]
                 (cons (reify-term e)
                       (reify-terms es)))))
@@ -52,5 +57,7 @@
   (cond
     (instance? clojure.lang.Atom t) (resolve-var t)
     (vector? t) (vec (reify-terms t))
-    (seq? t) (seq (reify-terms t))
+    (seq? t) (if (empty? t)
+               t
+               (seq (reify-terms t)))
     :else t))

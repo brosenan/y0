@@ -78,7 +78,14 @@
        t (atom nil)]
    (unify [1 2 3] [h 'y0.core/& t]) => true
    @h => 1
-   @t => [2 3]))
+   @t => [2 3])
+ (let [x (atom nil)]
+   (unify [1 'y0.core/& [2 3]] x) => true
+   @x => [1 2 3])
+ (let [x (atom nil)]
+   (unify x [1 'y0.core/& [2 3]]) => true
+   @x => [1 2 3]))
+
 
 ;; Specifically, the variable after the `&` can bind to an empty list.
 (fact
@@ -166,6 +173,10 @@
  (let [x (atom nil)]
    (reify-term x) => x))
 
+;; Empty lists remain lists.
+(fact
+ (reify-term ()) => seq?)
+
 ;; `reify-term` recurses into lists and vectors.
 (fact
  (let [x (atom 3)]
@@ -174,10 +185,17 @@
    (reify-term (list 1 2 x)) => '(1 2 3)
    (reify-term (list 1 2 x)) => seq?))
 
-;; A list or vector ending with `& something` are reified such that `something` is the tail of the list or vector.
+;; A list or vector ending with `& something` are reified such that `something` is the
+;; tail of the list or vector.
 (fact
  (let [tail (atom [3 4 5])]
    (reify-term [1 2 'y0.core/& tail]) => [1 2 3 4 5]
    (reify-term [1 2 'y0.core/& tail]) => vector?
    (reify-term (list 1 2 'y0.core/& tail)) => '(1 2 3 4 5)
    (reify-term (list 1 2 'y0.core/& tail)) => seq?))
+
+;; If the tail is a free variable, the list or vector is not constructed.
+(fact
+ (let [tail (atom nil)]
+   (reify-term [1 2 'y0.core/& tail]) => [1 2 'y0.core/& tail]
+   (reify-term (list 1 2 'y0.core/& tail)) => (list 1 2 'y0.core/& tail)))
