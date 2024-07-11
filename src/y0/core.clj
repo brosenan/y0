@@ -22,4 +22,6 @@
   ;; Built-ins
   =
   inspect
-  replace-meta)
+  replace-meta
+  to-list
+  to-vec)

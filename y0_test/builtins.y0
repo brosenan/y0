@@ -60,3 +60,15 @@
         (= from [a b])
         (= to [b a])
         (replace-meta [a b] [from to] [[1 2] [2 1]])))
+
+;; ## Conversion Predicates
+
+;; `to-list` takes a collection and converts it to a list.
+(assert
+ (to-list [1 2 3] (1 2 3))
+ (to-list (1 2 3) (1 2 3)))
+
+;; Similarly, `to-vec` converts to a vector.
+(assert
+ (to-vec (1 2 3) [1 2 3])
+ (to-vec [1 2 3] [1 2 3]))

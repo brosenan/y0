@@ -39,6 +39,12 @@
         term' (replace-vars symbolic vars)]
     (unify-or-err term term' why-not)))
 
+(defn gen-to-x [ctor]
+  (fn [goal why-not _ps]
+    (let [[_pred term var] goal
+          term (reify-term term)]
+      (unify-or-err (ctor term) var why-not))))
+
 (defn add-builtin [ps name arity func]
   (assoc ps {:name (str "y0.core/" name) :arity arity} {{} func}))
 
@@ -46,4 +52,6 @@
   (-> ps
       (add-builtin "=" 2 eq)
       (add-builtin "inspect" 2 inspect)
-      (add-builtin "replace-meta" 3 replace-meta)))
+      (add-builtin "replace-meta" 3 replace-meta)
+      (add-builtin "to-list" 2 (gen-to-x seq))
+      (add-builtin "to-vec" 2 (gen-to-x vec))))

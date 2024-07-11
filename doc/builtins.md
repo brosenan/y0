@@ -1,6 +1,7 @@
 * [Built-ins](#built-ins)
   * [`=`](#`=`)
   * [`inspect`](#`inspect`)
+  * [Conversion Predicates](#conversion-predicates)
 ```clojure
 (ns builtins)
 
@@ -76,5 +77,21 @@ The term that contains the symbols may be constructed of bound variables.
         (= from [a b])
         (= to [b a])
         (replace-meta [a b] [from to] [[1 2] [2 1]])))
+
+```
+## Conversion Predicates
+
+`to-list` takes a collection and converts it to a list.
+```clojure
+(assert
+ (to-list [1 2 3] (1 2 3))
+ (to-list (1 2 3) (1 2 3)))
+
+```
+Similarly, `to-vec` converts to a vector.
+```clojure
+(assert
+ (to-vec (1 2 3) [1 2 3])
+ (to-vec [1 2 3] [1 2 3]))
 ```
 
