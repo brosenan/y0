@@ -1,4 +1,5 @@
   * [Goal Keys](#goal-keys)
+    * [Predicate Keys](#predicate-keys)
     * [Argument Keys](#argument-keys)
       * [Lists and Forms](#lists-and-forms)
     * [Argument Key Generalization](#argument-key-generalization)
@@ -23,6 +24,8 @@
 
 For goals to be evaluated efficiently, there needs to be a match goals with corresponding definitions.
 In $y_0$, a definition refers to a certain predicate, with or without a specific pattern for its first argument.
+
+### Predicate Keys
 
 Predicates are identified with a `:name` and an `:arity`. The `pred-key` function takes a goal and returns
 a corresponding _predicate key_ consisting of these two attributes.
@@ -102,7 +105,7 @@ For list whose first element is a list, the outer list's attributes take precide
 we do not recurse into the first element of the first element.
 ```clojure
 (fact
- (arg-key `((foo 2 3 4) 2 3)) => {:list 3}) 
+ (arg-key `((foo 2 3 4) 2 3)) => {:list 3})
 
 ```
 Vectors are similar to lists, but use the `:vec` attribute rather than `:list`.

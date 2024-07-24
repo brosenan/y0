@@ -425,7 +425,7 @@
         ! "Too many argument given to function" square "."
           ("please round up") "are extra"))
 
-;; Algebraic Data Types
+;; ## Algebraic Data Types
 
 ;; _Algebraic data types_ (_ADTs_) are user-defined types common in functional
 ;; programming languages. An ADT has one or more _constructors_, each
@@ -455,6 +455,12 @@
  (type (list string))
  (type (list (vector foo)) ! foo "is not a type"))
 
+;; The base rule for `adt-constructors` is defined here:
+(all [name params ctors]
+     (adt-constructors name params ctors
+                       ! name "is not an algebraic data type"))
+
+
 ;; In $y_1$, ADTs are defined using `deftype` definitions, which is defined as
 ;; follows.
 (all [name params ctors]
@@ -468,12 +474,17 @@
      (defctors- ctors name params)
      (all [args]
           (type (name & args)) <-
-          (type-args args params)))
+          (type-args args params))
+     (all [params' ctors']
+          (adt-constructors name params' ctors') <-
+          (replace-meta params [params ctors] [params' ctors'])))
 
-;; A defnition is translated to three parts:
+;; A defnition is translated to four parts:
 ;; 1. An assertion that checks the validity of the definition itself.
 ;; 2. A definition of the constructors.
 ;; 3. A rule for `type`, defining instances of this ADT as types.
+;; 4. A rule for `adt-constructors` that lists the constructors for a given
+;;    ADT.
 
 ;; `symbol-vector` simply checks that the input is a vector of symbols.
 (all [v]
@@ -617,6 +628,106 @@
           (foo-list (list t))
           (foo-vec (vector t)))
         (typeof (foo-vec [1 2 3]) (foo int))))
+
+;; ### Deconstructing ADT Values
+
+;; Deconstruction of ADT values is done through `case` expressions. They have
+;; the syntax `(case expr cases...)`, where `expr` is a single expression that
+;; evaluates to a ADT value and `cases...` are pattern-expression pairs.
+
+;; We define the type of `case` as follows.
+(all [expr cases t]
+     (typeof (case expr & cases) t) <-
+     (exist [expr-t]
+            (typeof expr expr-t)
+            (exist [name t-args]
+                   (= expr-t (name & t-args)
+                      ! "case requires expressions whose types are of the form (name args...)."
+                      "An expression of type" expr-t "was given")
+                   (exist [t-args-v ctors t']
+                          (to-vec t-args t-args-v)
+                          (adt-constructors name t-args-v ctors)
+                          (cases-for-ctors ctors cases t')
+                          (= t t' ! "Type mismatch in case expression. Expected" t "but inferred" t')))))
+
+;; We first infer the type of `expr`. Then, after checking this is an ADT, we
+;; find its constructors and check the cases against them.
+
+;; The last part is done using `cases-for-ctors`:
+(all [ctors cases t]
+     (cases-for-ctors ctors cases t
+                      ! "cases-for-ctors takes a list of constructors as its first argument."
+                      ctors "is given"))
+(all [ctor ctors cases t]
+     (cases-for-ctors (ctor & ctors) cases t) <-
+     (exist [dtor expr r-cases]
+            (= cases (dtor expr & r-cases)
+               ! "case expression missing case for constructor" ctor)
+            (case-for-ctor ctor dtor expr t)
+            (cases-for-ctors ctors r-cases t)))
+(all [cases t]
+     (cases-for-ctors () cases t) <-
+     (= cases ()
+        ! "Too many cases in case express."
+        cases "do not have corresponding constructors"))
+
+(all [ctor dtor expr t]
+     (case-for-ctor ctor dtor expr t
+                    ! "Invalid constructor" ctor))
+(all [name params dtor expr t]
+     (case-for-ctor (name & params) dtor expr t) <-
+     (exist [vars]
+            (= dtor (name & vars)
+               ! "Expected destructor for constructor" name "but got" dtor)
+            (given (declparams- vars params)
+                   (exist [t']
+                          (typeof expr t')
+                          (= t' t 
+                             ! "Type mismatch in case" name ":"
+                             "expected type" t "but inferred type" t')))))
+
+;; The last rule defines the semantics of a _destructor_, a term of the form
+;; `(name vars...)`, where `name` is the same name as one of the constructors
+;; and `vars...` are zero or more symbols.
+
+;; The important bit is that we declare these symbols based on the types they
+;; take in the constructor, using the `declparams-` statement, defined below.
+(all [var vars params
+      param r-params]
+     (declparams- (var & vars) params) =>
+     (assert
+      (exist []
+             (inspect var :symbol ! "Expected symbol, found" var)
+             (= params (param & r-params)
+                ! "Too many variables in destructor." (var & vars) "are not matched by constructor parameters.")))
+     (all []
+          (typeof var param))
+     (declparams- vars r-params))
+(all [params]
+     (declparams- () params) =>
+     (assert
+      (exist []
+             (= params ()
+                ! "Too few variables in destructor. Missing variables for" params))))
+
+(assert
+ (given (declparams- (a b c) (int string float)))
+ (given (declparams- (a 3 c) (int string float))
+        ! "Expected symbol, found" 3)
+ (given (declparams- (a b) (int string float))
+        ! "Too few variables in destructor. Missing variables for" (float))
+ (given (declparams- (a b c d) (int string float))
+        ! "Too many variables in destructor." (d) "are not matched by constructor parameters."))
+
+;; Now we are ready to test our `case` expression.
+(assert
+ (given (deftype foo [t]
+          (foo-list (list t))
+          (foo-vec (vector t)))
+        (given (declvars- [x (foo int)])
+               (typeof (case x
+                         (foo-list l) 3
+                         (foo-vec v) 2) int))))
 
 ;; ## Type Classes
 
