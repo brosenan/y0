@@ -1,5 +1,6 @@
 (ns y0.explanation
-  (:require [clojure.string :refer [join]]))
+  (:require [clojure.string :refer [join]]
+            [y0.unify :refer [reify-term]]))
 
 (declare explanation-expr-to-str)
 
@@ -15,13 +16,15 @@
        closer))
 
 (defn explanation-expr-to-str [expr budget]
-  (cond
-    (symbol? expr) (name expr)
-    (seq? expr) (sequential-to-str budget expr "(" ")")
-    (vector? expr) (sequential-to-str budget expr "[" "]")
-    (instance? clojure.lang.Atom expr) (recur @expr budget)
-    (nil? expr) "_"
-    :else (pr-str expr)))
+  (loop [expr (reify-term expr)
+         budget budget]
+    (cond
+      (symbol? expr) (name expr)
+      (seq? expr) (sequential-to-str budget expr "(" ")")
+      (vector? expr) (sequential-to-str budget expr "[" "]")
+      (instance? clojure.lang.Atom expr) (recur @expr budget)
+      (nil? expr) "_"
+      :else (pr-str expr))))
 
 (defn explanation-to-str [why-not]
   (->> why-not

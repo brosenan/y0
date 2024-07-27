@@ -71,6 +71,11 @@ Unbound variables are printed as `_`.
 (fact (explanation-expr-to-str `(foo/bar ~(atom nil) 2 3) 3) => "(bar _ 2 ...)")
 
 ```
+Lists are constructed where necessary.
+```clojure
+(fact (explanation-expr-to-str `(foo/bar 1 y0.core/& (2 3)) 5) => "(bar 1 2 3)")
+
+```
 ### Stringifying Explanations
 
 The `explanation-to-str` function takes an explanation and returns a string representing
