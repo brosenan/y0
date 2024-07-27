@@ -128,8 +128,8 @@
 
 ;; The terms after the `!` override the provided why-not explanation in case of a failure.
 (fact
- (satisfy-goal amount-ps `(amount 1 :uno ! "the" "correct" "explanation") ["wrong-explanation"]) =>
- {:err ["the" "correct" "explanation"]})
+ (satisfy-goal amount-ps `(amount 1 :uno ! "the" "correct" "explanation") ["with some context"]) =>
+ {:err ["the" "correct" "explanation" "with some context"]})
 
 ;; A rule can provide its own why not explanation. Rules can be provided to always fail, providing
 ;; an explanation. This is useful, for example, when rules are provided to cover all "valid" special

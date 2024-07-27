@@ -1,6 +1,6 @@
 (ns y0.explanation-test
   (:require [midje.sweet :refer [fact =>]]
-            [y0.explanation :refer [explanation-to-str explanation-expr-to-str code-location]]))
+            [y0.explanation :refer [explanation-to-str explanation-expr-to-str code-location all-unique-locations]]))
 
 ;; "Why not" explanations are an important aspect of $y_0$ and are here we describe the
 ;; software support for them.
@@ -94,3 +94,59 @@
 (fact
  (code-location [(atom `(~(with-meta '(a perfect match) {:path "z.y0" :row 3})))]) =>
  {:path "z.y0" :row 3})
+
+;; ## Extracting Terms
+
+;; In addition to pointing the location that best matches the explanation, we
+;; wish to also provide pointers to all the different locations referenced in
+;; the explanation.
+
+;; This is done using `all-unique-locations`. It takes an explanation and
+;; returns a sequence of `[term location]` pairs, where the `term`s are a
+;; subset of the terms in the explanation, each with its code location.
+(fact
+ (all-unique-locations ["This" (with-meta `x {:row 3 :path "/foo/bar"})
+                        "is" (with-meta `y {:row 4 :path "/foo/bar"})
+                        "a" (with-meta `z {:row 5 :path "/foo/bar"})
+                        "test" (with-meta `w {:row 2 :path "/foo/bar"})]) =>
+ [[`x {:row 3 :path "/foo/bar"}]
+  [`y {:row 4 :path "/foo/bar"}]
+  [`z {:row 5 :path "/foo/bar"}]
+  [`w {:row 2 :path "/foo/bar"}]])
+
+;; Terms without location are skipped.
+(fact
+ (all-unique-locations ["This" (with-meta `x {:row 3 :path "/foo/bar"})
+                        "is" (with-meta `y {:row 4})  ;; No :path
+                        "a" (with-meta `z {:path "/foo/bar"})  ;; No :row
+                        "test" (with-meta `w {:row 2 :path "/foo/bar"})]) =>
+ [[`x {:row 3 :path "/foo/bar"}]
+  [`w {:row 2 :path "/foo/bar"}]])
+
+;; A full term is taken even if the location is only known by its internals.
+(fact
+ (all-unique-locations [["foo" (with-meta `x {:row 3 :path "/foo/bar"}) "bar"]]) =>
+ [[["foo" `x "bar"] {:row 3 :path "/foo/bar"}]])
+
+;; If two terms have the same location (`:path` and `:row`), only the first one
+;; is returned.
+(fact
+ (all-unique-locations ["This" (with-meta `x {:row 3 :path "/foo/bar"})
+                        "is" (with-meta `y {:row 4 :path "/foo/bar"})
+                        "a" (with-meta `z {:row 3 :path "/foo/bar"})  ;; Same location as x
+                        "test" (with-meta `w {:row 2 :path "/foo/bar"})
+                        ])=>
+ [[`x {:row 3 :path "/foo/bar"}]
+  [`y {:row 4 :path "/foo/bar"}]
+  [`w {:row 2 :path "/foo/bar"}]])
+
+;; If the location map contains things other than `:row` and `:path`, they are
+;; not taken into account in the dedupping.
+(fact
+ (all-unique-locations ["This" (with-meta `x {:row 3 :path "/foo/bar" :foo :bar})
+                        "is" (with-meta `y {:row 4 :path "/foo/bar"})
+                        "a" (with-meta `z {:row 3 :path "/foo/bar" :foo :baz})  ;; Same :row and :path as x
+                        "test" (with-meta `w {:row 2 :path "/foo/bar"})]) =>
+ [[`x {:row 3 :path "/foo/bar" :foo :bar}]
+  [`y {:row 4 :path "/foo/bar"}]
+  [`w {:row 2 :path "/foo/bar"}]])

@@ -155,8 +155,8 @@ the `!`.
 The terms after the `!` override the provided why-not explanation in case of a failure.
 ```clojure
 (fact
- (satisfy-goal amount-ps `(amount 1 :uno ! "the" "correct" "explanation") ["wrong-explanation"]) =>
- {:err ["the" "correct" "explanation"]})
+ (satisfy-goal amount-ps `(amount 1 :uno ! "the" "correct" "explanation") ["with some context"]) =>
+ {:err ["the" "correct" "explanation" "with some context"]})
 
 ```
 A rule can provide its own why not explanation. Rules can be provided to always fail, providing

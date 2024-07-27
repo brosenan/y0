@@ -52,3 +52,20 @@
 
 (defn code-location [term]
   (code-location' term))
+
+(defn- project-location [loc]
+  [(:row loc) (:path loc)])
+
+(defn- unique-location [seen pairs]
+  (if (empty? pairs)
+    pairs
+    (let [[[term loc] & pairs] pairs]
+      (if (contains? seen (project-location loc))
+        (recur seen pairs)
+        (lazy-seq (cons [term loc] (-> seen (conj (project-location loc)) (unique-location pairs))))))))
+
+(defn all-unique-locations [explanation]
+  (->> explanation
+       (map (fn [term] [term (code-location term)]))
+       (filter #(-> % second nil? not))
+       (unique-location #{})))
