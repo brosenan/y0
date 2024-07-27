@@ -1,8 +1,8 @@
 (ns y0.main
-  (:require [clojure.term.colors :refer [green red]]
+  (:require [clojure.term.colors :refer [green red blue]]
             [clojure.tools.cli :refer [parse-opts]]
             [y0.builtins :refer [add-builtins]]
-            [y0.explanation :refer [code-location explanation-to-str]]
+            [y0.explanation :refer [code-location explanation-to-str all-unique-locations explanation-expr-to-str]]
             [y0.modules :refer [load-with-dependencies]]
             [y0.rules :refer [apply-statements]])
   (:gen-class))
@@ -23,7 +23,9 @@
             message (explanation-to-str explanation)
             location (code-location explanation)]
         (binding [*out* *err*]
-          (println (str (:path location) ":" (:row location) ": " (red "Error") ":") message))
+          (println (str (:path location) ":" (:row location) ": " (red "Error") ":") message)
+          (vec (for [[term loc] (all-unique-locations explanation)]
+                 (println (str (:path loc) ":" (:row loc) ": " (blue "Note") ":") (explanation-expr-to-str term 10)))))
         (System/exit 1))
       (println (green "Success")))))
 
