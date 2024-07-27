@@ -111,8 +111,7 @@
           (ok ps)
           (let-s [[assertion why-not] (ok  assertion split-goal nil)
                   _nil (expect-status
-                        (check-condition assertion ps vars 
-                                         ["Test failed without explanation"])
+                        (check-condition assertion ps vars [])
                         why-not assertion vars
                         (-> assert-block meta :origin nil?))]
                  (recur assertions)))))))

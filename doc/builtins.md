@@ -17,7 +17,7 @@ they unify.
 ```clojure
 (assert
  (= 1 1)
- (= 1 2 ! "Test failed without explanation"))
+ (= 1 2 !))
 
 ```
 ## `inspect`
@@ -48,14 +48,14 @@ variable symbols with actual variables.
 ```clojure
 (assert
  (replace-meta [a b] [[a b] [b a]] [[1 2] [2 1]])
- (replace-meta [a b] [[a b] [b a]] [[1 2] [2 3]] ! "Test failed without explanation"))
+ (replace-meta [a b] [[a b] [b a]] [[1 2] [2 3]] !))
 
 ```
 The variable symbols can be introduced in a list or a vector.
 ```clojure
 (assert
  (replace-meta (a b) [[a b] [b a]] [[1 2] [2 1]])
- (replace-meta (a b) [[a b] [b a]] [[1 2] [2 3]] ! "Test failed without explanation"))
+ (replace-meta (a b) [[a b] [b a]] [[1 2] [2 3]] !))
 
 ```
 The variable symbol list may, in part or in full, consist of bound variables.
