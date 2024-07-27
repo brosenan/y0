@@ -44,8 +44,7 @@ the root cause by itself is not explanation enough.
 
 As an example, consider we wish to define `bit-stream` as a language of
 vectors of bits. We begin by defining `bit-vec`, a predicate that accepts
-bit vectors. In its definition we use the `<-` operator which is explained
-[elsewhere](conditions.md#deduction-rules).
+bit vectors.
 ```clojure
 (all [bv]
      (bit-vec bv ! bv "is not a bit-vector"))
