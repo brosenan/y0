@@ -27,7 +27,6 @@ that corresponds to the kind of s-expression the first argument is of.
 ```clojure
 (assert
  (inspect 42 :int)
- (fail (inspect 42 :float)) ;; Just making sure this is not random...
  (inspect 3.141592 :float)
  (inspect "foo" :string)
  (inspect 'foo :symbol)

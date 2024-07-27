@@ -11,7 +11,6 @@
   assert
   exist
   given
-  fail
   trace
   &
   <-

@@ -1,7 +1,6 @@
 * [$y_0$ Rules and Conditions](#$y_0$-rules-and-conditions)
   * [Deduction Rules](#deduction-rules)
     * [Goal Conditions](#goal-conditions)
-  * [`fail` Conditions](#`fail`-conditions)
   * [`exist` Conditions](#`exist`-conditions)
   * [`given` Conditions](#`given`-conditions)
     * [Example: The Lambda Calculus](#example:-the-lambda-calculus)
@@ -125,85 +124,6 @@ the program is committed to the chosen rule. And if something fails
 down the line, we know there is no alternative. We know the AST is
 invalid.
 
-## `fail` Conditions
-
-`fail` conditions check that a certain condition fails, and can check
-that it fails for the correct reason.
-
-Its syntax is: `(fail condition)`, where `condition` is any condition.
-
-In the following example we define the predicate `notpeano`, which
-accepts any term that is _not_ a Peano number.
-```clojure
-(all [x]
-     (notpeano x) <-
-     (fail (peano x)))
-
-```
-Now, `1` is `notpeano`, but `(s z)` is not.
-```clojure
-(assert
- (notpeano 1)
- (notpeano (s z) ! (peano (s z)) "succeeded when it should have failed"))
-
-```
-A `fail` condition can check for a specific explanation on failure,
-and fail if the failure was with another explanation. The expected
-explanation is provided following the `?` operator.
-
-We define the `notpeano2` predicate, which is similar to `notpeano`
-but checks for the base-rule's explanation speficically.
-```clojure
-(all [x]
-     (notpeano2 x) <-
-     (fail (peano x) ? x "is not a Peano number"))
-
-(assert
- (notpeano2 1)
- (notpeano2 (s z) ! (peano (s z)) "succeeded when it should have failed"))
-
-```
-Now condier we add a case for `peano`, where `0` is given a special
-error, reminding the user that they should use `z` instead.
-```clojure
-(all []
-     (peano 0 ! "Please use z instead of 0"))
-(assert
- (peano 0 ! "Please use z instead of 0"))
-
-```
-`notpeano` will still succeed on `0`, since it does not expect a
-specific explanation, however, `notpeano2` will fail in this case,
-because the explanation is not what it expects.
-```clojure
-(assert
- (notpeano 0)
- (notpeano2 0 ! "Please use z instead of 0"))
-
-```
-`fail` conditions can provide one explanation with another, specified
-using the `!` operator.  The original explanation is bound to the
-special variable `!?`, which can be used in the explanation.
-
-In the definition of `notpeano3` we use it to provide a proper
-explanation.
-```clojure
-(all [x]
-     (notpeano3 x) <-
-     (fail (peano x) ? x "is not a Peano number"
-           ! x "is not a proper notpeano. Reason:" & !?))
-
-```
-Note that we use the `&` symbol to make the cause (`!?`) the tail of
-the explanation. As a result, the cause is not added as a vector to
-the explanation but is rather concatenated to it.  
-```clojure
-(assert
- (notpeano3 0 ! 0 "is not a proper notpeano. Reason:" "Please use z instead of 0")
- (notpeano3 z ! z "is not a proper notpeano. Reason:" (peano z) "succeeded when it should have failed")
- (notpeano3 1))
-
-```
 ## `exist` Conditions
 
 So far we have introduced one way of introducing free variables into
