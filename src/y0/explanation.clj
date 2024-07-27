@@ -48,6 +48,4 @@
     :else nil))
 
 (defn code-location [term]
-  (let [res (code-location' term)]
-    (println ">code-location" term (meta term) (has-location? term) res)
-    res))
+  (code-location' term))
