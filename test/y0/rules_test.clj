@@ -135,14 +135,16 @@
 ;; an explanation. This is useful, for example, when rules are provided to cover all "valid" special
 ;; cases, but we want to make the default fail with a proper explanation, e.g., x is not a valid y.
 
-;; Creating a failing rule is done by placing a `!` in its head.
+;; Creating a failing rule is done by placing a `!` in its head. If there is any context provided,
+;; it is appended to the explanation.
 
 ;; To demonstrate this, we extend the `amount` example to have a failing case for `-1`.
 (fact
  (let [x (atom nil)]
    (->s (ok amount-ps)
         (add-rule `(all [x] (amount -1 x ! "Cannot have negative amounts")) {})
-        (satisfy-goal `(amount -1 ~x) ["wrong-explanation"]))) => {:err ["Cannot have negative amounts"]})
+        (satisfy-goal `(amount -1 ~x) ["with some context"]))) =>
+ {:err ["Cannot have negative amounts" "with some context"]})
 
 ;; The provided explanation may contain variables shared with the head. These make the explanation
 ;; refer to the arguments that were given. For example, the following rule takes a 1-place vector
@@ -151,6 +153,7 @@
  (let [y (atom nil)
        status (->s (ok amount-ps)
                    (add-rule `(all [x xs y] (amount [x y0.core/& xs] y ! "Cannot provide an amount for a vector containing" x)) {})
-                   (satisfy-goal `(amount [6] ~y) ["wrong-explanation"]))]
-   (explanation-to-str (:err status)) => "Cannot provide an amount for a vector containing 6"))
+                   (satisfy-goal `(amount [6] ~y) ["with some context"]))]
+   (explanation-to-str (:err status)) =>
+   "Cannot provide an amount for a vector containing 6 with some context"))
 

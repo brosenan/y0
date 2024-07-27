@@ -42,16 +42,16 @@
               (cond
                 (-> condition first (= `exist)) (let [[_exist bindings & conditions] condition
                                                       vars (new-vars vars bindings)]
-                                                  (check-conditions conditions ps vars))
+                                                  (check-conditions conditions ps vars why-not))
                 (-> condition first (= `given)) (let-s [[_given statement & conditions] (ok condition)
                                                         ps' (apply-statement statement ps vars)]
-                                                       (check-conditions conditions ps' vars))
+                                                       (check-conditions conditions ps' vars why-not))
                 (-> condition first (= `?)) (do
                                               (apply println "?" (replace-vars (rest condition) vars))
                                               {:ok nil})
                 (-> condition first (= `trace)) (let [[_trace & conditions] condition]
                                                   (with-bindings {#'*do-trace* true}
-                                                    (check-conditions conditions ps vars)))
+                                                    (check-conditions conditions ps vars why-not)))
                 :else (let [condition (replace-vars condition vars)]
                         (satisfy-goal ps condition why-not))))]
     (when *do-trace*
@@ -59,21 +59,24 @@
                res))
     res))
 
-(defn- check-conditions [conditions ps vars]
+(defn- check-conditions [conditions ps vars why-not]
   (if (empty? conditions)
     (ok nil)
     (let-s [[condition & conditions] (ok conditions)
-            _ (check-condition condition ps vars nil)]
-           (recur conditions ps vars))))
+            _ (check-condition condition ps vars why-not)]
+           (recur conditions ps vars why-not))))
 
 (defn- add-deduction-rule [ps bindings head conditions vars]
   (let [[head why-not] (split-goal head nil)
         vars' (new-vars vars bindings)
         head' (replace-vars head vars')
         body (if why-not
-               (fn [goal _why-not _ps]
+               (fn [goal why-not-context _ps]
                  (let [vars (new-vars vars bindings)
-                       why-not (replace-vars why-not vars)
+                       why-not (-> why-not
+                                   (replace-vars vars)
+                                   (concat why-not-context)
+                                   vec)
                        head (replace-vars head vars)]
                    (unify goal head)
                    {:err why-not}))
@@ -83,7 +86,7 @@
                    (when *do-trace*
                      (println *trace-indent* goal head (unify goal head)))
                    (if (unify goal head)
-                     (check-conditions conditions ps vars)
+                     (check-conditions conditions ps vars why-not)
                      {:err why-not}))))]
     (store-rule ps head' body)))
 
