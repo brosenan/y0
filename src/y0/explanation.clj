@@ -31,16 +31,23 @@
        (join " ")))
 
 (defn- has-location? [term]
-  (and (instance? clojure.lang.Obj term)
-         (let [m (meta term)]
-           (and (contains? m :row)
-                (contains? m :path)))))
+  (let [m (meta term)]
+    (and (contains? m :row)
+         (contains? m :path))))
 
-(defn code-location [term]
+(declare code-location)
+
+(defn- code-location' [term]
   (cond
     (has-location? term) (meta term)
     (sequential? term) (->> term
                             (map code-location)
                             (filter #(not (nil? %)))
                             first)
+    (instance? clojure.lang.Atom term) (code-location @term)
     :else nil))
+
+(defn code-location [term]
+  (let [res (code-location' term)]
+    (println ">code-location" term (meta term) (has-location? term) res)
+    res))

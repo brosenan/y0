@@ -86,3 +86,8 @@
                    ~(with-meta '(does not contain row) {:path "x.y0"})
                    ~(with-meta '(a perfect match) {:path "z.y0" :row 3})
                    ~(with-meta '(the one who came too late) {:path "w.y0" :row 4}))]) => {:path "z.y0" :row 3})
+
+;; Digging even deeper, code location can be found inside a bound variable.
+(fact
+ (code-location [(atom `(~(with-meta '(a perfect match) {:path "z.y0" :row 3})))]) =>
+ {:path "z.y0" :row 3})
