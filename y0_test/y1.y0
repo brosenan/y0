@@ -552,7 +552,9 @@
  (given (deftype foo [t]
           (foo-list (list t))
           (foo-vec (vector x)))
-        ! x "is not a type")
+        ! x "is not a type" "in" (deftype foo [t]
+                                   (foo-list (list t))
+                                   (foo-vec (vector x))))
  (given (deftype :foo [t]
           (foo-list (list t))
           (foo-vec (vector t)))
@@ -859,14 +861,15 @@
  (given (defclass :Show [t])
         ! "A class name needs to be a symbol." :Show "is given")
  (given (defclass Show (t))
-        ! "A class types list needs to be a vector." (t) "is given")
+        ! "A class types list needs to be a vector." (t) "is given" "in" (defclass Show (t)))
  (given (defclass Show [])
-        ! "Empty types list for class" Show)
+        ! "Empty types list for class" Show "in" (defclass Show []))
  (given (defclass Show [:t])
         ! "A symbol expected." :t "was given")
  (given (defclass Show [t]
           (not a declfn))
-        ! (not a declfn) "is not a legal class method declaration"))
+        ! (not a declfn) "is not a legal class method declaration" "in" (defclass Show [t]
+                                                                          (not a declfn))))
 
 ;; #### Method Definitions
 
@@ -1175,7 +1178,9 @@
  (given (definstance [] [] Show [string]
           (defn show (s)
             s))
-        ! "Expected a vector, found" (s))
+        ! "Expected a vector, found" (s) "in" (definstance [] [] Show [string]
+                                                (defn show (s)
+                                                  s)))
  (given (definstance [] [] Show [int]
           (defn show [s]
             s))

@@ -160,8 +160,8 @@ and an assertion.
      (defquux x) =>
      (all [] (quux x))
      (assert
-      (foo x ! x "is not foo")
-      (bar x ! x "is not bar")))
+      (foo x ! x "is not foo" "in" (defquux x))
+      (bar x ! x "is not bar" "in" (defquux x))))
 
 ```
 Please note that we had to mention which explanation we expect

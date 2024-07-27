@@ -107,16 +107,20 @@
       :else (ok nil))))
 
 (defn apply-assert-block [ps assert-block vars]
-  (let [[_assert & assertions] assert-block]
+  (let [[_assert & assertions] assert-block
+        origin (-> assert-block meta :origin)
+        why-not-context (if (nil? origin)
+                          []
+                          ["in" origin])]
     (loop [assertions assertions]
       (let [[assertion & assertions] assertions]
         (if (nil? assertion)
           (ok ps)
-          (let-s [[assertion why-not] (ok  assertion split-goal nil)
+          (let-s [[assertion why-not] (ok assertion split-goal nil)
                   _nil (expect-status
-                        (check-condition assertion ps vars [])
+                        (check-condition assertion ps vars why-not-context)
                         why-not assertion vars
-                        (-> assert-block meta :origin nil?))]
+                        (nil? origin))]
                  (recur assertions)))))))
 
 (defn- apply-normal-statement [ps statement vars]
