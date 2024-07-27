@@ -1,5 +1,6 @@
 (ns why-not
-  (:require [hello :refer [bit]]))
+  (:require [hello :refer [bit]]
+            [statements :refer [foo]]))
 
 ;; # Why-Not Explanations
 
@@ -64,3 +65,56 @@
  (bit-stream (bitvec [1 0 1]))
  (bit-stream (bitvec [1 0 2 0])
           ! "2 is not a bit value. Only 0 and 1" "in" [1 0 2 0]))
+
+;; ## Context for Assertions
+
+;; One specific case in which context is important are assertion blocks that
+;; are the result of a [translation rule](statements.md#translation-rules)
+;; working on some statement. In such cases, we often wish to know which
+;; statement was the origin for the assertion.
+
+;; $y_0$ does so automatically. It tracks, for each statement that is generated
+;; by a translation rule, what statement was its origin. Then it provides this
+;; origin as context to assertions within any generated assertion block.
+
+;; For example, let us consider a `defoo` definition, similar to the one
+;; defined in our discussion of
+;; [translation rules](statements.md#translation-rules). This version, however,
+;; adds a restriction that a `foo` must be a symbol.
+(all [x]
+     (defoo x) =>
+     (assert
+      (is-symbol x))
+     (all [] (foo x)))
+
+;; Where `is-symbol` is defined as follows:
+(all [x]
+     (is-symbol x) <-
+     (inspect x :symbol ! x "is not a symbol"))
+
+;; The statement `defoo` which is defined here translates to an assertion that
+;; the defined thing is a symbol. Then it contributes a rule to the `foo`
+;; predicate. Please note that `defoo` here is separate from the original one
+;; as it is defined witin a different namespace. However, we import `foo` to
+;; reuse the symbol from its original definition.
+
+;; Now, `defoo` statements with non-symbols will fail.
+(assert
+ (given (defoo x)
+        (foo x))
+ (given (defoo "x") ! "x" "is not a symbol" "in" (defoo "x")))
+
+;; In case where an assert-block is resulting from a chained translation, the
+;; original statement is presented as context.
+
+;; For example, let us define `defoo'` as a statement that translates to
+;; `defoo`.
+(all [x]
+     (defoo' x) => (defoo x))
+
+;; An error in `defoo'` will be reported with `defoo'`, rather than `defoo` as
+;; context.
+(assert
+ (given (defoo' x)
+        (foo x))
+ (given (defoo' "x") ! "x" "is not a symbol" "in" (defoo' "x")))

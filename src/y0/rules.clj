@@ -24,7 +24,7 @@
   (let [bang-index (.indexOf goal `!)] 
     (if (= bang-index -1)
       [goal why-not]
-      [(take bang-index goal) (-> bang-index inc (drop goal) vec)])))
+      [(take bang-index goal) (-> bang-index inc (drop goal) (concat why-not) vec)])))
 
 (declare satisfy-goal check-conditions check-condition add-rule apply-statement)
 
@@ -165,11 +165,16 @@
       (let-s [ps (body (first statements) ps)]
              (recur (rest statements) ps)))))
 
+(defn- origin-of [statement]
+  (if-let [origin (-> statement meta :origin)]
+    origin
+    statement))
+
 (defn- add-translation-rule [ps bindings head terms vars]
   (let [vars' (new-vars vars bindings)
         head' (replace-vars head vars')
         body (fn [statement ps]
-               (let [terms (map #(vary-meta % assoc :origin statement) terms)
+               (let [terms (map #(vary-meta % assoc :origin (origin-of statement)) terms)
                      vars (new-vars vars bindings)
                      head (replace-vars head vars)]
                  (if (unify statement head)
