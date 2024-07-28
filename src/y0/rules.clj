@@ -10,6 +10,7 @@
 
 (def ^:dynamic *do-trace* false)
 (def ^:dynamic *trace-indent* ">")
+(def ^:dynamic *subject* nil)
 
 (defn new-vars [bindings symbols]
   (loop [bindings bindings
@@ -35,12 +36,6 @@
       [(take bang-index goal) (-> bang-index inc (drop goal) (combine-explanations why-not) vec)])))
 
 (declare satisfy-goal check-conditions check-condition add-rule apply-statement)
-
-(defn- nest-explanation [why-not cause-why-not vars]
-  (if (nil? why-not)
-    cause-why-not
-    (let [vars (assoc vars `!? cause-why-not)]
-      (replace-vars why-not vars))))
 
 (defn- check-condition [condition ps vars why-not]
   (when *do-trace*
@@ -74,6 +69,9 @@
             _ (check-condition condition ps vars why-not)]
            (recur conditions ps vars why-not))))
 
+(defn- resolve-subject [why-not]
+  (replace {`? *subject*} why-not))
+
 (defn- add-deduction-rule [ps bindings head conditions vars]
   (let [[head why-not] (split-goal head nil)
         vars' (new-vars vars bindings)
@@ -83,6 +81,7 @@
                  (let [vars (new-vars vars bindings)
                        why-not (-> why-not
                                    (replace-vars vars)
+                                   resolve-subject
                                    (combine-explanations why-not-context)
                                    vec)
                        head (replace-vars head vars)]
@@ -94,7 +93,8 @@
                    (when *do-trace*
                      (println *trace-indent* goal head (unify goal head)))
                    (if (unify goal head)
-                     (check-conditions conditions ps vars why-not)
+                     (with-bindings {#'*subject* (second goal)}
+                       (check-conditions conditions ps vars why-not))
                      {:err why-not}))))]
     (store-rule ps head' body)))
 
@@ -199,6 +199,7 @@
       :else {:err ["Invalid rule operator" op]})))
 
 (defn satisfy-goal [ps goal why-not]
-  (let [[goal why-not] (split-goal goal why-not)]
+  (let [[goal why-not] (split-goal goal why-not)
+        why-not (resolve-subject why-not)]
     (let-s [rule (match-rule ps goal)]
            (rule goal why-not ps))))

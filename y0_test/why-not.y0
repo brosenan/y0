@@ -62,7 +62,7 @@
      (bit-stream bs ! bs "is not a bit-stream"))
 (all [bv]
      (bit-stream (bitvec bv)) <-
-     (bit-vec bv ! "invalid bit-stream" (bitvec bv) "because:" !? "so please fix it"))
+     (bit-vec bv ! "invalid bit-stream" ? "because:" !? "so please fix it"))
 
 ;; The `!?` symbol is used as a placeholder for the root cause, which is
 ;; concatenated in its place.
