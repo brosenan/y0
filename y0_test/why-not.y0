@@ -67,11 +67,25 @@
 ;; The `!?` symbol is used as a placeholder for the root cause, which is
 ;; concatenated in its place.
 
+;; The `?` symbol is used here as a placeholder for the _subject_, i.e., the
+;; term on which this rule pattern-matched. As can be seen in the example
+;; below, it matches the `(bitvec bits...)` pattern.
+
 (assert
  (bit-stream (bitvec [1 0 1]))
  (bit-stream (bitvec [1 0 2 0])
           ! "invalid bit-stream" (bitvec [1 0 2 0])
              "because:" "2 is not a bit value. Only 0 and 1" "so please fix it"))
+
+;; If the `!?` symbol is omitted, the higher-level explanation is appenderd to
+;; the cause.
+(all [bv]
+     (bit-stream (bitvec' bv)) <-
+     (bit-vec bv ! "in" ?))
+(assert
+ (bit-stream (bitvec' [1 0 1]))
+ (bit-stream (bitvec' [1 0 2 0])
+             ! "2 is not a bit value. Only 0 and 1" "in" (bitvec' [1 0 2 0])))
 
 ;; ## Context for Assertions
 
