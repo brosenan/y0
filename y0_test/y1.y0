@@ -916,7 +916,7 @@
                                [types params ret-type]
                                [[self-type & aux-types] params' ret-type'])
                  (check-decl-types params' args method)
-                 (class self-type aux-types ! "in method" method))))
+                 (class self-type aux-types ! "in method call" ? "with param types" params'))))
 
 ;; With the above definition of the `Show` class (and no instances), we expect
 ;; type-checking on the `show` function to fail on the call to the class
@@ -924,7 +924,7 @@
 (assert
  (exist [t]
         (typeof (show 2) t)
-        ! int "is not a type in class" Show "in method" show))
+        ! int "is not a type in class" Show "in method call" (show 2) "with param types" [int]))
 
 ;; If we bridge this gap, we get a valid expression.
 (assert
@@ -1189,7 +1189,7 @@
  (typeof (show 42) string)
  (exist [t]
         (typeof (show 42.0) t)
-        ! float "is not a type in class" Show "in method" show)
+        ! float "is not a type in class" Show "in method call" (show 42.0) "with param types" [float])
  (typeof (convert- 42.0) int))
 
 ;; Following are some erroneous examples, showing the different checks we have
