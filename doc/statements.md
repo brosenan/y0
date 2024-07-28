@@ -3,6 +3,7 @@
     * [An Example](#an-example)
   * [Translating into Assertions](#translating-into-assertions)
   * [Variadic Statements](#variadic-statements)
+  * [Meta-Variables-in-Translations](#meta-variables-in-translations)
 ```clojure
 (ns statements
   (:require [hello :refer [classify]]))
@@ -210,5 +211,59 @@ a list.
 (assert
  (baz a (b c d e))
  (baz b (c d e)))
-```
 
+```
+## Meta-Variables in Translations
+
+When a translation generates a deduction rule or even a simple rule, it is
+not always possible to know in advance (translation-rule writing time) the
+quanitfication of the resulting rule.
+
+One example is a poor-man's `defmacro` we are about to define. The predicate
+`expand-macro` takes a term and returns that term with macros expanded. By
+default, it will return the term unchanged.
+```clojure
+(all [term]
+     (expand-macro term term))
+
+(assert
+ (expand-macro (foo 1 2 3) (foo 1 2 3)))
+
+```
+Simple. The definition `defmacro` adds a solution to this predicate.
+```clojure
+(all [name $params $expansion
+      $params-l]
+     (defmacro name $params $expansion) =>
+     (assert
+      (to-list $params $params-l))
+     (all $params
+          (expand-macro (name & $params-l) $expansion)))
+
+```
+To do this, we named three variables starting with `$`. This marks them as
+_meta variables_, i.e., variables containing names of variables. One of
+these variables, `$params`, is used as the variable list for the `all`
+quantifier. This means that the symbols it contains are treated as variables
+in all the variables which names start with `$` within its scope.
+
+$y_0$ replaces variables that start with `$` and are bound to a
+[ground](term_utils.md#ground-terms) term at translation time. This means
+that the names that exist there are taken verbatim, so that when the rule
+is evaluated, these symbols are taken as variables.
+
+So now we can define a macro.
+```clojure
+(defmacro foo [a b c] (+ a (* b c)))
+
+(assert
+ (exist [x]
+        (expand-macro (foo 1 2 3) x)))
+
+```
+Caustion should be taken when using this feature. If the names of
+user-provided variables collide with the names of variables in the rule,
+this may cause unexpected behavior.
+
+We suggest to use a special prefix or suffix for the variables used within
+the rule, one that is not allowed for user-provided variables.

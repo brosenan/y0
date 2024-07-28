@@ -1,5 +1,4 @@
-(ns y0.term-utils
-  (:require [clojure.walk :refer [postwalk]]))
+(ns y0.term-utils)
 
 (defn postwalk-with-meta [f x]
   (let [m (meta x)
@@ -25,11 +24,11 @@
     :else true))
 
 (defn replace-ground-vars [term vars]
-  (let [term (postwalk (fn [x]
-                         (if (and (contains? vars x)
-                                  (ground? @(get vars x)))
-                           @(get vars x)
-                           x)) term)
+  (let [term (postwalk-with-meta (fn [x]
+                                   (if (and (contains? vars x)
+                                            (ground? @(get vars x)))
+                                     @(get vars x)
+                                     x)) term)
         vars (->> vars
                   (filter #(-> % second ground? not))
                   (into {}))]

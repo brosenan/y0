@@ -1,11 +1,11 @@
 (ns y0.rules
-  (:require [clojure.string :refer [join]]
+  (:require [clojure.string :refer [starts-with?]]
             [y0.core :refer [! !? <- => ? exist given trace]]
             [y0.predstore :refer [get-rules-to-match get-statements-to-match
                                   match-rule store-rule store-statement
                                   store-translation-rule]]
             [y0.status :refer [->s let-s ok]]
-            [y0.term-utils :refer [replace-vars]]
+            [y0.term-utils :refer [replace-vars postwalk-with-meta ground?]]
             [y0.unify :refer [unify reify-term]]))
 
 (def ^:dynamic *do-trace* false)
@@ -156,12 +156,22 @@
                   {:ok ps})
       (apply-normal-statement ps statement vars))))
 
+(defn- replace-meta-vars [statement vars]
+  (postwalk-with-meta (fn [x]
+                        (if (and (symbol? x)
+                                 (-> x name (starts-with? "$"))
+                                 (contains? vars x)
+                                 (ground? @(get vars x)))
+                          (reify-term @(get vars x))
+                          x)) statement))
+
 (defn apply-statements [statements ps vars]
   (loop [statements statements
          ps ps]
     (if (empty? statements)
       (ok ps)
-      (let [[statement & statements] statements]
+      (let [[statement & statements] statements
+            statement (replace-meta-vars statement vars)]
         (let-s [ps (apply-statement statement ps vars)]
                (recur statements ps))))))
 
