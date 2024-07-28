@@ -957,12 +957,10 @@
                 "declared for class" class)
              (given (declconstraints- constraints)
                     (instance-method-defs methods method-decls)))
-      (exist [types']
-             (replace-meta free-types [types constraints] [types' constraints'])
-             (= types' [t & ts])))
-     (all []
+      (= types [t & ts]))
+     (all free-types
           (class t ts) <-
-          (check-constraints constraints')))
+          (check-constraints constraints ! "when checking constraint for instance" ? "of class" class)))
 
 ;; Like other definitions, `definstance` translates into an assertion and a
 ;; rule. However, here we see a special interaction between them. The assertion
@@ -1228,3 +1226,17 @@
   (defn convert- [x]
     (case x
       (showable- v) (show v))))
+
+;; 
+
+
+(assert
+ (exist [t]
+        (typeof (convert- (showable- 42.0)) t)
+        ! float "is not a type in class" Show
+        "when checking constraint for instance" (showable- float)
+        "of class" Convertable-
+        "in method call" (convert- (showable- 42.0))
+        "with param types" [(showable- float)]))
+(assert
+ (typeof (convert- (showable- 42)) string))
