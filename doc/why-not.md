@@ -1,6 +1,6 @@
 * [Why-Not-Explanations](#why-not-explanations)
   * [Failing Rules](#failing-rules)
-  * [Explanation Context](#explanation-context)
+  * [Explanation Cause](#explanation-cause)
   * [Context for Assertions](#context-for-assertions)
 ```clojure
 (ns why-not
@@ -39,13 +39,16 @@ with a different explanation
  (bit 2 ! "2 is not a bit value. Only 0 and 1"))
 
 ```
-## Explanation Context
+## Explanation Cause
 
 A good explanation points to the root cause of the issue. However, sometimes
-the root cause by itself is not explanation enough.
+the root cause by itself is not explanation enough. Sometimes the root cause
+explanation is too narrow and in order to give a good explanation we need to
+begin one or more levels above, explain what fails and refer to the
+underlying cause.
 
 As an example, consider we wish to define `bit-stream` as a language of
-vectors of bits. We begin by defining `bit-vec`, a predicate that accepts
+streams of bits. We begin by defining `bit-vec`, a predicate that accepts
 bit vectors.
 ```clojure
 (all [bv]
@@ -74,12 +77,18 @@ stream.
      (bit-stream bs ! bs "is not a bit-stream"))
 (all [bv]
      (bit-stream (bitvec bv)) <-
-     (bit-vec bv ! "in" bv))
+     (bit-vec bv ! "invalid bit-stream" (bitvec bv) "because:" !? "so please fix it"))
 
+```
+The `!?` symbol is used as a placeholder for the root cause, which is
+concatenated in its place.
+
+```clojure
 (assert
  (bit-stream (bitvec [1 0 1]))
  (bit-stream (bitvec [1 0 2 0])
-          ! "2 is not a bit value. Only 0 and 1" "in" [1 0 2 0]))
+          ! "invalid bit-stream" (bitvec [1 0 2 0])
+             "because:" "2 is not a bit value. Only 0 and 1" "so please fix it"))
 
 ```
 ## Context for Assertions

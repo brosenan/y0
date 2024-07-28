@@ -20,11 +20,19 @@
           (assoc sym (atom nil))
           (recur syms)))))
 
+(defn- combine-explanations [cause effect]
+  (if (nil? effect)
+    cause
+    (vec (let [bangq-index (.indexOf effect `!?)]
+           (if (= bangq-index -1)
+             (concat cause effect)
+             (concat (take bangq-index effect) cause (-> bangq-index inc (drop effect))))))))
+
 (defn split-goal [goal why-not]
   (let [bang-index (.indexOf goal `!)] 
     (if (= bang-index -1)
       [goal why-not]
-      [(take bang-index goal) (-> bang-index inc (drop goal) (concat why-not) vec)])))
+      [(take bang-index goal) (-> bang-index inc (drop goal) (combine-explanations why-not) vec)])))
 
 (declare satisfy-goal check-conditions check-condition add-rule apply-statement)
 
@@ -75,7 +83,7 @@
                  (let [vars (new-vars vars bindings)
                        why-not (-> why-not
                                    (replace-vars vars)
-                                   (concat why-not-context)
+                                   (combine-explanations why-not-context)
                                    vec)
                        head (replace-vars head vars)]
                    (unify goal head)
