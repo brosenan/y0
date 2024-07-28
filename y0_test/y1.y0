@@ -941,32 +941,32 @@
 ;; implementations for the declared methods.
 
 ;; We now proceed to defining the meaning of the `definstance` statement.
-(all [free-types constraints class types methods
+(all [$free-types $constraints class types methods
       ;; Internal vars
-      constraints' t ts]
-     (definstance free-types constraints class types
+      $t $ts]
+     (definstance $free-types $constraints class types
        & methods) =>
      (assert
-      (symbol-vector free-types)
-      (given (decltypes- free-types)
-             (type-constraints constraints))
+      (symbol-vector $free-types)
+      (given (decltypes- $free-types)
+             (type-constraints $constraints))
       (exist [classdef-types method-decls]
              (methods-for-class class classdef-types method-decls)
              (= classdef-types types
                 ! "The types" types "do not match the type list" classdef-types
                 "declared for class" class)
-             (given (declconstraints- constraints)
+             (given (declconstraints- $constraints)
                     (instance-method-defs methods method-decls)))
-      (= types [t & ts]))
-     (all free-types
-          (class t ts) <-
-          (check-constraints constraints ! "when checking constraint for instance" ? "of class" class)))
+      (= types [$t & $ts]))
+     (all $free-types
+          (class $t $ts) <-
+          (check-constraints $constraints ! "when checking constraint for instance" ? "of class" class)))
 
 ;; Like other definitions, `definstance` translates into an assertion and a
 ;; rule. However, here we see a special interaction between them. The assertion
 ;; binds some free variables that we marked as `Internal vars` in the
 ;; translation rule. These variables are then used in the rule. Specifically,
-;; they replace meta-vars in the instance `free-types` with unbound variables.
+;; they replace meta-vars in the instance `$free-types` with unbound variables.
 ;; These variables are then used in the rule.
 
 ;; The rule contributes a solution for the class predicate (the predicate
@@ -975,9 +975,9 @@
 ;; sure that when the rule is being added, `t` corresponds to a concrete type,
 ;; contributing a concrete case to the predicate.
 
-;; The assertion works as follows. First it checks that the given `free-types`
+;; The assertion works as follows. First it checks that the given `$free-types`
 ;; are all symbols given in a vector. Then it checks that if these symbols
-;; were types, the given `constraints` were valid. Then it checks the matching
+;; were types, the given `$constraints` were valid. Then it checks the matching
 ;; of the method definitions to the declarations in the `defclass`. Finally, it
 ;; replaces the meta-vars and prepares the terms for the instance rule, as
 ;; described above.
@@ -1227,9 +1227,12 @@
     (case x
       (showable- v) (show v))))
 
-;; 
+;; With this definition, `convert-` can be called on `showable-` instances for
+;; which the value is an instance of `Show`.
+(assert
+ (typeof (convert- (showable- 42)) string))
 
-
+;; If this is not the case, we receive a detailed explanation.
 (assert
  (exist [t]
         (typeof (convert- (showable- 42.0)) t)
@@ -1238,5 +1241,4 @@
         "of class" Convertable-
         "in method call" (convert- (showable- 42.0))
         "with param types" [(showable- float)]))
-(assert
- (typeof (convert- (showable- 42)) string))
+
