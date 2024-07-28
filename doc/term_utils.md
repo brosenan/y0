@@ -5,7 +5,8 @@
 ```clojure
 (ns y0.term-utils-test
   (:require [midje.sweet :refer [fact =>]]
-            [y0.term-utils :refer [postwalk-with-meta replace-vars ground?]]))
+            [y0.term-utils :refer [postwalk-with-meta replace-vars
+                                   ground? replace-ground-vars]]))
 
 ```
 # Term Utils
@@ -139,5 +140,29 @@ elements are ground.
  (ground? [1 (atom nil) 3]) => false
  (ground? [1 #{(atom nil) 2} 3]) => false
  (ground? [1 #{2} 3]) => true)
+
+```
+`replace-ground-vars` takes a symbolic term and a variable map. It returns
+the term and the var-map after replacing all variables bound to ground terms
+in the term with their values, and removing these variables from the
+var-map.
+
+If all the variables in the var-map are unbound, nothing happens.
+```clojure
+(fact
+ (let [x (atom nil)
+       y (atom nil)]
+   (replace-ground-vars `(hello x y) {`x x `y y}) =>
+   [`(hello x y) {`x x `y y}]))
+
+```
+Variables that are bound to ground terms are replaced in the term and
+removed from the map.
+```clojure
+(fact
+ (let [x (atom [1 2 (atom nil)])
+       y (atom [1 2 3])]
+   (replace-ground-vars `(hello x y) {`x x `y y}) =>
+   [`(hello x [1 2 3]) {`x x}]))
 ```
 
