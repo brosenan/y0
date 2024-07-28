@@ -1,10 +1,11 @@
 * [Term Utils](#term-utils)
   * [Meta-Preserving-`postwalk`.](#meta-preserving-`postwalk`.)
   * [Replacing Variables in Terms](#replacing-variables-in-terms)
+  * [Ground Terms](#ground-terms)
 ```clojure
 (ns y0.term-utils-test
   (:require [midje.sweet :refer [fact =>]]
-            [y0.term-utils :refer [postwalk-with-meta replace-vars]]))
+            [y0.term-utils :refer [postwalk-with-meta replace-vars ground?]]))
 
 ```
 # Term Utils
@@ -104,5 +105,39 @@ the map.
        term (replace-vars term `{x ~x
                                  y ~y})]
     (meta term) => {:foo :bar}))
+
+```
+## Ground Terms
+
+Ground terms are terms that do not contain free variables.
+
+The function `ground?` takes a term and returns whether or ont it is ground.
+```clojure
+(fact
+ (ground? 42) => true)
+
+```
+A free variable (`atom` containing `nil`) is not ground.
+```clojure
+(fact
+ (ground? (atom nil)) => false)
+
+```
+For a bound variable, if the term it is bound to is ground, the variable is
+ground.
+```clojure
+(fact
+ (ground? (atom 42)) => true
+ (ground? (atom [1 (atom nil) 3])) => false)
+
+```
+For a collection type, the collection is ground if and only if all its
+elements are ground.
+```clojure
+(fact
+ (ground? [1 2 3]) => true
+ (ground? [1 (atom nil) 3]) => false
+ (ground? [1 #{(atom nil) 2} 3]) => false
+ (ground? [1 #{2} 3]) => true)
 ```
 

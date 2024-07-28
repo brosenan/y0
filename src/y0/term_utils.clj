@@ -15,3 +15,10 @@
 
 (defn replace-vars [term vars]
   (postwalk-with-meta #(get vars % %) term))
+
+(defn ground? [term]
+  (cond
+    (nil? term) false
+    (coll? term) (every? ground? term)
+    (instance? clojure.lang.Atom term) (recur @term)
+    :else true))

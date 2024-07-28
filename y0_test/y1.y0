@@ -942,7 +942,7 @@
 
 ;; We now proceed to defining the meaning of the `definstance` statement.
 (all [free-types constraints class types methods
-      ;; Internal vars 
+      ;; Internal vars
       constraints' t ts]
      (definstance free-types constraints class types
        & methods) =>
