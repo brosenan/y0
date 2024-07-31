@@ -39,6 +39,12 @@
                        (unify-all a b vec))
       :else (= a b))))
 
+(defn- valid-tail? [tail]
+  (cond
+    (sequential? tail) true
+    (instance? clojure.lang.Atom tail) (recur @tail)
+    :else false))
+
 (defn- free-var? [tail]
   (and (instance? clojure.lang.Atom tail)
        (nil? @tail)))
@@ -46,9 +52,9 @@
 (defn- reify-terms [ts]
   (cond (empty? ts) ts
         (tail? ts) (let [tail (second ts)]
-                     (if (free-var? tail)
-                       ts
-                       (reify-term tail)))
+                     (if (valid-tail? tail)
+                       (reify-term tail)
+                       ts))
         :else (let [[e & es] ts]
                 (cons (reify-term e)
                       (reify-terms es)))))

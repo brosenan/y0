@@ -237,11 +237,14 @@ tail of the list or vector.
    (reify-term (list 1 2 'y0.core/& tail)) => seq?))
 
 ```
-If the tail is a free variable, the list or vector is not constructed.
+If the tail is not a list or a vector (e.g., an unbound variable or a symbol
+representing one), the list or vector is not constructed.
 ```clojure
 (fact
  (let [tail (atom nil)]
    (reify-term [1 2 'y0.core/& tail]) => [1 2 'y0.core/& tail]
-   (reify-term (list 1 2 'y0.core/& tail)) => (list 1 2 'y0.core/& tail)))
+   (reify-term (list 1 2 'y0.core/& tail)) => (list 1 2 'y0.core/& tail)
+   (reify-term [1 2 'y0.core/& 'tail]) => [1 2 'y0.core/& 'tail]
+   (reify-term (list 1 2 'y0.core/& 'tail)) => (list 1 2 'y0.core/& 'tail)))
 ```
 
