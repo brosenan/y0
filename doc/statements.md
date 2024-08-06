@@ -3,7 +3,7 @@
     * [An Example](#an-example)
   * [Translating into Assertions](#translating-into-assertions)
   * [Variadic Statements](#variadic-statements)
-  * [Meta-Variables-in-Translations](#meta-variables-in-translations)
+  * [`with-meta`-Statements](#`with-meta`-statements)
 ```clojure
 (ns statements
   (:require [hello :refer [classify]]))
@@ -213,11 +213,11 @@ a list.
  (baz b (c d e)))
 
 ```
-## Meta-Variables in Translations
+## `with-meta` Statements
 
-When a translation generates a deduction rule or even a simple rule, it is
-not always possible to know in advance (translation-rule writing time) the
-quanitfication of the resulting rule.
+Meta-Variables are variables that are bound to terms that contain the names
+of variables. They are useful to define variable-like behavior in the
+language we are defining using $y_0$.
 
 One example is a poor-man's `defmacro` we are about to define. The predicate
 `expand-macro` takes a term and returns that term with macros expanded. By
@@ -239,21 +239,20 @@ Simple. The definition `defmacro` adds a solution to this predicate.
       (to-list params params-l))
      (with-meta [$params params
                  $expansion expansion
-                 $params-l params-l]
+                 $params-l params-l
+                 $name name]
        (all $params
-            (expand-macro (name & $params-l) $expansion))))
+            (expand-macro ($name & $params-l) $expansion))))
 
 ```
-To do this, we named three variables starting with `$`. This marks them as
-_meta variables_, i.e., variables containing names of variables. One of
-these variables, `$params`, is used as the variable list for the `all`
-quantifier. This means that the symbols it contains are treated as variables
-in all the variables which names start with `$` within its scope.
+To do this, we used a `with-meta` statement. This statement has the syntax:
+`(with-meta [mvar val...] statement)`, where `mvar` is a symbol, `val` is 
+a term (and there are zero or more of them), and `statement` is an
+underlying statement.
 
-$y_0$ replaces variables that start with `$` and are bound to a
-[ground](term_utils.md#ground-terms) term at translation time. This means
-that the names that exist there are taken verbatim, so that when the rule
-is evaluated, these symbols are taken as variables.
+A `with-meta` statement is evaluated by first assigining the `mvar`s with
+their associated `val`s, then replacing them in `statement` and finally
+applying `statement`.
 
 So now we can define a macro.
 ```clojure
@@ -263,9 +262,8 @@ So now we can define a macro.
  (expand-macro (foo 1 2 3) (+ 1 (* 2 3))))
 
 ```
-Caustion should be taken when using this feature. If the names of
-user-provided variables collide with the names of variables in the rule,
-this may cause unexpected behavior.
+In the example above, `$params`, `$expansion`, `$params-l` and `$name` are
+the meta variables, which took their values from similarly-named variables,
+without the `$` prefix. The `$` prefix, while not required, is used to
+prevent name collisions with variables provided by the origin statement.
 
-We suggest to use a special prefix or suffix for the variables used within
-the rule, one that is not allowed for user-provided variables.
