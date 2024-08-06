@@ -257,12 +257,7 @@ So now we can define a macro.
 (defmacro foo [a b c] (+ a (* b c)))
 
 (assert
- (exist [x]
-        (expand-macro (foo 1 2 3) x)))
-
-(comment (assert (expand-macro (foo 1 2 3) (+ 1 (* 2 3)))))
-
-
+ (expand-macro (foo 1 2 3) (+ 1 (* 2 3))))
 
 ```
 Caustion should be taken when using this feature. If the names of

@@ -157,13 +157,13 @@
       (apply-normal-statement ps statement vars))))
 
 (defn- replace-meta-vars [statement vars]
-  (postwalk-with-meta (fn [x]
-                        (if (and (symbol? x)
-                                 (-> x name (starts-with? "$"))
-                                 (contains? vars x)
-                                 (ground? @(get vars x)))
-                          (reify-term @(get vars x))
-                          x)) statement))
+  (reify-term (postwalk-with-meta (fn [x]
+                                    (if (and (symbol? x)
+                                             (-> x name (starts-with? "$"))
+                                             (contains? vars x)
+                                             (ground? @(get vars x)))
+                                      (reify-term @(get vars x))
+                                      x)) statement)))
 
 (defn apply-statements [statements ps vars]
   (loop [statements statements
