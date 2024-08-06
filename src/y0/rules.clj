@@ -142,11 +142,24 @@
                 ps (rule statement ps)]
                (recur rules ps))))))
 
+(defn- apply-with-meta-block [ps statement vars]
+  (let [[_with-meta bindings statement] statement
+        metavars (loop [metavars {}
+                        [mvar val & bindings] bindings]
+                   (if (nil? mvar)
+                     metavars
+                     (let [val (replace-vars val vars)]
+                       (recur (assoc metavars mvar val)
+                              bindings))))
+        statement (-> statement (replace-vars metavars) reify-term)]
+    (apply-statement statement ps vars)))
+
 (defn- apply-statement [statement ps vars]
   (let [[form & _] statement]
     (case form
       y0.core/all (add-rule ps statement vars)
       y0.core/assert (apply-assert-block ps statement vars)
+      y0.core/with-meta (apply-with-meta-block ps statement vars)
       ;; Debugging utility. Keeping for the time being.
       y0.core/? (let [[_? key] statement]
                   (if (nil? key)
@@ -156,22 +169,12 @@
                   {:ok ps})
       (apply-normal-statement ps statement vars))))
 
-(defn- replace-meta-vars [statement vars]
-  (reify-term (postwalk-with-meta (fn [x]
-                                    (if (and (symbol? x)
-                                             (-> x name (starts-with? "$"))
-                                             (contains? vars x)
-                                             (ground? @(get vars x)))
-                                      (reify-term @(get vars x))
-                                      x)) statement)))
-
 (defn apply-statements [statements ps vars]
   (loop [statements statements
          ps ps]
     (if (empty? statements)
       (ok ps)
-      (let [[statement & statements] statements
-            statement (replace-meta-vars statement vars)]
+      (let [[statement & statements] statements]
         (let-s [ps (apply-statement statement ps vars)]
                (recur statements ps))))))
 

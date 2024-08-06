@@ -232,13 +232,16 @@ default, it will return the term unchanged.
 ```
 Simple. The definition `defmacro` adds a solution to this predicate.
 ```clojure
-(all [name $params $expansion
-      $params-l]
-     (defmacro name $params $expansion) =>
+(all [name params expansion
+      params-l]
+     (defmacro name params expansion) =>
      (assert
-      (to-list $params $params-l))
-     (all $params
-          (expand-macro (name & $params-l) $expansion)))
+      (to-list params params-l))
+     (with-meta [$params params
+                 $expansion expansion
+                 $params-l params-l]
+       (all $params
+            (expand-macro (name & $params-l) $expansion))))
 
 ```
 To do this, we named three variables starting with `$`. This marks them as
