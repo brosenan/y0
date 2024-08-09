@@ -227,3 +227,22 @@
 ;; without the `$` prefix. The `$` prefix, while not required, is used to
 ;; prevent name collisions with variables provided by the origin statement.
 
+;; ### Meta-Vars Must Be Ground
+
+;; One restriction posed on `with-meta` is that the `val`s being assigned to
+;; the meta variables must be _ground_. This means they cannot contain any
+;; unbound variables.
+
+;; For example, in the following translation rule, `unbound` will remain
+;; unbound when used to initialize `$not-ground`.
+(all [x unbound]
+     (defsomething x) =>
+     (with-meta [$x x
+                 $not-ground [1 2 unbound]]
+       (defmacro $x $not-ground)))
+
+;; Now, a `defsomething` statement will fail.
+(assert
+ (exist [u]
+        (given (defsomething 1))
+        ! $not-ground "has non-ground value" [1 2 u]))

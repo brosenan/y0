@@ -4,6 +4,7 @@
   * [Translating into Assertions](#translating-into-assertions)
   * [Variadic Statements](#variadic-statements)
   * [`with-meta`-Statements](#`with-meta`-statements)
+    * [Meta-Vars-Must-Be-Ground](#meta-vars-must-be-ground)
 ```clojure
 (ns statements
   (:require [hello :refer [classify]]))
@@ -266,4 +267,28 @@ In the example above, `$params`, `$expansion`, `$params-l` and `$name` are
 the meta variables, which took their values from similarly-named variables,
 without the `$` prefix. The `$` prefix, while not required, is used to
 prevent name collisions with variables provided by the origin statement.
+
+### Meta-Vars Must Be Ground
+
+One restriction posed on `with-meta` is that the `val`s being assigned to
+the meta variables must be _ground_. This means they cannot contain any
+unbound variables.
+
+For example, in the following translation rule, `unbound` will remain
+unbound when used to initialize `$not-ground`.
+```clojure
+(all [x unbound]
+     (defsomething x) =>
+     (with-meta [$x x
+                 $not-ground [1 2 unbound]]
+       (defmacro $x $not-ground)))
+
+```
+Now, a `defsomething` statement will fail.
+```clojure
+(assert
+ (exist [u]
+        (given (defsomething 1))
+        ! $not-ground "has non-ground value" [1 2 u]))
+```
 

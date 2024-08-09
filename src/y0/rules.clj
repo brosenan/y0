@@ -1,6 +1,5 @@
 (ns y0.rules
-  (:require [clojure.string :refer [starts-with?]]
-            [y0.core :refer [! !? <- => ? exist given trace]]
+  (:require [y0.core :refer [! !? <- => ? exist given trace]]
             [y0.predstore :refer [get-rules-to-match get-statements-to-match
                                   match-rule store-rule store-statement
                                   store-translation-rule]]
@@ -43,6 +42,7 @@
              (-> condition (replace-vars vars) reify-term)))
   (let [res (with-bindings {#'*trace-indent* (str *trace-indent* "  ")}
               (cond
+                (not (seq? condition)) {:err ["invalid condition" condition]}
                 (-> condition first (= `exist)) (let [[_exist bindings & conditions] condition
                                                       vars (new-vars vars bindings)]
                                                   (check-conditions conditions ps vars why-not))
@@ -143,15 +143,17 @@
                (recur rules ps))))))
 
 (defn- apply-with-meta-block [ps statement vars]
-  (let [[_with-meta bindings statement] statement
-        metavars (loop [metavars {}
-                        [mvar val & bindings] bindings]
-                   (if (nil? mvar)
-                     metavars
-                     (let [val (replace-vars val vars)]
-                       (recur (assoc metavars mvar val)
-                              bindings))))
-        statement (-> statement (replace-vars metavars) reify-term)]
+  (let-s [[_with-meta bindings statement] (ok statement)
+          metavars (loop [metavars {}
+                          [mvar val & bindings] bindings]
+                     (if (nil? mvar)
+                       (ok metavars)
+                       (let [val (replace-vars val vars)]
+                         (if (ground? val)
+                           (recur (assoc metavars mvar val)
+                                  bindings)
+                           {:err [mvar "has non-ground value" val]}))))
+          statement (-> statement (replace-vars metavars) reify-term ok)]
     (apply-statement statement ps vars)))
 
 (defn- apply-statement [statement ps vars]
