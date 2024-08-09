@@ -1,0 +1,75 @@
+* [Utility Predicates](#utility-predicates)
+  * [Verifying Elements](#verifying-elements)
+```clojure
+(ns util)
+
+```
+# Utility Predicates
+
+This module defines generic utility predicates, useful for defining
+languages.
+
+## Verifying Elements
+
+Here we define two predicates that verify that the elements of a collection
+(vector or list) all meet a certain criterion. In order to be able to do
+this we need to first define an abstraction for defining predicates on the
+elements. To do so, we define `is`, a predicate that takes a `description`
+and a term and accepts the term if it matches the description.
+
+By default, `is` will reject the description.
+```clojure
+(all [desc term]
+     (is desc term ! desc "is not a valid term description"))
+
+```
+A description of `symbol` requires that the term is a symbol.
+```clojure
+(all [term]
+     (is symbol term) <-
+     (inspect term :symbol ! "Expected a symbol, received" term))
+
+(assert
+ (is symbol foo)
+ (is symbol 42 ! "Expected a symbol, received" 42)
+ (is not-a-description foo
+     ! not-a-description "is not a valid term description"))
+
+```
+`vector-of` is a predicate that takes a term expected to be a vector and a
+description for its elements. It accepts vectors where all elements match
+the description.
+```clojure
+(all [vec desc]
+     (vector-of vec desc ! vec "is not a vector"))
+(all [x xs desc]
+     (vector-of [x & xs] desc) <-
+     (is desc x)
+     (vector-of xs desc))
+(all [desc]
+     (vector-of [] desc))
+
+(assert
+ (vector-of [a b c] symbol)
+ (vector-of [a 3 c] symbol ! "Expected a symbol, received" 3)
+ (vector-of (a b c) symbol ! (a b c) "is not a vector"))
+
+```
+Similarly, `list-of` accepts a list of element that match the given
+description.
+```clojure
+(all [list desc]
+     (list-of list desc ! list "is not a list"))
+(all [x xs desc]
+     (list-of (x & xs) desc) <-
+     (is desc x)
+     (list-of xs desc))
+(all [desc]
+     (list-of () desc))
+
+(assert
+ (list-of (a b c) symbol)
+ (list-of (a 3 c) symbol ! "Expected a symbol, received" 3)
+ (list-of [a b c] symbol ! [a b c] "is not a list"))
+```
+
