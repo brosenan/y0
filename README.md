@@ -22,7 +22,7 @@ We are not there yet, but this is where we strive to go...
 
 ## The $y_0$ Language
 
-$y_0$ is a logic programming language. However, it is significantly different from other logic-programming languages such as Prolog and Datalog, so readers unfamiliar with these languages and logic programming in general, are not missing much.
+$y_0$ is a logic programming language. However, it is significantly different from other logic-programming languages such as Prolog and Datalog, so readers unfamiliar with these languages and logic programming in general, are not necessarily at a disadvantage trying to learn $y_0$.
 
 The $y_0$ of defining the semantics of a programming language is by defining a [_predicate_](doc/hello.md#predicates) that accepts it. For example, the predicate `bit` defined below accepts a language consisting of eitehr `0` or `1`:
 
