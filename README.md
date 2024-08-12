@@ -1,22 +1,64 @@
-# $y_0$, AKA Y Nought, AKA Why Not
+# $y_0$: A Language for Defining Programming Language Semantics
 
-$y_0$, AKA Y Nought, AKA Why Not, is a declarative language intended for semantic analysis and other post-parsing, pre-optimizations compilation tasks.
+$y_0$, AKA Y Nought, AKA Why Not, is a declarative language intended for defining the semantics of programming languages. Similar to how [parser generators](https://en.wikipedia.org/wiki/Comparison_of_parser_generators) define languages for defining the _syntax_ of computer and programming languages, $y_0$ is designed to define their _semantics_.
 
-$y_0$ is a logic-programming language. It means that a $y_0$ program consists of rules that use logic to determine properties of a program in the target language -- the language which we wish to compile / analyze.
+The term "semantics" is ambiguous, and can mean different things. For example, it can mean _what syntactically-valid inputs are valid programs_ but it can also mean _what does a given program do_.
 
-In comparison with Prolog, the most well-known logic programming language, $y_0$ has a few unique features:
+$y_0$ is capable of doing both, but it is intended for the former. Given a parse tree, determine whether it represents a semantically valid program, and if now, why. The latter part gives $y_0$ its name.
 
-1. Predicates in $y_0$ are either deterministic or semi-deterministic. Deterministic predicates either return a result for every query or return an explanation _why not_, i.e., why the input program is not valid. Semi-deterministic predicates, which names end with a `?` have a third outcome -- not returning a result. These can be used by deterministic predicates as conditions, or by providing the lack of result as an error.
-2. Variables are quantified. In Prolog, logic variables are distinguished from other symbols in the language lexically, by starting with a capital letter or an underscore. In $y_0$, however, logic variables are declared within `all` and `exist` forms, which correspond to the &#2200 and &#2203 operators in first-order logic, respectively. Using explicit quantification in $y_0$ allows for variables to be indistinguishable from other symbols in the program, which in turn opens the door to _meta variables_.
-3. The `given` form allows for assumptions to be injected into a logic goal. This allows for an easy and intuitive definition of scopes.
-4. $y_0$ supports both Prolog-style _top down_ and Datalog-style _bottom up evaluation_. The `<-` operator means that for the goal on the left to be true, all goals on the right must be true, while the `->` operator means that if the goal on the left is said to be true, so are the goals on the right. The operator `<->` says both and acts as "if and only if".
-5. Meta variables are variables that come from the program being analyzed but act as logic variables in the $y_0$ program. These can be used, e.g., as type variables in algebraic data types or generics.
-6. $y_0$ is a purely-declarative programming language. Its built-in predicates have no side effects.
+## Motivation
 
+[Traditionally](https://en.wikipedia.org/wiki/Compilers:_Principles,_Techniques,_and_Tools), the task of performing semantic analysis on syntax trees has been implemented in compilers using general-purpose code. After tackling the challenge of parsing, reasoning over a tree is something that any language that can handle structured data and recursion can handle.
 
-## Usage
+However, ever since InteliJ first shared their IDEA (pun intended) that IDEs (Integrated Development Environment) can benfit heavily by semantically-understanding the program, the role of semantic analyzers has changed significantly. Language implementation is no longer limited to compilers. Editors need to understand the programs too, but need to do significantly different things with this understanding.
 
-FIXME
+A later breakthrough in this field was the introduction of the [Language Server Protocol](https://microsoft.github.io/language-server-protocol/) by VS Code. It created a standard separation between an editor / IDE and a language implementation, turning what was previously a `n*m` problem (`n` languages times `m` editors) to a `n+m` problem, where every editor adopting this protocol needs to implement its client side, while a language server needs to be implemented for each language.
+
+However, implementing a language server is never easy. An implementation needs to be based on a semantic understanding of the language, but the different services such a server can implement need to do different things with it. In a way, this is still an `n*k` problem, with `n` languages times `k` services (e.g., syntax highlighting, auto-completion, error reporting etc).
+
+$y_0$ is intended to turn this into a `n+k` problem instead. For each language, a semantic definition is provided. The different language services, however, are implemented as part of $y_0$. This allows us to tackle each of the `k` language services only once, while $y_0$ users only need to define their language semantics in $y_0$ (`n` definitions overall).
+
+We are not there yet, but this is where we strive to go...
+
+## The $y_0$ Language
+
+$y_0$ is a logic programming language. However, it is significantly different from other logic-programming languages such as Prolog and Datalog, so readers unfamiliar with these languages and logic programming in general, are not missing much.
+
+The $y_0$ of defining the semantics of a programming language is by defining a [_predicate_](hello.md#predicates) that accepts it. For example, the predicate `bit` defined below accepts a language consisting of eitehr `0` or `1`:
+
+```clojure
+;; Base case: reject everything.
+(all [x]
+     (bit x ! "Expected a bit, received" x))
+;; Accept 0 and 1
+(all []
+     (bit 0))
+(all []
+     (bit 1))
+```
+
+The code-snippet above contains three rules (starting with the `all` keyword, followed by a vector or free variables). The first is a "catch all" rule that rejects (using the `!` symbol) everything. It is followed by two rules that each accepts one value (either `0` or `1`).
+
+As can be seen in this example, $y_0$'s syntax is based on [s-expressions](https://en.wikipedia.org/wiki/S-expression). We did this because s-expressions are inherently trees, so parse-trees and parse-tree fragments are easy to express in such a language. For people who are not familiar with LISP-like languages and find the use of s-expressions intimidating, I would suggest to find an extension along the lines of [Rainbow Brackets](https://marketplace.visualstudio.com/items?itemName=2gua.rainbow-brackets) for your favorite editor. It accomplishes two goals at once: allows you to better understand nesting levels and at the same time makes the code look colorful.
+
+## Documentation
+
+*   [Language Introduction](doc/hello.md)
+*   [Rules and Conditions](doc/conditions.md)
+*   [Statements and Translation Rules](doc/statements.md)
+*   [Why-Not Explanations](doc/why-not.md)
+*   [An example language definition](doc/y1.md)
+
+## Development Status
+
+At this point the language itself is implemented to the point where one can define the semantics of s-expression-based languages with it (e.g., [$y_1$](doc/y1.md)).
+
+Some features are still missing. For example:
+
+*   A bootstrapping of $y_0$ to validate itself.
+*   Integration with one or more parser generators.
+
+LSP support will be provided by a separate project.
 
 ## License
 
