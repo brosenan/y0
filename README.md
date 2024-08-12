@@ -24,7 +24,7 @@ We are not there yet, but this is where we strive to go...
 
 $y_0$ is a logic programming language. However, it is significantly different from other logic-programming languages such as Prolog and Datalog, so readers unfamiliar with these languages and logic programming in general, are not missing much.
 
-The $y_0$ of defining the semantics of a programming language is by defining a [_predicate_](hello.md#predicates) that accepts it. For example, the predicate `bit` defined below accepts a language consisting of eitehr `0` or `1`:
+The $y_0$ of defining the semantics of a programming language is by defining a [_predicate_](doc/hello.md#predicates) that accepts it. For example, the predicate `bit` defined below accepts a language consisting of eitehr `0` or `1`:
 
 ```clojure
 ;; Base case: reject everything.
@@ -51,7 +51,7 @@ As can be seen in this example, $y_0$'s syntax is based on [s-expressions](https
 
 ## Development Status
 
-At this point the language itself is implemented to the point where one can define the semantics of s-expression-based languages with it (e.g., [$y_1$](doc/y1.md)).
+At this point the language itself is implemented to the point where one can define the semantics of s-expression-based languages with it (e.g., [our example language](doc/y1.md)).
 
 Some features are still missing. For example:
 
