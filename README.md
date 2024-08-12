@@ -47,6 +47,7 @@ As can be seen in this example, $y_0$'s syntax is based on [s-expressions](https
 *   [Rules and Conditions](doc/conditions.md)
 *   [Statements and Translation Rules](doc/statements.md)
 *   [Why-Not Explanations](doc/why-not.md)
+*   [Built-in Predicates](doc/builtins.md)
 *   [An example language definition](doc/y1.md)
 
 ## Development Status
