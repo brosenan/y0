@@ -119,3 +119,74 @@
  (list-of (a b c) symbol)
  (list-of (a 3 c) symbol ! "Expected a symbol, received" 3)
  (list-of [a b c] symbol ! [a b c] "is not a list"))
+
+;; ### Matching Collections
+
+;; Often we need to match two collections, element by element, making sure that
+;; they are of the same size. One example where this is useful is when
+;; validating arguments based on the parameter definitions.
+
+;; Similarly to how when verifying single elements we used a _description_, to
+;; handle the relationship between two elements we define a family of terms
+;; named _relations_. A relation describes the relationship between two things.
+;; The predicate `have-relation` takes a relation and two values and accepts
+;; them if the values have the given relationship.
+
+;; The base rule rejects all (undefined) relations.
+(all [rel a b]
+     (have-relation rel a b ! "Undefined relation" rel))
+
+;; The relation `=` requires that the two values are equal.
+(all [a b]
+     (have-relation = a b) <-
+     (= a b ! "Expected" a "to equal" b "but they differ"))
+
+;; The predicate `match-vector` takes a vector, a collection, a relation and a
+;; string representing the vector and checks a member-wise relation between the
+;; respective elements.
+(all [vec coll rel name]
+     (match-vector vec coll rel name ! "match-vector expects a vector, but" vec "is given"))
+(all [x xs coll rel name]
+     (match-vector [x & xs] coll rel name) <-
+     (empty? coll false ! "Too many" name "provided." x "is extra")
+     (exist [y coll']
+            (decons coll y coll')
+            (have-relation rel x y)
+            (match-vector xs coll' rel name)))
+(all [coll rel name]
+     (match-vector [] coll rel name) <-
+     (empty? coll true ! "Too few" name "provided." coll "are unmatched"))
+
+;; These rules handle both the cases of the vector and collection being eual in
+;; size and the vector being longer or shorter.
+(assert
+ (match-vector [1 2 3] (1 2 3) = "numbers")
+ (match-vector [1 2 3] (1 2) = "numbers"
+               ! "Too many" "numbers" "provided." 3 "is extra")
+ (match-vector [1 2] (1 2 3) = "numbers"
+               ! "Too few" "numbers" "provided." (3) "are unmatched")
+ (match-vector [1 2 3] (1 4 3) = "numbers"
+               ! "Expected" 2 "to equal" 4 "but they differ"))
+
+;; Similarly, `match-list` matches a list to a collection.
+(all [list coll rel name]
+     (match-list list coll rel name ! "match-list expects a list, but" list "is given"))
+(all [x xs coll rel name]
+     (match-list (x & xs) coll rel name) <-
+     (empty? coll false ! "Too many" name "provided." x "is extra")
+     (exist [y coll']
+            (decons coll y coll')
+            (have-relation rel x y)
+            (match-list xs coll' rel name)))
+(all [coll rel name]
+     (match-list () coll rel name) <-
+     (empty? coll true ! "Too few" name "provided." coll "are unmatched"))
+
+(assert
+ (match-list (1 2 3) [1 2 3] = "numbers")
+ (match-list (1 2 3) [1 2] = "numbers"
+             ! "Too many" "numbers" "provided." 3 "is extra")
+ (match-list (1 2) [1 2 3] = "numbers"
+             ! "Too few" "numbers" "provided." [3] "are unmatched")
+ (match-list (1 2 3) [1 4 3] = "numbers"
+             ! "Expected" 2 "to equal" 4 "but they differ"))
