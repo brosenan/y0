@@ -24,7 +24,7 @@ We are not there yet, but this is where we strive to go...
 
 $y_0$ is a logic programming language. However, it is significantly different from other logic-programming languages such as Prolog and Datalog, so readers unfamiliar with these languages and logic programming in general, are not necessarily at a disadvantage trying to learn $y_0$.
 
-The $y_0$ of defining the semantics of a programming language is by defining a [_predicate_](doc/hello.md#predicates) that accepts it. For example, the predicate `bit` defined below accepts a language consisting of eitehr `0` or `1`:
+The way of defining the semantics of a programming language in $y_0$ is by defining a [_predicate_](doc/hello.md#predicates) that accepts its parse tree. For example, the predicate `bit` defined below accepts a language consisting of eitehr `0` or `1`:
 
 ```clojure
 ;; Base case: reject everything.
@@ -37,9 +37,70 @@ The $y_0$ of defining the semantics of a programming language is by defining a [
      (bit 1))
 ```
 
-The code-snippet above contains three rules (starting with the `all` keyword, followed by a vector or free variables). The first is a "catch all" rule that rejects (using the `!` symbol) everything. It is followed by two rules that each accepts one value (either `0` or `1`).
+The first thing to notice in this example is the fact that $y_0$'s syntax is based on [s-expressions](https://en.wikipedia.org/wiki/S-expression). We made this decision because s-expressions are inherently trees, so parse-trees and parse-tree fragments are easy to express in such a language. For people who are not familiar with LISP-like languages and find the use of s-expressions intimidating, I would recommend finding an extension along the lines of [Rainbow Brackets](https://marketplace.visualstudio.com/items?itemName=2gua.rainbow-brackets) for your favorite editor. It accomplishes two goals at once: allowing you to better understand nesting level of your expressions and at the same time making the code more colorful and therefore more cheerful.
 
-As can be seen in this example, $y_0$'s syntax is based on [s-expressions](https://en.wikipedia.org/wiki/S-expression). We did this because s-expressions are inherently trees, so parse-trees and parse-tree fragments are easy to express in such a language. For people who are not familiar with LISP-like languages and find the use of s-expressions intimidating, I would suggest to find an extension along the lines of [Rainbow Brackets](https://marketplace.visualstudio.com/items?itemName=2gua.rainbow-brackets) for your favorite editor. It accomplishes two goals at once: allows you to better understand nesting levels and at the same time makes the code look colorful.
+Having gone pased that, the code-snippet above contains three rules (starting with the `all` keyword, followed by a vector or free variables). The first is a "catch all" rule that matches the free variable `x` and rejects (using the `!` symbol) everything, providing an explanation (`"Expected a bit, received" x`).
+
+It is followed by two rules that each accepts one value (either `0` or `1`).
+
+This works because $y_0$ chooses the _most specific rule_ when matching an input tree. Therefore, `0` or `1` will be matched by their dedicated rules, while anything else will be matched by the catch-all rule.
+
+### A More Elaborate Example
+
+A slightly more complex example accepts s-expressions that represent [Peano numbers](https://en.wikipedia.org/wiki/Peano_axioms):
+
+```closure
+(all [x] (peano x ! x "is not a Peano number"))
+(all [] (peano z))
+(all [n]
+     (peano (s n)) <- (peano n))
+```
+
+As before, the first rule rejects all non-Peano values. The second rule accepts `z` (zero), and the thrid rule accepts anything of the form `(s n)`, for any `n` that is a Peano number by itself.
+
+As our third example we define `lambda-expr`, a predicate that accepts expressions in the [Lambda Calculs](https://en.wikipedia.org/wiki/Lambda_calculus).
+
+As usual, we begin with a catch-all rule.
+
+```clojure
+(all [x]
+     (lambda-expr x ! x "is not a lambda-calulus expression"))
+```
+
+Then, we define a [translation rule](doc/statements.md) that defines `defconst` _statements_.
+
+```clojure
+(all [var expr]
+     (defconst var expr) =>
+       (assert (lambda-expr expr))
+       (all [] (lambda-expr var)))
+```
+
+Statements are top-level elements of the parse-tree. Translation rules translate them into other statements. In this case, a `defconst` statement is translated to an `assert` block which verifies that the value assigned to the constant is a valid Lambda expression, followed by a rule that defines the constant (`var`) as a valid expression.
+
+Next we define a rule for _lambda application_, an expression of the form `(fun arg)`, where both `func` and `arg` are Lambda expressions.
+
+```clojure
+(all [func arg]
+     (lambda-expr (func arg)) <-
+     (lambda-expr func)
+     (lambda-expr arg))
+```
+
+Finally, we get to the most difficult piece to define in the Lambda Calculus, the Lambda abstraction, of the form `(lambda var expr)`, where `var` is a symbol and `expr` is an expression. The challenge here is that `expr` _may include `var`_, so `var` needs to be defined as a valid Lambda expression within `expr`, but nowhere else.
+
+We do this as follows:
+
+```clojure
+(all [var expr]
+     (lambda-expr (lambda var expr)) <-
+     (given (all [] (lambda-expr var))
+            (lambda-expr expr)))
+```
+
+The `given` keyword is responsible for the magic. It introduces the rule `(all [] (lambda-expr var))` locally, basically asserting that `var` is a Lambda expression, and then checks that `expr` is a Lambda expression. Because the rule introducing `var` is scoped under the `given` keyword, it _only_ applies to `expr`.
+
+The entire example, with tests, can be found [here](doc/conditions.md#example-the-lambda-calculus).
 
 ## Documentation
 
