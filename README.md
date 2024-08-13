@@ -76,7 +76,7 @@ Then, we define a [translation rule](doc/statements.md) that defines `defconst` 
        (all [] (lambda-expr var)))
 ```
 
-Statements are top-level elements of the parse-tree. Translation rules translate them into other statements. In this case, a `defconst` statement is translated to an `assert` block which verifies that the value assigned to the constant is a valid Lambda expression, followed by a rule that defines the constant (`var`) as a valid expression.
+Statements are top-level elements of the parse-tree. Translation rules translate them into other statements, including rules (`all`) or assertions (`assert`). In this case, a `defconst` statement is translated to an `assert` block which verifies that the value assigned to the constant is a valid Lambda expression, followed by a rule that defines the constant (`var`) as a valid expression.
 
 Next we define a rule for _lambda application_, an expression of the form `(fun arg)`, where both `func` and `arg` are Lambda expressions.
 
