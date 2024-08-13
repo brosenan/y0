@@ -49,7 +49,7 @@ This works because $y_0$ chooses the _most specific rule_ when matching an input
 
 A slightly more complex example accepts s-expressions that represent [Peano numbers](https://en.wikipedia.org/wiki/Peano_axioms):
 
-```closure
+```clojure
 (all [x] (peano x ! x "is not a Peano number"))
 (all [] (peano z))
 (all [n]
