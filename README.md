@@ -102,6 +102,8 @@ The `given` keyword does the trick. It introduces the rule `(all [] (lambda-expr
 
 The entire example, with tests, can be found [here](doc/conditions.md#example-the-lambda-calculus).
 
+For a full-featured language, with algebraic data types and type classes, see $y_1$, [our example language](doc/y1.md).
+
 ## Documentation
 
 *   [Language Introduction](doc/hello.md)
