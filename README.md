@@ -111,6 +111,7 @@ For a full-featured language, with algebraic data types and type classes, see $y
 *   [Statements and Translation Rules](doc/statements.md)
 *   [Why-Not Explanations](doc/why-not.md)
 *   [Built-in Predicates](doc/builtins.md)
+*   [A Library of Utility Predicates](doc/util.md)
 *   [An example language definition](doc/y1.md)
 
 ## Development Status
