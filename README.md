@@ -98,7 +98,7 @@ We do this as follows:
             (lambda-expr expr)))
 ```
 
-The `given` keyword is responsible for the magic. It introduces the rule `(all [] (lambda-expr var))` locally, basically asserting that `var` is a Lambda expression, and then checks that `expr` is a Lambda expression. Because the rule introducing `var` is scoped under the `given` keyword, it _only_ applies to `expr`.
+The `given` keyword does the trick. It introduces the rule `(all [] (lambda-expr var))` locally, in the scope of checking that `expr` is a Lambda expression, and only there.
 
 The entire example, with tests, can be found [here](doc/conditions.md#example-the-lambda-calculus).
 
