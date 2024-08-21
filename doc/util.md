@@ -1,6 +1,7 @@
 * [Utility Predicates](#utility-predicates)
   * [Collection Predicates](#collection-predicates)
     * [Abstract Collections](#abstract-collections)
+      * [A Collection of Pairs](#a-collection-of-pairs)
     * [Verifying Elements](#verifying-elements)
     * [Matching Collections](#matching-collections)
 ```clojure
@@ -79,6 +80,45 @@ vectors.
         (decons [] x xs) ! "Attempt to deconstruct an empty vector")
  (exist [x xs]
         (decons () x xs) ! "Attempt to deconstruct an empty list"))
+
+```
+#### A Collection of Pairs
+
+In some cases it may be useful to treat the members of a collection as
+pairs. These could be, for example, variable names coupled with expressions
+to initialize them, as in `let` expressions in Clojure.
+
+Collections of the form `(pairs coll)`, where `coll` is some collection are
+interpreted as collections of pairs of consecutive elements from the
+underlying collection. For example, `(pair [1 2 3 4])` contains the elements
+`[1 2]` and `[3 4]`.
+
+We define `empty?` on `(pairs coll)` as `empty?` on `coll`.
+```clojure
+(all [coll res]
+     (empty? (pairs coll res)) <-
+     (empty? coll res))
+
+(assert
+ (empty? (pairs (1 2 3 4) false))
+ (empty? (pairs () true)))
+
+```
+For `decons`, we call `decons` on the underlying `coll` while checking
+`empty?` between them.
+```clojure
+(all [coll x y xys]
+     (decons (pairs coll) [x y] (pairs xys)) <-
+     (exist [yxys]
+            (decons coll x yxys)
+            (empty? yxys false ! x "is unmatched")
+            (decons yxys y xys)))
+
+(assert
+ (decons (pairs [1 2 3 4]) [1 2] (pairs [3 4]))
+ (exist [x xs]
+        (decons (pairs [1]) x xs)
+        ! 1 "is unmatched"))
 
 ```
 ### Verifying Elements
