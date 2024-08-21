@@ -4,7 +4,7 @@ $y_0$, AKA Y Nought, AKA Why Not, is a declarative language intended for definin
 
 The term "semantics" is ambiguous, and can mean different things. For example, it can mean _what syntactically-valid inputs are valid programs_ but it can also mean _what does a given program do_.
 
-$y_0$ is capable of doing both, but it is intended for the former. Given a parse tree, determine whether it represents a semantically valid program, and if now, why. The latter part gives $y_0$ its name.
+$y_0$ is capable of doing both, but it is intended for the former. Given a parse tree, determine whether it represents a semantically valid program, and if not, why. The latter part gives $y_0$ its name.
 
 ## Motivation
 
