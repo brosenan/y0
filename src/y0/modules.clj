@@ -74,11 +74,16 @@
              (= directive ':require) (handle-require args)))
          (reduce fold [[] {nil module-name} {}]))))
 
+(defn- convert-location [loc]
+  (let [{:keys [col row end-col end-row]} loc]
+    {:start (+ (* row 1000000) col)
+     :end (+ (* end-row 1000000) end-col)}))
+
 (defn load-single-module [module-name y0-path]
   (let [[module-text module-path] (read-module module-name y0-path)
         [ns-decl & statements] (parse-string-all module-text {:postprocess (fn [m]
                                                                              (if (instance? clojure.lang.IObj (:obj m))
-                                                                               (with-meta (:obj m) (-> (:loc m)
+                                                                               (with-meta (:obj m) (-> (convert-location (:loc m))
                                                                                                        (assoc :path module-path)))
                                                                                (:obj m)))})
         [module-list ns-map refer-map] (parse-ns-decl ns-decl)

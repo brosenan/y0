@@ -100,17 +100,19 @@ $y_0$ tries to associate every explanation with a code location. Given an explan
 associated location will be the first location it encounters in a left-to-right traversal.
 
 Code location for this purpose is carried as Clojure metadata and requires having at least
-these two attributes: `:path` and `:row`.
+these two attributes: `:path`, `:start` and `:end`.
 
 The function `code-location` takes an explanation and returns its associated code location
 or `nil` if one is not found.
 ```clojure
 (fact
  (code-location ["does not contain meta" 
-                 (with-meta '(does not contain path) {:row 2})
-                 (with-meta '(does not contain row) {:path "x.y0"})
-                 (with-meta '(a perfect match) {:path "z.y0" :row 3})
-                 (with-meta '(the one who came too late) {:path "w.y0" :row 4})]) => {:path "z.y0" :row 3})
+                 (with-meta '(does not contain path) {:start 1000001 :end 1000002})
+                 (with-meta '(does not contain start) {:path "x.y0" :end 1000002})
+                 (with-meta '(does not contain end) {:path "x.y0" :start 1000001})
+                 (with-meta '(a perfect match) {:path "z.y0" :start 1000001 :end 1000002})
+                 (with-meta '(the one who came too late) {:path "w.y0" :start 2000001 :end 2000002})])
+ => {:path "z.y0" :start 1000001 :end 1000002})
 
 ```
 Sometimes it is necessary to dig deeper to find the location. The following example is
@@ -119,17 +121,19 @@ expect that `code-location` would dig the value by going inside.
 ```clojure
 (fact
  (code-location [`("does not contain meta"
-                   ~(with-meta '(does not contain path) {:row 2})
-                   ~(with-meta '(does not contain row) {:path "x.y0"})
-                   ~(with-meta '(a perfect match) {:path "z.y0" :row 3})
-                   ~(with-meta '(the one who came too late) {:path "w.y0" :row 4}))]) => {:path "z.y0" :row 3})
+                   ~(with-meta '(does not contain path) {:start 1000001 :end 1000002})
+                   ~(with-meta '(does not contain start) {:path "x.y0" :end 1000002})
+                   ~(with-meta '(does not contain end) {:path "x.y0" :start 1000001})
+                   ~(with-meta '(a perfect match) {:path "z.y0" :start 1000001 :end 1000002})
+                   ~(with-meta '(the one who came too late) {:path "w.y0" :start 2000001 :end 2000002}))])
+ => {:path "z.y0" :start 1000001 :end 1000002})
 
 ```
 Digging even deeper, code location can be found inside a bound variable.
 ```clojure
 (fact
- (code-location [(atom `(~(with-meta '(a perfect match) {:path "z.y0" :row 3})))]) =>
- {:path "z.y0" :row 3})
+ (code-location [(atom `(~(with-meta '(a perfect match) {:path "z.y0" :start 1000001 :end 1000002})))]) =>
+ {:path "z.y0" :start 1000001 :end 1000002})
 
 ```
 ## Extracting Terms
@@ -143,58 +147,44 @@ returns a sequence of `[term location]` pairs, where the `term`s are a
 subset of the terms in the explanation, each with its code location.
 ```clojure
 (fact
- (all-unique-locations ["This" (with-meta `x {:row 3 :path "/foo/bar"})
-                        "is" (with-meta `y {:row 4 :path "/foo/bar"})
-                        "a" (with-meta `z {:row 5 :path "/foo/bar"})
-                        "test" (with-meta `w {:row 2 :path "/foo/bar"})]) =>
- [[`x {:row 3 :path "/foo/bar"}]
-  [`y {:row 4 :path "/foo/bar"}]
-  [`z {:row 5 :path "/foo/bar"}]
-  [`w {:row 2 :path "/foo/bar"}]])
+ (all-unique-locations ["This" (with-meta `x {:path "/foo/bar" :start 1 :end 4})
+                        "is" (with-meta `y {:path "/foo/bar" :start 4 :end 6})
+                        "a" (with-meta `z {:path "/foo/bar" :start 6 :end 9})
+                        "test" (with-meta `w {:path "/foo/bar"  :start 9 :end 10})]) =>
+ [[`x {:path "/foo/bar" :start 1 :end 4}]
+  [`y {:path "/foo/bar" :start 4 :end 6}]
+  [`z {:path "/foo/bar" :start 6 :end 9}]
+  [`w {:path "/foo/bar"  :start 9 :end 10}]])
 
 ```
 Terms without location are skipped.
 ```clojure
 (fact
- (all-unique-locations ["This" (with-meta `x {:row 3 :path "/foo/bar"})
-                        "is" (with-meta `y {:row 4})  ;; No :path
-                        "a" (with-meta `z {:path "/foo/bar"})  ;; No :row
-                        "test" (with-meta `w {:row 2 :path "/foo/bar"})]) =>
- [[`x {:row 3 :path "/foo/bar"}]
-  [`w {:row 2 :path "/foo/bar"}]])
+ (all-unique-locations ["This" (with-meta `x {:path "/foo/bar" :start 1 :end 7})
+                        "is" (with-meta `y {:start 4 :end 5})  ;; No :path
+                        "a" (with-meta `z {:path "/foo/bar" :start 5})  ;; No :end
+                        "test" (with-meta `w {:path "/foo/bar" :start 7 :end 9})]) =>
+ [[`x {:path "/foo/bar" :start 1 :end 7}]
+  [`w {:path "/foo/bar" :start 7 :end 9}]])
 
 ```
 A full term is taken even if the location is only known by its internals.
 ```clojure
 (fact
- (all-unique-locations [["foo" (with-meta `x {:row 3 :path "/foo/bar"}) "bar"]]) =>
- [[["foo" `x "bar"] {:row 3 :path "/foo/bar"}]])
+ (all-unique-locations [["foo" (with-meta `x {:path "/foo/bar" :start 1 :end 7}) "bar"]]) =>
+ [[["foo" `x "bar"] {:path "/foo/bar" :start 1 :end 7}]])
 
 ```
-If two terms have the same location (`:path` and `:row`), only the first one
-is returned.
+If one term is contained within another (i.e., they have the same `:path`
+and the `:start` of the one is >= the `:start` of the other while the `:end`
+of the one is <= the `:end` of the other), the internal term is removed.
 ```clojure
 (fact
- (all-unique-locations ["This" (with-meta `x {:row 3 :path "/foo/bar"})
-                        "is" (with-meta `y {:row 4 :path "/foo/bar"})
-                        "a" (with-meta `z {:row 3 :path "/foo/bar"})  ;; Same location as x
-                        "test" (with-meta `w {:row 2 :path "/foo/bar"})
-                        ])=>
- [[`x {:row 3 :path "/foo/bar"}]
-  [`y {:row 4 :path "/foo/bar"}]
-  [`w {:row 2 :path "/foo/bar"}]])
-
-```
-If the location map contains things other than `:row` and `:path`, they are
-not taken into account in the dedupping.
-```clojure
-(fact
- (all-unique-locations ["This" (with-meta `x {:row 3 :path "/foo/bar" :foo :bar})
-                        "is" (with-meta `y {:row 4 :path "/foo/bar"})
-                        "a" (with-meta `z {:row 3 :path "/foo/bar" :foo :baz})  ;; Same :row and :path as x
-                        "test" (with-meta `w {:row 2 :path "/foo/bar"})]) =>
- [[`x {:row 3 :path "/foo/bar" :foo :bar}]
-  [`y {:row 4 :path "/foo/bar"}]
-  [`w {:row 2 :path "/foo/bar"}]])
+ (all-unique-locations ["This" (with-meta `x {:path "/foo/bar" :start 1 :end 4})
+                        "is" (with-meta `y {:path "/foo/bar" :start 2 :end 3})
+                        "a" (with-meta `z {:path "/foo/bar" :start 6 :end 9})
+                        "test" (with-meta `w {:path "/foo/bar"  :start 5 :end 10})]) =>
+ [[`x {:path "/foo/bar" :start 1 :end 4}]
+  [`w {:path "/foo/bar"  :start 5 :end 10}]])
 ```
 

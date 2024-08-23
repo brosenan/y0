@@ -132,6 +132,12 @@ Additional symbols in the `y0` namespace: `...` and `test`.
 
 ```
 When reading the module, the source location of expressions is recorded as metadata.
+The file path is recorded as `:path` and the beginning and end locations within the
+file are recorded as `:start` and `:end`, respectively, representing the row and
+column location as a single integrer using the formula: `row * 1000000 + col`. This
+guarantees that (1) the values of the row and column can be extracted unambiguously
+from the values and (2) these values can be compared using normal integer comparison
+operators (e.g., `>` and `<=`).
 ```clojure
 (fact
  (let [[module _deps] (load-single-module "foo.bar" ["/some/path"])]
@@ -141,13 +147,13 @@ When reading the module, the source location of expressions is recorded as metad
                                                   (a b)
                                                   (charlie)" "foo.y0"])
  ;; Location of `(a b)`
- (-> foobar-module first meta)  => {:path "foo.y0" :row 2 :col 51 :end-row 2 :end-col 56}
+ (-> foobar-module first meta)  => {:path "foo.y0" :start 2000051 :end 2000056}
  ;; Location of `a`
- (-> foobar-module first first meta)  => {:path "foo.y0" :row 2 :col 52 :end-row 2 :end-col 53}
+ (-> foobar-module first first meta)  => {:path "foo.y0" :start 2000052 :end 2000053}
  ;; Location of `b`
- (-> foobar-module first second meta)  => {:path "foo.y0" :row 2 :col 54 :end-row 2 :end-col 55}
+ (-> foobar-module first second meta)  => {:path "foo.y0" :start 2000054 :end 2000055}
  ;; Location of `charlie`
- (-> foobar-module second first meta)  => {:path "foo.y0" :row 3 :col 52 :end-row 3 :end-col 59})
+ (-> foobar-module second first meta)  => {:path "foo.y0" :start 3000052 :end 3000059})
 
 
 

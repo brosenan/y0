@@ -35,7 +35,8 @@
 
 (defn- has-location? [term]
   (let [m (meta term)]
-    (and (contains? m :row)
+    (and (contains? m :start)
+         (contains? m :end)
          (contains? m :path))))
 
 (declare code-location)
@@ -53,19 +54,18 @@
 (defn code-location [term]
   (code-location' term))
 
-(defn- project-location [loc]
-  [(:row loc) (:path loc)])
+(defn- loc-contained? [[_ a] [_ b]]
+  (and (= (:path a) (:path b))
+       (or (and (>= (:start a) (:start b))
+                (< (:end a) (:end b)))
+           (and (> (:start a) (:start b))
+                (<= (:end a) (:end b))))))
 
-(defn- unique-location [seen pairs]
-  (if (empty? pairs)
-    pairs
-    (let [[[term loc] & pairs] pairs]
-      (if (contains? seen (project-location loc))
-        (recur seen pairs)
-        (lazy-seq (cons [term loc] (-> seen (conj (project-location loc)) (unique-location pairs))))))))
+(defn- unique-location [pairs]
+  (filter (fn [x] (nil? (some #(loc-contained? x %) pairs))) pairs))
 
 (defn all-unique-locations [explanation]
   (->> explanation
        (map (fn [term] [term (code-location term)]))
        (filter #(-> % second nil? not))
-       (unique-location #{})))
+       unique-location))
