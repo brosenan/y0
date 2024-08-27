@@ -79,20 +79,27 @@
     {:start (+ (* row 1000000) col)
      :end (+ (* end-row 1000000) end-col)}))
 
-(defn load-single-module [module-name y0-path]
-  (let [[module-text module-path] (read-module module-name y0-path)
-        [ns-decl & statements] (parse-string-all module-text {:postprocess (fn [m]
-                                                                             (if (instance? clojure.lang.IObj (:obj m))
-                                                                               (with-meta (:obj m) (-> (convert-location (:loc m))
-                                                                                                       (assoc :path module-path)))
-                                                                               (:obj m)))})
+(defn- decorate-location [m module-path]
+  (if (instance? clojure.lang.IObj (:obj m))
+    (with-meta (:obj m) (-> (convert-location (:loc m))
+                            (assoc :path module-path)))
+    (:obj m)))
+
+(defn parse-edn [module path text]
+  (let [[ns-decl & statements] (parse-string-all text
+                                                 {:postprocess #(decorate-location % path)})
         [module-list ns-map refer-map] (parse-ns-decl ns-decl)
         refer-map (merge refer-map (->> (for [sym y0-symbols]
                                           [(name sym) "y0.core"])
-                                        (into {})))]
-    [(for [statement statements]
-       (convert-ns statement ns-map refer-map))
-     module-list]))
+                                        (into {})))
+        statements (for [statement statements]
+                     (convert-ns statement ns-map refer-map))]
+    [statements module-list]))
+
+(defn load-single-module [module-name y0-path]
+  (let [[module-text module-path] (read-module module-name y0-path)
+        [statements module-list] (parse-edn module-name module-path module-text)]
+    [statements module-list]))
 
 (defn load-all-modules [modules-to-load y0-path]
   (loop [modules-to-load modules-to-load
