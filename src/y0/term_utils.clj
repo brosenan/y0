@@ -13,6 +13,17 @@
       (with-meta y m)
       y)))
 
+(defn postwalk-meta [f x]
+  (let [x (cond
+            (vector? x) (->> x (map #(postwalk-meta f %)) vec)
+            (seq? x) (->> x (map #(postwalk-meta f %)) sequence)
+            (map? x) (->> x (map #(postwalk-meta f %)) (into {}))
+            (set? x) (->> x (map #(postwalk-meta f %)) set)
+            :else x)]
+    (if (instance? clojure.lang.IObj x)
+      (with-meta x (f (meta x)))
+      x)))
+
 (defn replace-vars [term vars]
   (postwalk-with-meta #(get vars % %) term))
 

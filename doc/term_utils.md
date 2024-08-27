@@ -1,12 +1,13 @@
 * [Term Utils](#term-utils)
   * [Meta-Preserving-`postwalk`.](#meta-preserving-`postwalk`.)
+    * [A `postwalk` for Meta](#a-`postwalk`-for-meta)
   * [Replacing Variables in Terms](#replacing-variables-in-terms)
   * [Ground Terms](#ground-terms)
 ```clojure
 (ns y0.term-utils-test
   (:require [midje.sweet :refer [fact =>]]
-            [y0.term-utils :refer [postwalk-with-meta replace-vars
-                                   ground? replace-ground-vars]]))
+            [y0.term-utils :refer [postwalk-with-meta postwalk-meta 
+                                   replace-vars ground? replace-ground-vars]]))
 
 ```
 # Term Utils
@@ -64,6 +65,32 @@ the numbers. Metadata on the lists and vectors will be preserved.
    (-> res (nth 3) meta) => {:seq :empty}
    (-> res (nth 4) meta) => {:map :bar}
    (-> res (nth 5) meta) => {:set :baz}))
+
+```
+### A `postwalk` for Meta
+
+A slightly different operation is to transform the meta properties of a
+s-expression. `postwalk-with-meta` cannot be used in this case because it
+would override any changes to the meta done by the function.
+
+`postwalk-meta` takes a function and a s-expression. The function, rather
+than being called on the object, is being called on the _meta_ of each
+object. Then, the returned value from the function is installed as the new
+meta.
+
+In the following example we use `postwalk-meta` to add a meta property
+`:foo` with value `:bar` to all nodes in a s-expression.
+```clojure
+(fact
+ (let [tree '[foo (#{baz} {baz 42})]
+       res (postwalk-meta #(assoc % :foo :bar) tree)]
+   res => tree
+   (-> res meta :foo) => :bar
+   (-> res first meta :foo) => :bar
+   (-> res second meta :foo) => :bar
+   (-> res second first meta :foo) => :bar
+   (-> res second first first meta :foo) => :bar
+   (-> res second second first first meta :foo) => :bar))
 
 ```
 ## Replacing Variables in Terms
