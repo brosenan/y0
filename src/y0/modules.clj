@@ -2,7 +2,8 @@
   (:require [clojure.string :as str]
             [clojure.java.io :as io]
             [clojure.set :refer [union difference]]
-            [y0.edn-parser :refer [parse-edn]]))
+            [y0.edn-parser :refer [edn-parser]]
+            [y0.core :refer [y0-root-refer-map]]))
 
 (defn module-paths [module-name y0-path]
   (let [rel-path (str/split module-name #"[.]")
@@ -22,7 +23,8 @@
 
 (defn load-single-module [module-name y0-path]
   (let [[module-text module-path] (read-module module-name y0-path)
-        [statements module-list] (parse-edn module-name module-path module-text)]
+        parser (edn-parser y0-root-refer-map)
+        [statements module-list] (parser module-name module-path module-text)]
     [statements module-list]))
 
 (defn load-all-modules [modules-to-load y0-path]

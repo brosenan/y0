@@ -54,24 +54,23 @@
              (= directive ':require) (handle-require args)))
          (reduce fold [[] {nil module-name} {}]))))
 
-(defn- convert-location [loc]
+(defn convert-location [loc]
   (let [{:keys [col row end-col end-row]} loc]
     {:start (+ (* row 1000000) col)
      :end (+ (* end-row 1000000) end-col)}))
 
-(defn- decorate-location [m module-path]
+(defn- annotate-location [m module-path]
   (if (instance? clojure.lang.IObj (:obj m))
     (with-meta (:obj m) (-> (convert-location (:loc m))
                             (assoc :path module-path)))
     (:obj m)))
 
-(defn parse-edn [module path text]
-  (let [[ns-decl & statements] (parse-string-all text
-                                                 {:postprocess #(decorate-location % path)})
-        [module-list ns-map refer-map] (parse-ns-decl ns-decl)
-        refer-map (merge refer-map (->> (for [sym y0-symbols]
-                                          [(name sym) "y0.core"])
-                                        (into {})))
-        statements (for [statement statements]
-                     (convert-ns statement ns-map refer-map))]
-    [statements module-list]))
+(defn edn-parser [root-refer-map]
+  (fn [module path text]
+    (let [[ns-decl & statements] (parse-string-all text
+                                                   {:postprocess #(annotate-location % path)})
+          [module-list ns-map refer-map] (parse-ns-decl ns-decl)
+          refer-map (merge refer-map root-refer-map)
+          statements (for [statement statements]
+                       (convert-ns statement ns-map refer-map))]
+      [statements module-list])))

@@ -25,3 +25,8 @@
   replace-meta
   to-list
   to-vec)
+
+(def y0-root-refer-map
+  (->> (for [sym y0-symbols]
+         [(name sym) "y0.core"])
+       (into {})))
