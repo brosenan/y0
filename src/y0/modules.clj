@@ -35,9 +35,10 @@
       (let [newly-loaded (->> (for [module modules-to-load]
                                 [module (load-single-module module y0-path)])
                               (into {}))
-            new-deps (difference (set (apply concat (for [[_module [_statements deps]] newly-loaded]
-                                                      deps)))
-                                 (set (keys loaded)))]
+            new-deps (for [[_module [_statements deps]] newly-loaded
+                           dep deps
+                           :when (not (contains? loaded dep))]
+                       dep)]
         (recur new-deps (merge loaded newly-loaded))))))
 
 (defn- remove-all-keys [m keys]
