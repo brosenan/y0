@@ -112,12 +112,14 @@
  (let [root-symbols '[foo bar baz]
        root-refer-map (into {} (for [sym root-symbols]
                                  [(name sym) "mylang.core"]))
-       parser (edn-parser root-refer-map)
-       [parse deps] (parser "boo" "/path/to/boo" "(ns boo)\na foo goes into a bar")]
-   parse => '[boo/a mylang.core/foo boo/goes boo/into boo/a mylang.core/bar]
-   (map meta parse) => [{:start 2000001 :end 2000002 :path "/path/to/boo"}
-                        {:start 2000003 :end 2000006 :path "/path/to/boo"}
-                        {:start 2000007 :end 2000011 :path "/path/to/boo"}
-                        {:start 2000012 :end 2000016 :path "/path/to/boo"}
-                        {:start 2000017 :end 2000018 :path "/path/to/boo"}
-                        {:start 2000019 :end 2000022 :path "/path/to/boo"}]))
+       parse (edn-parser root-refer-map)
+       [statements deps] (parse "boo" "/path/to/boo" 
+                                "(ns boo (:require [some.module]))\na foo goes into a bar")]
+   statements => '[boo/a mylang.core/foo boo/goes boo/into boo/a mylang.core/bar]
+   (map meta statements) => [{:start 2000001 :end 2000002 :path "/path/to/boo"}
+                             {:start 2000003 :end 2000006 :path "/path/to/boo"}
+                             {:start 2000007 :end 2000011 :path "/path/to/boo"}
+                             {:start 2000012 :end 2000016 :path "/path/to/boo"}
+                             {:start 2000017 :end 2000018 :path "/path/to/boo"}
+                             {:start 2000019 :end 2000022 :path "/path/to/boo"}]
+   deps => ["some.module"]))
