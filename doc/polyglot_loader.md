@@ -59,11 +59,13 @@ For the following examples, let us use the following language-map:
 (def lang-map {"y1" {:resolve #(assoc % :path "some/path")
                      :parse #(-> %
                                  (assoc :statements `[parsing ~(:text %)])
-                                 (assoc :deps [{"y1" (str (:name %) 2)}]))}
+                                 (assoc :deps [{:lang "y1"
+                                                :name (str (:name %) 2)}]))}
                "y2" {:resolve #(assoc % :path "some/other/path")
                      :parse #(-> %
                                  (assoc :statements [`(something-else ~(:name %))])
-                                 (assoc :deps [{"y2" (str (:name %) 3)}]))}})
+                                 (assoc :deps [{:lang "y2"
+                                                :name (str (:name %) 3)}]))}})
 
 ```
 If it contains `:statements`, it does nothing.
@@ -86,7 +88,8 @@ If `:statements` is not present, but `:text` is, `:parse` is called.
      :path "path/to/foo.y1"
      :text "text inside foo.y1"
      :statements `[parsing "text inside foo.y1"]
-     :deps [{"y1" "foo2"}]})
+     :deps [{:lang "y1"
+             :name "foo2"}]})
 
 ```
 If `:text` is not present but `:path` is, `slurp` is called to read the
@@ -101,7 +104,8 @@ text, followed by `:parse` to parse it.
      :path "path/to/foo.y1"
      :text "text inside foo.y1"
      :statements `[parsing "text inside foo.y1"]
-     :deps [{"y1" "foo2"}]}
+     :deps [{:lang "y1"
+             :name "foo2"}]}
  (provided
   (slurp "path/to/foo.y1") => "text inside foo.y1"))
 
@@ -117,7 +121,8 @@ the path.
      :path "some/path"
      :text "text inside foo.y1"
      :statements `[parsing "text inside foo.y1"]
-     :deps [{"y1" "foo2"}]}
+     :deps [{:lang "y1"
+             :name "foo2"}]}
  (provided
   (slurp "some/path") => "text inside foo.y1"))
 ```
