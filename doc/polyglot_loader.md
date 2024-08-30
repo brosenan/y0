@@ -4,7 +4,8 @@
 ```clojure
 (ns y0.polyglot-loader-test
   (:require [midje.sweet :refer [fact => throws provided]]
-            [y0.polyglot-loader :refer :all]))
+            [y0.polyglot-loader :refer :all]
+            [y0.status :refer [ok]]))
 
 ```
 # A Polyglot Module Loader
@@ -39,8 +40,8 @@ keys:
    `:name`), representing the module's dependencies.
 
 A language is also represented as a map, with two keys, `:resolve` and
-`:parse`. Both function take and return a module. They add keys to the
-module they process, as follows:
+`:parse`. Both function take a module and return a [status](status.md) with
+an updated modules. They add keys to the module they process, as follows:
 
 * `:resolve` assumes `:name` and adds `:path`.
 * `:parse` assumes `:name`, `:path` and `:text` and adds `:statements` and
@@ -56,24 +57,26 @@ keys and a language map, and completes it.
 
 For the following examples, let us use the following language-map:
 ```clojure
-(def lang-map {"y1" {:resolve #(assoc % :path "some/path")
+(def lang-map {"y1" {:resolve #(ok % assoc :path "some/path")
                      :parse #(-> %
                                  (assoc :statements `[parsing ~(:text %)])
                                  (assoc :deps [{:lang "y1"
-                                                :name (str (:name %) 2)}]))}
-               "y2" {:resolve #(assoc % :path "some/other/path")
+                                                :name (str (:name %) 2)}])
+                                 ok)}
+               "y2" {:resolve #(ok % assoc :path "some/other/path")
                      :parse #(-> %
                                  (assoc :statements [`(something-else ~(:name %))])
                                  (assoc :deps [{:lang "y2"
-                                                :name (str (:name %) 3)}]))}})
+                                                :name (str (:name %) 3)}])
+                                 ok)}})
 
 ```
 If it contains `:statements`, it does nothing.
 ```clojure
 (fact
  (load-module {:lang "y1"
-               :statements [1 2 ]} lang-map) => {:lang "y1"
-                                                :statements [1 2]})
+               :statements [1 2 ]} lang-map) => {:ok {:lang "y1"
+                                                      :statements [1 2]}})
 
 ```
 If `:statements` is not present, but `:text` is, `:parse` is called.
@@ -83,13 +86,13 @@ If `:statements` is not present, but `:text` is, `:parse` is called.
                :name "foo"
                :path "path/to/foo.y1"
                :text "text inside foo.y1"} lang-map)
- => {:lang "y1"
-     :name "foo"
-     :path "path/to/foo.y1"
-     :text "text inside foo.y1"
-     :statements `[parsing "text inside foo.y1"]
-     :deps [{:lang "y1"
-             :name "foo2"}]})
+ => {:ok {:lang "y1"
+          :name "foo"
+          :path "path/to/foo.y1"
+          :text "text inside foo.y1"
+          :statements `[parsing "text inside foo.y1"]
+          :deps [{:lang "y1"
+                  :name "foo2"}]}})
 
 ```
 If `:text` is not present but `:path` is, `slurp` is called to read the
@@ -99,13 +102,13 @@ text, followed by `:parse` to parse it.
  (load-module {:lang "y1"
                :name "foo"
                :path "path/to/foo.y1"} lang-map)
- => {:lang "y1"
-     :name "foo"
-     :path "path/to/foo.y1"
-     :text "text inside foo.y1"
-     :statements `[parsing "text inside foo.y1"]
-     :deps [{:lang "y1"
-             :name "foo2"}]}
+ => {:ok {:lang "y1"
+          :name "foo"
+          :path "path/to/foo.y1"
+          :text "text inside foo.y1"
+          :statements `[parsing "text inside foo.y1"]
+          :deps [{:lang "y1"
+                  :name "foo2"}]}}
  (provided
   (slurp "path/to/foo.y1") => "text inside foo.y1"))
 
@@ -116,13 +119,13 @@ the path.
 (fact
  (load-module {:lang "y1"
                :name "foo"} lang-map)
- => {:lang "y1"
-     :name "foo"
-     :path "some/path"
-     :text "text inside foo.y1"
-     :statements `[parsing "text inside foo.y1"]
-     :deps [{:lang "y1"
-             :name "foo2"}]}
+ => {:ok {:lang "y1"
+          :name "foo"
+          :path "some/path"
+          :text "text inside foo.y1"
+          :statements `[parsing "text inside foo.y1"]
+          :deps [{:lang "y1"
+                  :name "foo2"}]}}
  (provided
   (slurp "some/path") => "text inside foo.y1"))
 ```
