@@ -1,6 +1,7 @@
 * [A Polyglot Module Loader](#a-polyglot-module-loader)
   * [Module and Language Representation](#module-and-language-representation)
-    * [Loading Modules](#loading-modules)
+    * [Loading a Single Module](#loading-a-single-module)
+  * [Loading Modules with their Dependnecies](#loading-modules-with-their-dependnecies)
 ```clojure
 (ns y0.polyglot-loader-test
   (:require [midje.sweet :refer [fact => throws provided]]
@@ -50,7 +51,7 @@ an updated modules. They add keys to the module they process, as follows:
 The collection of all supported languages is contained in a _language map_,
 which maps a language name (string) to its representation.
 
-### Loading Modules
+### Loading a Single Module
 
 The function `load-module` takes a module (as defined above) with partial
 keys and a language map, and completes it.
@@ -75,8 +76,8 @@ If it contains `:statements`, it does nothing.
 ```clojure
 (fact
  (load-module {:lang "y1"
-               :statements [1 2 ]} lang-map) => {:ok {:lang "y1"
-                                                      :statements [1 2]}})
+               :statements [1 2]} lang-map) => {:ok {:lang "y1"
+                                                     :statements [1 2]}})
 
 ```
 If `:statements` is not present, but `:text` is, `:parse` is called.
@@ -128,5 +129,109 @@ the path.
                   :name "foo2"}]}}
  (provided
   (slurp "some/path") => "text inside foo.y1"))
+
+```
+## Loading Modules with their Dependnecies
+
+A module ID is a string of the form `land:name`. The function `module-id`
+takes a module (map) and returns an ID (string).
+```clojure
+(fact
+ (module-id {:lang "foo" :name "bar"}) => "foo:bar")
+
+```
+A module-store is a map, mapping module IDs to the respective completed
+modules. `load-with-deps` takes a single (partial) module and a language-map
+and returns a module-store containing it along with all its dependencies.
+
+To demonstrate it, we start by building a dependency map of modules.
+```clojure
+(def my-deps
+  {"m1" []
+   "m2" ["m1"]
+   "m3" ["m1"]
+   "m4" ["m2"]
+   "m5" ["m1"]
+   "m6" ["m3" "m2"]
+   "m7" ["m1"]
+   "m8" ["m4"]
+   "m9" ["m3"]
+   "m10" ["m5" "m2"]
+   "m11" ["m1"]
+   "m12" ["m6" "m4"]})
+
+```
+Yes, it was a bit nurdy/lazy of me, but instead of using real names I just
+named my modules after natural numbers from 1 to 12 and gave each number as
+dependencies the modules with the numbers of the divisors of that number,
+omitting devisors of those devisors. For example, for `m12` I wrote `m6` and
+`m4`, but not `m3`, because it is already a divisor (dependency) of `m6`.
+
+OK, so after this completely unnecessary detour in middle-school math, we
+continue to defining our language-map. We will only have one language here,
+`y2`. The resolver will be trivial, matching module `foo` with path
+`/foo.y2`. The parser will provide fixed `:statements`, but will provide
+dependencies from `my-deps`.
+```clojure
+(def lang-map2
+  {"y2" {:resolve (fn [{:keys [name] :as m}]
+                    (ok m assoc :path (str "/" name ".y2")))
+         :parse (fn [{:keys [name text] :as m}]
+                  (ok (-> m
+                          (assoc :statements [name text])
+                          (assoc :deps (for [dep (my-deps name)]
+                                         {:lang "y2"
+                                          :name dep})))))}})
+
+```
+Now we have what we need to call `load-with-deps`.
+```clojure
+(fact
+ (load-with-deps {:lang "y2" :name "m12"} lang-map2)
+ => {:ok {"y2:m12" {:lang "y2"
+                    :name "m12"
+                    :path "/m12.y2"
+                    :text "text in m12"
+                    :statements ["m12" "text in m12"]
+                    :deps [{:lang "y2" :name "m6"}
+                           {:lang "y2" :name "m4"}]}
+          "y2:m6" {:lang "y2"
+                   :name "m6"
+                   :path "/m6.y2"
+                   :text "text in m6"
+                   :statements ["m6" "text in m6"]
+                   :deps [{:lang "y2" :name "m3"}
+                          {:lang "y2" :name "m2"}]}
+          "y2:m4" {:lang "y2"
+                   :name "m4"
+                   :path "/m4.y2"
+                   :text "text in m4"
+                   :statements ["m4" "text in m4"]
+                   :deps [{:lang "y2" :name "m2"}]}
+          "y2:m3" {:lang "y2"
+                   :name "m3"
+                   :path "/m3.y2"
+                   :text "text in m3"
+                   :statements ["m3" "text in m3"]
+                   :deps [{:lang "y2" :name "m1"}]}
+          "y2:m2" {:lang "y2"
+                   :name "m2"
+                   :path "/m2.y2"
+                   :text "text in m2"
+                   :statements ["m2" "text in m2"]
+                   :deps [{:lang "y2" :name "m1"}]}
+          "y2:m1" {:lang "y2"
+                   :name "m1"
+                   :path "/m1.y2"
+                   :text "text in m1"
+                   :statements ["m1" "text in m1"]
+                   :deps []}}}
+ (provided
+  (slurp "/m12.y2") => "text in m12"
+  (slurp "/m6.y2") => "text in m6"
+  (slurp "/m4.y2") => "text in m4"
+  (slurp "/m3.y2") => "text in m3"
+  (slurp "/m2.y2") => "text in m2"
+  (slurp "/m1.y2") => "text in m1"))
 ```
 
