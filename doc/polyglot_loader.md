@@ -1,12 +1,13 @@
 * [A Polyglot Module Loader](#a-polyglot-module-loader)
   * [Module and Language Representation](#module-and-language-representation)
     * [Loading a Single Module](#loading-a-single-module)
-  * [Loading Modules with their Dependnecies](#loading-modules-with-their-dependnecies)
+  * [Module Store](#module-store)
+    * [Topological Sorting of a Module Store](#topological-sorting-of-a-module store)
 ```clojure
 (ns y0.polyglot-loader-test
   (:require [midje.sweet :refer [fact => throws provided]]
             [y0.polyglot-loader :refer :all]
-            [y0.status :refer [ok]]))
+            [y0.status :refer [ok unwrap-status]]))
 
 ```
 # A Polyglot Module Loader
@@ -131,7 +132,7 @@ the path.
   (slurp "some/path") => "text inside foo.y1"))
 
 ```
-## Loading Modules with their Dependnecies
+## Module Store
 
 A module ID is a string of the form `land:name`. The function `module-id`
 takes a module (map) and returns an ID (string).
@@ -187,51 +188,98 @@ dependencies from `my-deps`.
 Now we have what we need to call `load-with-deps`.
 ```clojure
 (fact
- (load-with-deps {:lang "y2" :name "m12"} lang-map2)
- => {:ok {"y2:m12" {:lang "y2"
-                    :name "m12"
-                    :path "/m12.y2"
-                    :text "text in m12"
-                    :statements ["m12" "text in m12"]
-                    :deps [{:lang "y2" :name "m6"}
-                           {:lang "y2" :name "m4"}]}
-          "y2:m6" {:lang "y2"
-                   :name "m6"
-                   :path "/m6.y2"
-                   :text "text in m6"
-                   :statements ["m6" "text in m6"]
-                   :deps [{:lang "y2" :name "m3"}
-                          {:lang "y2" :name "m2"}]}
-          "y2:m4" {:lang "y2"
-                   :name "m4"
-                   :path "/m4.y2"
-                   :text "text in m4"
-                   :statements ["m4" "text in m4"]
-                   :deps [{:lang "y2" :name "m2"}]}
-          "y2:m3" {:lang "y2"
-                   :name "m3"
-                   :path "/m3.y2"
-                   :text "text in m3"
-                   :statements ["m3" "text in m3"]
-                   :deps [{:lang "y2" :name "m1"}]}
-          "y2:m2" {:lang "y2"
-                   :name "m2"
-                   :path "/m2.y2"
-                   :text "text in m2"
-                   :statements ["m2" "text in m2"]
-                   :deps [{:lang "y2" :name "m1"}]}
-          "y2:m1" {:lang "y2"
-                   :name "m1"
-                   :path "/m1.y2"
-                   :text "text in m1"
-                   :statements ["m1" "text in m1"]
-                   :deps []}}}
+ (def my-mstore (unwrap-status (load-with-deps {:lang "y2" :name "m12"} lang-map2)))
+ => #'my-mstore
  (provided
   (slurp "/m12.y2") => "text in m12"
   (slurp "/m6.y2") => "text in m6"
   (slurp "/m4.y2") => "text in m4"
   (slurp "/m3.y2") => "text in m3"
   (slurp "/m2.y2") => "text in m2"
-  (slurp "/m1.y2") => "text in m1"))
-```
+  (slurp "/m1.y2") => "text in m1")
+ my-mstore => {"y2:m12" {:lang "y2"
+                         :name "m12"
+                         :path "/m12.y2"
+                         :text "text in m12"
+                         :statements ["m12" "text in m12"]
+                         :deps [{:lang "y2" :name "m6"}
+                                {:lang "y2" :name "m4"}]}
+               "y2:m6" {:lang "y2"
+                        :name "m6"
+                        :path "/m6.y2"
+                        :text "text in m6"
+                        :statements ["m6" "text in m6"]
+                        :deps [{:lang "y2" :name "m3"}
+                               {:lang "y2" :name "m2"}]}
+               "y2:m4" {:lang "y2"
+                        :name "m4"
+                        :path "/m4.y2"
+                        :text "text in m4"
+                        :statements ["m4" "text in m4"]
+                        :deps [{:lang "y2" :name "m2"}]}
+               "y2:m3" {:lang "y2"
+                        :name "m3"
+                        :path "/m3.y2"
+                        :text "text in m3"
+                        :statements ["m3" "text in m3"]
+                        :deps [{:lang "y2" :name "m1"}]}
+               "y2:m2" {:lang "y2"
+                        :name "m2"
+                        :path "/m2.y2"
+                        :text "text in m2"
+                        :statements ["m2" "text in m2"]
+                        :deps [{:lang "y2" :name "m1"}]}
+               "y2:m1" {:lang "y2"
+                        :name "m1"
+                        :path "/m1.y2"
+                        :text "text in m1"
+                        :statements ["m1" "text in m1"]
+                        :deps []}})
 
+```
+### Topological Sorting of a Module Store
+
+Given a module-store, we wish to find an order in which we could evaluate
+modules, so that all dependencies of a given module are evaluated before it.
+
+This requires us to topologically-sort a graph, in which the nodes are
+modules and the edges are dependencies.
+
+A topological sort of a graph starts with source nodes. These are nodes that
+do not have any edge go into them. In our case, these are the modules that
+have no dependencies.
+
+`mstore-sources` takes a module-store and returns a set of source module
+IDs.
+```clojure
+(fact
+ (mstore-sources my-mstore) => #{"y2:m1"})
+
+```
+Next, the algorithm needs to walk from these sources to all the nodes
+reachable from them through forward edges, listing all the nodes it
+encounters in-order. Unfortunately, `:deps` provides _backward_ edges. To
+fix this, `mstore-refs` generates an inverse index of `:deps`, creating a
+map from module-IDs to the IDs of modules that directly depend on them.
+```clojure
+(fact
+ (mstore-refs my-mstore) => {"y2:m1" #{"y2:m2" "y2:m3"}
+                             "y2:m2" #{"y2:m4" "y2:m6"}
+                             "y2:m3" #{"y2:m6"}
+                             "y2:m4" #{"y2:m12"}
+                             "y2:m6" #{"y2:m12"}})
+
+```
+`mstore-toposort` does the actual sorting. It takes a module-store and
+returns a sequence of module-IDs, given in some topological order.
+```clojure
+(fact
+ (mstore-toposort my-mstore) => ["y2:m1" "y2:m3" "y2:m2" "y2:m6" "y2:m4" "y2:m12"])
+
+```
+Please note that the order above is only one possible sort (`m2` can come
+before `m3` and `m4` can come before `m6`), but Clojure has stable
+representations for maps and sets, making it possible to write a test with
+one particular result. Please note that this particular result is
+topologically sorted. `m1` comes first, `m12` comes last; `m3` and `m2`
+precede `m6`, etc. 

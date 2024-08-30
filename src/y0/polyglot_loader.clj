@@ -1,5 +1,6 @@
 (ns y0.polyglot-loader
-  (:require [y0.status :refer [ok ->s let-s]]))
+  (:require [y0.status :refer [ok ->s let-s]]
+            [clojure.set :refer [union]]))
 
 (defn- slurp-text [{:keys [path] :as m}]
   (ok m assoc :text (slurp path)))
@@ -26,3 +27,28 @@
              (let-s [m (load-module m lang-map)]
                     (recur (concat ms (:deps m))
                            (assoc mstore (module-id m) m))))))))
+
+(defn mstore-sources [mstore]
+  (set (for [[mid m] mstore
+             :when (empty? (:deps m))]
+         mid)))
+
+(defn mstore-refs [mstore]
+  (->> (for [[mid m] mstore
+             dep (:deps m)]
+         {(module-id dep) #{mid}})
+       (reduce (partial merge-with union))))
+
+(defn mstore-toposort [mstore]
+  (let [refs (mstore-refs mstore)
+        srcs (mstore-sources mstore)]
+    (loop [sorted (vec srcs)
+           seen srcs
+           queue (seq srcs)]
+      (if (empty? queue)
+        sorted
+        (let [[mid & queue] queue
+              queue (concat queue (seq (refs mid)))]
+          (if (contains? seen mid)
+            (recur sorted seen queue)
+            (recur (conj sorted mid) (conj seen mid) queue)))))))
