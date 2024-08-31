@@ -3,11 +3,12 @@
     * [Loading a Single Module](#loading-a-single-module)
   * [Module Store](#module-store)
     * [Topological Sorting of a Module Store](#topological-sorting-of-a-module store)
+    * [Evaluating All Modules](#evaluating-all-modules)
 ```clojure
 (ns y0.polyglot-loader-test
   (:require [midje.sweet :refer [fact => throws provided]]
             [y0.polyglot-loader :refer :all]
-            [y0.status :refer [ok unwrap-status]]))
+            [y0.status :refer [ok unwrap-status ->s let-s]]))
 
 ```
 # A Polyglot Module Loader
@@ -283,3 +284,46 @@ representations for maps and sets, making it possible to write a test with
 one particular result. Please note that this particular result is
 topologically sorted. `m1` comes first, `m12` comes last; `m3` and `m2`
 precede `m6`, etc. 
+
+### Evaluating All Modules
+
+The state of a $y_0$ program, along with code in hosted languages is stored
+as a [predstore](predstore.md). This is a map containing predicates, rules
+and statements that are computed from the `:statements` in the different
+modules.
+
+`eval-mstore` takes a module-store and an evaluation function, and
+_evaluates_ it. It
+[topologically sorts](#topological-sorting-of-a-module-store) the modules
+and evaluates them one by one, by calling the evaluation function.
+
+It returns the same module-store, adding the key `:predstore` in each
+module, containing the predstore as seen at the end of this module.
+
+To demonstrate this, we use the following fake function as the evaluation
+function.
+```clojure
+(defn fake-eval-statements [ps statements]
+  (ok ps update :foo #(concat % statements)))
+
+```
+This function maintains a single entry in the predstore, `:foo`, and appends
+the statements to it. For example:
+```clojure
+(fact
+ (->s (ok {})
+      (fake-eval-statements [1 2 3])
+      (fake-eval-statements [4 5])
+      (fake-eval-statements [6 7 8]))
+ => {:ok {:foo [1 2 3 4 5 6 7 8]}})
+
+(fact
+ (let-s [mstore (eval-mstore my-mstore fake-eval-statements)]
+        (-> mstore (get "y2:m12") :predstore :foo) => ["m1" "text in m1"
+                                                       "m3" "text in m3"
+                                                       "m2" "text in m2"
+                                                       "m6" "text in m6"
+                                                       "m4" "text in m4"
+                                                       "m12" "text in m12"]))
+```
+

@@ -52,3 +52,16 @@
           (if (contains? seen mid)
             (recur sorted seen queue)
             (recur (conj sorted mid) (conj seen mid) queue)))))))
+
+(defn eval-mstore [mstore eval-func]
+  (loop [keys (mstore-toposort mstore)
+         mstore mstore
+         ps {}]
+    (if (empty? keys)
+      (ok mstore)
+      (let-s [[key & keys] (ok keys)
+              m (ok mstore get key)
+              ps (eval-func ps (:statements m))
+              m (ok m assoc :predstore ps)
+              mstore (ok mstore assoc key m)]
+             (recur keys mstore ps)))))
