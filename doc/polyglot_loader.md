@@ -43,12 +43,9 @@ keys:
    `:name`), representing the module's dependencies.
 
 A language is also represented as a map, with two keys, `:resolve` and
-`:parse`. Both function take a module and return a [status](status.md) with
-an updated modules. They add keys to the module they process, as follows:
-
-* `:resolve` assumes `:name` and adds `:path`.
-* `:parse` assumes `:name`, `:path` and `:text` and adds `:statements` and
-  `:deps`.
+`:parse`. `:resolve` takes the value of a module's `:name` and returns the
+value of its `:path`. `:parse` takes `:name`, `:path` and `:text` and
+returns the values of `:statements` and `:deps`, as a tuple.
 
 The collection of all supported languages is contained in a _language map_,
 which maps a language name (string) to its representation.
@@ -60,18 +57,16 @@ keys and a language map, and completes it.
 
 For the following examples, let us use the following language-map:
 ```clojure
-(def lang-map {"y1" {:resolve #(ok % assoc :path "some/path")
-                     :parse #(-> %
-                                 (assoc :statements `[parsing ~(:text %)])
-                                 (assoc :deps [{:lang "y1"
-                                                :name (str (:name %) 2)}])
-                                 ok)}
+(def lang-map {"y1" {:resolve (constantly (ok "some/path"))
+                     :parse (fn [name _path text]
+                              (ok [`[parsing ~text]
+                                   [{:lang "y1"
+                                     :name (str name 2)}]]))}
                "y2" {:resolve #(ok % assoc :path "some/other/path")
-                     :parse #(-> %
-                                 (assoc :statements [`(something-else ~(:name %))])
-                                 (assoc :deps [{:lang "y2"
-                                                :name (str (:name %) 3)}])
-                                 ok)}})
+                     :parse (fn [name _path text]
+                              (ok [`[something-else ~text]
+                                   [{:lang "y2"
+                                     :name (str name 3)}]]))}})
 
 ```
 If it contains `:statements`, it does nothing.
@@ -176,14 +171,13 @@ continue to defining our language-map. We will only have one language here,
 dependencies from `my-deps`.
 ```clojure
 (def lang-map2
-  {"y2" {:resolve (fn [{:keys [name] :as m}]
-                    (ok m assoc :path (str "/" name ".y2")))
-         :parse (fn [{:keys [name text] :as m}]
-                  (ok (-> m
-                          (assoc :statements [name text])
-                          (assoc :deps (for [dep (my-deps name)]
-                                         {:lang "y2"
-                                          :name dep})))))}})
+  {"y2" {:resolve (fn [name]
+                    (ok (str "/" name ".y2")))
+         :parse (fn [name path text]
+                  (ok [[name text]
+                       (for [dep (my-deps name)]
+                         {:lang "y2"
+                          :name dep})]))}})
 
 ```
 Now we have what we need to call `load-with-deps`.

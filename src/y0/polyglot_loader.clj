@@ -9,9 +9,14 @@
   (let [{:keys [parse resolve]} (get lang-map (:lang module))]
     (cond
       (contains? module :statements) (ok module)
-      (contains? module :text) (parse module)
+      (contains? module :text) (let-s [[statements deps] (parse (:name module) (:path module) (:text module))]
+                                      (ok (-> module
+                                              (assoc :statements statements)
+                                              (assoc :deps deps))))
       (contains? module :path) (->s (slurp-text module) (recur lang-map))
-      (contains? module :name) (->s (resolve module) (recur lang-map)))))
+      (contains? module :name) (let-s [path (resolve (:name module))
+                                       module (ok module assoc :path path)]
+                                      (recur module lang-map)))))
 
 (defn module-id [{:keys [lang name]}]
   (str lang ":" name))
