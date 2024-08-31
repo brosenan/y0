@@ -24,3 +24,6 @@
             (if (exists? candidate)
               (ok candidate)
               (recur paths))))))))
+
+(defn y0-resolver [y0-path]
+  (prefix-list-resolver y0-path (qname-to-rel-path-resolver "y0")))
