@@ -24,4 +24,26 @@
 ;; given as a `java.io.File`.
 (fact
  (let [r (qname-to-rel-path-resolver "y2")]
-   (r "foo.bar.baz") => (io/file "foo/bar/baz.y2")))
+   (r "foo.bar.baz") => {:ok (io/file "foo/bar/baz.y2")}))
+
+;; ## Absolute Path from Prefix List
+
+;; Given a resolver that provides us with a relative path for our module, we
+;; need a way to convert this into an absolute path of an existing file. One
+;; common way of doing this is by having a list of possible prefixes (think,
+;; `JAVA_PATH` or `PYTHONPATH`). This is an ordered list. The module system
+;; is expected to try these prefixes one by one and return the first path that
+;; resolves to an existing file.
+
+;; `prefix-list-resolver` takes a sequence of prefixes (as strings) and a
+;; relative-path resolver, and returns an absolute-path resolver.
+(fact
+ (let [rrel (fn [x] (ok (io/file (str x ".foo"))))
+       paths ["/foo" "/bar" "./baz"]
+       r (prefix-list-resolver paths rrel)
+       path1 (io/file "/foo/my-module.foo")
+       path2 (io/file "/bar/my-module.foo")]
+   (r "my-module") => {:ok path2}
+   (provided
+    (exists? path1) => false
+    (exists? path2) => true)))
