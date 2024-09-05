@@ -106,9 +106,9 @@
 ;; symbols to the root namespace, similar to `clojure.core` in Clojure.
 
 ;; It returns a _parser_, i.e., a function that takes a module name, a module
-;; path and the textual contents of a module and returns a pair: the canonical
-;; parse of the module (as a list of statements) and a list of dependencies,
-;; modules required by this one.
+;; path and the textual contents of a module and returns a status containing a
+;;pair: the canonical parse of the module (as a list of statements) and a list
+;; of dependencies, modules required by this one.
 (fact
  (let [root-symbols '[foo bar baz]
        root-refer-map (into {} (for [sym root-symbols]
@@ -126,3 +126,16 @@
                              {:start 2000017 :end 2000018 :path "/path/to/boo"}
                              {:start 2000019 :end 2000022 :path "/path/to/boo"}]
    deps => ["some.module"]))
+
+;; In case of a parsing error, an `:err` status is returned.
+(fact
+ (let [root-symbols '[foo bar baz]
+       root-refer-map (into {} (for [sym root-symbols]
+                                 [(name sym) "mylang.core"]))
+       parse (edn-parser root-refer-map)
+       status (parse "boo" "/path/to/boo"
+                     "(ns boo (:require [some.module]))\na foo goes into a bar (")
+       {:keys [ok err]} status
+       {:keys [error]} err]
+   ok => nil?
+   error => "EOF while reading, expected ) to match ( at [2,23]"))

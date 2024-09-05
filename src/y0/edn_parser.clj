@@ -68,10 +68,13 @@
 
 (defn edn-parser [root-refer-map]
   (fn [module path text]
-    (let [[ns-decl & statements] (parse-string-all text
-                                                   {:postprocess #(annotate-location % path)})
-          [module-list ns-map refer-map] (parse-ns-decl ns-decl)
-          refer-map (merge refer-map root-refer-map)
-          statements (for [statement statements]
-                       (convert-ns statement ns-map refer-map))]
-      (ok [statements module-list]))))
+    (try
+      (let [[ns-decl & statements] (parse-string-all text
+                                                     {:postprocess #(annotate-location % path)})
+            [module-list ns-map refer-map] (parse-ns-decl ns-decl)
+            refer-map (merge refer-map root-refer-map)
+            statements (for [statement statements]
+                         (convert-ns statement ns-map refer-map))]
+        (ok [statements module-list]))
+      (catch Exception e
+        {:err {:error (.getMessage e)}}))))
