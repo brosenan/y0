@@ -25,7 +25,9 @@
 (defn load-single-module [module-name y0-path]
   (let-s [[module-text module-path] (ok (read-module module-name y0-path))
           parser (ok (edn-parser y0-root-refer-map))
-          [statements module-list] (parser module-name module-path module-text)]
+          [statements module-list] (parser module-name module-path module-text)
+          module-list (ok (for [{:keys [name]} module-list]
+                            name))]
          [statements module-list]))
 
 (defn load-all-modules [modules-to-load y0-path]

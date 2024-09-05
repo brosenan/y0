@@ -75,7 +75,9 @@
             refer-map (merge refer-map root-refer-map)
             statements (for [statement statements]
                          (convert-ns statement ns-map refer-map))]
-        (ok [statements module-list]))
+        (ok [statements (for [module module-list]
+                          {:lang "y0"
+                           :name module})]))
       (catch Exception e
         {:err {:error (.getMessage e)}}))))
 

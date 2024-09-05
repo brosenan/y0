@@ -125,7 +125,8 @@
                              {:start 2000012 :end 2000016 :path "/path/to/boo"}
                              {:start 2000017 :end 2000018 :path "/path/to/boo"}
                              {:start 2000019 :end 2000022 :path "/path/to/boo"}]
-   deps => ["some.module"]))
+   deps => [{:lang "y0"
+             :name "some.module"}]))
 
 ;; In case of a parsing error, an `:err` status is returned.
 (fact
