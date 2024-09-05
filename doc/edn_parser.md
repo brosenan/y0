@@ -3,6 +3,7 @@
   * [Parsing `ns` Forms](#parsing-`ns`-forms)
   * [Converting Code Locations](#converting-code-locations)
   * [The EDN Parser](#the-edn-parser)
+  * [Root Module Symbols](#root-module-symbols)
 ```clojure
 (ns y0.edn-parser-test
   (:require [midje.sweet :refer [fact => throws provided]]
@@ -159,5 +160,26 @@ In case of a parsing error, an `:err` status is returned.
        {:keys [error]} err]
    ok => nil?
    error => "EOF while reading, expected ) to match ( at [2,23]"))
+
+```
+## Root Module Symbols
+
+Languages often have their collection of symbols that are imported by default
+from some root module. To accommodate this in EDN-based languages, the
+function `root-module-symbols` generates a `refer-map` for `edn-parser`,
+given a list of root-module symbols and the name of the root module.
+```clojure
+(fact
+ (root-module-symbols '[foo bar baz] "my.root") => {"foo" "my.root"
+                                                    "bar" "my.root"
+                                                    "baz" "my.root"})
+
+```
+The symbols can also be given as strings.
+```clojure
+(fact
+ (root-module-symbols '["foo" "bar" "baz"] "my.root") => {"foo" "my.root"
+                                                          "bar" "my.root"
+                                                          "baz" "my.root"})
 ```
 

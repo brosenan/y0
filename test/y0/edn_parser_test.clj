@@ -139,3 +139,20 @@
        {:keys [error]} err]
    ok => nil?
    error => "EOF while reading, expected ) to match ( at [2,23]"))
+
+;; ## Root Module Symbols
+
+;; Languages often have their collection of symbols that are imported by default
+;; from some root module. To accommodate this in EDN-based languages, the
+;; function `root-module-symbols` generates a `refer-map` for `edn-parser`,
+;; given a list of root-module symbols and the name of the root module.
+(fact
+ (root-module-symbols '[foo bar baz] "my.root") => {"foo" "my.root"
+                                                    "bar" "my.root"
+                                                    "baz" "my.root"})
+
+;; The symbols can also be given as strings.
+(fact
+ (root-module-symbols '["foo" "bar" "baz"] "my.root") => {"foo" "my.root"
+                                                          "bar" "my.root"
+                                                          "baz" "my.root"})

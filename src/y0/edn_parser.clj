@@ -78,3 +78,8 @@
         (ok [statements module-list]))
       (catch Exception e
         {:err {:error (.getMessage e)}}))))
+
+(defn root-module-symbols [syms ns]
+  (->> (for [sym syms]
+         [(str sym) ns])
+       (into {})))
