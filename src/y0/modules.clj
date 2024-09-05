@@ -3,7 +3,8 @@
             [clojure.java.io :as io]
             [clojure.set :refer [union difference]]
             [y0.edn-parser :refer [edn-parser]]
-            [y0.core :refer [y0-root-refer-map]]))
+            [y0.core :refer [y0-root-refer-map]]
+            [y0.status :refer [ok let-s]]))
 
 (defn module-paths [module-name y0-path]
   (let [rel-path (str/split module-name #"[.]")
@@ -22,10 +23,10 @@
         [(slurp path) path]))))
 
 (defn load-single-module [module-name y0-path]
-  (let [[module-text module-path] (read-module module-name y0-path)
-        parser (edn-parser y0-root-refer-map)
-        [statements module-list] (parser module-name module-path module-text)]
-    [statements module-list]))
+  (let-s [[module-text module-path] (ok (read-module module-name y0-path))
+          parser (ok (edn-parser y0-root-refer-map))
+          [statements module-list] (parser module-name module-path module-text)]
+         [statements module-list]))
 
 (defn load-all-modules [modules-to-load y0-path]
   (loop [modules-to-load modules-to-load

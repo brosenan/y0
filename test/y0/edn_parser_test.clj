@@ -1,6 +1,7 @@
 (ns y0.edn-parser-test
   (:require [midje.sweet :refer [fact => throws provided]]
-            [y0.edn-parser :refer :all]))
+            [y0.edn-parser :refer :all]
+            [y0.status :refer [let-s ok]]))
 
 ;; # Parsing EDN-Based Languages
 
@@ -113,8 +114,10 @@
        root-refer-map (into {} (for [sym root-symbols]
                                  [(name sym) "mylang.core"]))
        parse (edn-parser root-refer-map)
-       [statements deps] (parse "boo" "/path/to/boo" 
-                                "(ns boo (:require [some.module]))\na foo goes into a bar")]
+       status (parse "boo" "/path/to/boo"
+                     "(ns boo (:require [some.module]))\na foo goes into a bar")
+       {:keys [ok]} status
+       [statements deps] ok]
    statements => '[boo/a mylang.core/foo boo/goes boo/into boo/a mylang.core/bar]
    (map meta statements) => [{:start 2000001 :end 2000002 :path "/path/to/boo"}
                              {:start 2000003 :end 2000006 :path "/path/to/boo"}

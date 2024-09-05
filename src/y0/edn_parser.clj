@@ -1,7 +1,8 @@
 (ns y0.edn-parser
   (:require [edamame.core :as e :refer [parse-string-all]]
             [y0.core :refer [y0-symbols]]
-            [y0.term-utils :refer [postwalk-with-meta]]))
+            [y0.term-utils :refer [postwalk-with-meta]]
+            [y0.status :refer [ok]]))
 
 (defn convert-ns [expr ns-map refer-map]
   (postwalk-with-meta
@@ -73,4 +74,4 @@
           refer-map (merge refer-map root-refer-map)
           statements (for [statement statements]
                        (convert-ns statement ns-map refer-map))]
-      [statements module-list])))
+      (ok [statements module-list]))))
