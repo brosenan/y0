@@ -21,8 +21,8 @@
 (defn module-id [{:keys [lang name]}]
   (str lang ":" name))
 
-(defn load-with-deps [m lang-map]
-  (loop [ms [m]
+(defn load-with-deps [ms lang-map]
+  (loop [ms ms
          mstore {}]
     (if (empty? ms)
       (ok mstore)

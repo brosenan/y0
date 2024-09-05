@@ -118,8 +118,9 @@
  (module-id {:lang "foo" :name "bar"}) => "foo:bar")
 
 ;; A module-store is a map, mapping module IDs to the respective completed
-;; modules. `load-with-deps` takes a single (partial) module and a language-map
-;; and returns a module-store containing it along with all its dependencies.
+;; modules. `load-with-deps` takes a list of (partial) modules and a
+;; language-map and returns a module-store containing the original modules along
+;; with all their dependencies.
 
 ;; To demonstrate it, we start by building a dependency map of modules.
 (def my-deps
@@ -158,7 +159,7 @@
 
 ;; Now we have what we need to call `load-with-deps`.
 (fact
- (def my-mstore (unwrap-status (load-with-deps {:lang "y2" :name "m12"} lang-map2)))
+ (def my-mstore (unwrap-status (load-with-deps [{:lang "y2" :name "m12"}] lang-map2)))
  => #'my-mstore
  (provided
   (slurp "/m12.y2") => "text in m12"
