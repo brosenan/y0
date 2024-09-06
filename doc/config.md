@@ -1,9 +1,13 @@
 * [Language Configuration](#language-configuration)
   * [Generic Mechanism](#generic-mechanism)
+  * [Generating a Language Map from Config](#generating-a-language-map-from config)
 ```clojure
 (ns y0.config-test
-  (:require [midje.sweet :refer [fact => throws provided]]
-            [y0.config :refer :all]))
+  (:require [midje.sweet :refer [fact => throws provided anything]]
+            [y0.config :refer :all]
+            [y0.edn-parser :refer [edn-parser root-module-symbols]]
+            [y0.resolvers :refer [exists? qname-to-rel-path-resolver prefix-list-resolver]]
+            [clojure.java.io :as io]))
 
 ```
 # Language Configuration
@@ -97,5 +101,50 @@ options in the spec, an exception is thrown.
        config {:foo :quux}]
    (resolve-config-val spec config :foo)) =>
  (throws "Key :quux is not found in the spec for :foo"))
+
+```
+## Generating a Language Map from Config
+
+The function `language-map-from-config` takes a _language config_, a map
+that maps language names into configs for these languages, and returns a
+language map which can be used for loading modules in these languages.
+
+The following configuration could be the configuration for $y_1$ (our
+[example language](y1.md)). It defines a EDN-based parser with the language's
+keywords and a module system that looks for files based on the roots in the
+environment variable `Y1_PATH`.
+```clojure
+(fact
+ (let [root-symbols '[defn deftype declfn defclass definstance]
+       config {"y1" {:name "y1"
+                     ;; Use an EDN parser
+                     :parser :edn
+                     ;; Initialize the root namespace from a list of symbols 
+                     :root-refer-map :root-symbols
+                     ;; All these symbols...
+                     :root-symbols root-symbols
+                     ;; ...populate this namespace 
+                     :root-namespace "y1.core"
+                     ;; The resolver is based on a prefix list
+                     :resolver :prefix-list
+                     ;; The path relative to the prefixes is based on dots in
+                     ;; the module name (e.g., a.b.c => a/b/c.ext)
+                     :relative-path-resolution :dots
+                     ;; The file extension for the source files
+                     :file-ext "y1"
+                     ;; The prefix list comes from an environment variable...
+                     :path-prefixes :from-env
+                     ;; ...named Y0-PATH
+                     :path-prefixes-env "Y0-PATH"}}
+       lang-map (language-map-from-config config)
+       {:keys [parse resolve]} (get lang-map "y1")]
+   ;; Now we can use parse and see if it works
+   (parse "my.module" "/my/module.y1" "(ns foo) defn a b") =>
+   {:ok '[(y1.core/defn foo/a foo/b) ()]}
+       ;; Checking that we got the resolver we wanted
+   (let [path (io/file "./a/b/c.y1")]
+     (resolve "a.b.c") => {:ok path}
+     (provided
+      (exists? path) => true))))
 ```
 
