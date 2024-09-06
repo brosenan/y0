@@ -255,8 +255,8 @@
 ;; and statements that are computed from the `:statements` in the different
 ;; modules.
 
-;; `eval-mstore` takes a module-store and an evaluation function, and
-;; _evaluates_ it. It
+;; `eval-mstore` takes a module-store, an evaluation function and an initial
+;; predstore, and _evaluates_ it. It
 ;; [topologically sorts](#topological-sorting-of-a-module-store) the modules
 ;; and evaluates them one by one, by calling the evaluation function.
 
@@ -279,10 +279,12 @@
 
 ;;Now we are ready to call `eval-mstore`.
 (fact
- (let-s [mstore (eval-mstore my-mstore fake-eval-statements)]
-        (-> mstore (get "y2:m12") :predstore :foo) => ["m1" "text in m1"
-                                                       "m3" "text in m3"
-                                                       "m2" "text in m2"
-                                                       "m6" "text in m6"
-                                                       "m4" "text in m4"
-                                                       "m12" "text in m12"]))
+ (let-s [mstore (eval-mstore my-mstore fake-eval-statements {:bar :baz})]
+        (do
+          (-> mstore (get "y2:m12") :predstore :foo) => ["m1" "text in m1"
+                                                         "m3" "text in m3"
+                                                         "m2" "text in m2"
+                                                         "m6" "text in m6"
+                                                         "m4" "text in m4"
+                                                         "m12" "text in m12"]
+          (-> mstore (get "y2:m12") :predstore :bar) => :baz)))

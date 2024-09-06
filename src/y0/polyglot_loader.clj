@@ -58,10 +58,10 @@
             (recur sorted seen queue)
             (recur (conj sorted mid) (conj seen mid) queue)))))))
 
-(defn eval-mstore [mstore eval-func]
+(defn eval-mstore [mstore eval-func ps]
   (loop [keys (mstore-toposort mstore)
          mstore mstore
-         ps {}]
+         ps ps]
     (if (empty? keys)
       (ok mstore)
       (let-s [[key & keys] (ok keys)
