@@ -13,7 +13,7 @@
 
 ;; $y_0$'s syntax is EDN-based. This module defines a parser for parsing
 ;; EDN-based languages, including $y_0$ itself. It is pluggable to $y_0$'s
-;; [module system](modules.md).
+;; [module system](polyglot_loader.md).
 
 ;; ## Namespace Conversions
 
