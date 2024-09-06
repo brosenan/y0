@@ -3,7 +3,11 @@
             [clojure.tools.cli :refer [parse-opts]]
             [y0.builtins :refer [add-builtins]]
             [y0.explanation :refer [code-location explanation-to-str all-unique-locations explanation-expr-to-str]]
-            [y0.modules :refer [load-with-dependencies]]
+            [y0.polyglot-loader :refer [load-with-deps eval-mstore]]
+            [y0.edn-parser :refer [edn-parser root-module-symbols]]
+            [y0.resolvers :refer [y0-resolver]]
+            [y0.core :refer [y0-symbols]]
+            [y0.status :refer [ok let-s]]
             [y0.rules :refer [apply-statements]])
   (:gen-class))
 
@@ -20,9 +24,15 @@
     (str (:path location) ":" row ": ")))
 
 (defn- main [modules path]
-  (let [[statements _] (load-with-dependencies modules path)
-        ps (add-builtins {})
-        status (apply-statements statements ps {})]
+  (let [lang-map {"y0" {:parse (edn-parser
+                                (root-module-symbols y0-symbols "y0.core"))
+                        :resolve (y0-resolver path)}}
+        modules (for [module modules]
+                  {:lang "y0"
+                   :name module})
+        status (let-s [mstore (load-with-deps modules lang-map)
+                       ps (ok (add-builtins {}))]
+                      (eval-mstore mstore #(apply-statements %2 %1 {}) ps))]
     (if (:err status)
       (let [explanation (:err status)
             message (explanation-to-str explanation)

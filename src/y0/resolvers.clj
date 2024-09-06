@@ -11,7 +11,7 @@
       (ok (apply io/file rel-path)))))
 
 (defn exists? [file]
-  (.exist file))
+  (.exists file))
 
 (defn prefix-list-resolver [paths rel-resolve]
   (fn [module]
