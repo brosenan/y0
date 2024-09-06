@@ -1,6 +1,7 @@
 (ns y0.config
   (:require [y0.edn-parser :refer [edn-parser root-module-symbols]]
-            [y0.resolvers :refer [qname-to-rel-path-resolver prefix-list-resolver]]))
+            [y0.resolvers :refer [path-prefixes-from-env prefix-list-resolver
+                                  qname-to-rel-path-resolver]]))
 
 (defn- get-or-throw [m key name]
   (if (contains? m key)
@@ -25,7 +26,8 @@
                                                 :args [:root-symbols :root-namespace]}}
                 :relative-path-resolution {:dots {:func qname-to-rel-path-resolver
                                                   :args [:file-ext]}}
-                :path-prefixes {:from-env {:func (constantly ["."]) :args []}}})
+                :path-prefixes {:from-env {:func path-prefixes-from-env
+                                           :args [:path-prefixes-env]}}})
 
 (defn language-map-from-config [config]
   (->> (for [[lang conf] config]

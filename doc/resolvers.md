@@ -1,6 +1,7 @@
 * [Resolvers](#resolvers)
   * [Qualified Name as Path](#qualified-name-as-path)
   * [Absolute Path from Prefix List](#absolute-path-from-prefix-list)
+  * [Reading Path Prefixes from an Environment Variable](#reading-path-prefixes-from-an environment variable)
   * [The $y_0$ Resolver](#the-$y_0$-resolver)
 ```clojure
 (ns y0.resolvers-test
@@ -56,6 +57,20 @@ relative-path resolver, and returns an absolute-path resolver.
    (provided
     (exists? path1) => false
     (exists? path2) => true)))
+
+```
+## Reading Path Prefixes from an Environment Variable
+
+It is common that for a given language, the list of prefixes is taken from
+an environment variable.
+
+`path-prefixes-from-env` takes the name of an environment variable, reads it
+and returns its contents, split on the colon (`:`) character.
+```clojure
+(fact
+ (path-prefixes-from-env "Y0_PATH") => ["/foo" "/bar" "."]
+ (provided
+  (getenv "Y0_PATH") => "/foo:/bar:."))
 
 ```
 ## The $y_0$ Resolver

@@ -1,8 +1,7 @@
 (ns y0.config-test
   (:require [midje.sweet :refer [fact => throws provided anything]]
             [y0.config :refer :all]
-            [y0.edn-parser :refer [edn-parser root-module-symbols]]
-            [y0.resolvers :refer [exists? qname-to-rel-path-resolver prefix-list-resolver]]
+            [y0.resolvers :refer [exists? getenv]]
             [clojure.java.io :as io]))
 
 ;; # Language Configuration
@@ -119,14 +118,16 @@
                      ;; The prefix list comes from an environment variable...
                      :path-prefixes :from-env
                      ;; ...named Y0-PATH
-                     :path-prefixes-env "Y0-PATH"}}
-       lang-map (language-map-from-config config)
-       {:keys [parse resolve]} (get lang-map "y1")]
+                     :path-prefixes-env "Y0-PATH"}}]
+   (def lang-map1 (language-map-from-config config)) => #'lang-map1
+   (provided
+    (getenv "Y0-PATH") => "."))
    ;; Now we can use parse and see if it works
-   (parse "my.module" "/my/module.y1" "(ns foo) defn a b") =>
-   {:ok '[(y1.core/defn foo/a foo/b) ()]}
+   (let [{:keys [parse resolve]} (get lang-map1 "y1")]
+     (parse "my.module" "/my/module.y1" "(ns foo) defn a b") =>
+     {:ok '[(y1.core/defn foo/a foo/b) ()]}
        ;; Checking that we got the resolver we wanted
-   (let [path (io/file "./a/b/c.y1")]
-     (resolve "a.b.c") => {:ok path}
-     (provided
-      (exists? path) => true))))
+     (let [path (io/file "./a/b/c.y1")]
+       (resolve "a.b.c") => {:ok path}
+       (provided
+        (exists? path) => true))))

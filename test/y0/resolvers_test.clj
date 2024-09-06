@@ -48,6 +48,18 @@
     (exists? path1) => false
     (exists? path2) => true)))
 
+;; ## Reading Path Prefixes from an Environment Variable
+
+;; It is common that for a given language, the list of prefixes is taken from
+;; an environment variable.
+
+;; `path-prefixes-from-env` takes the name of an environment variable, reads it
+;; and returns its contents, split on the colon (`:`) character.
+(fact
+ (path-prefixes-from-env "Y0_PATH") => ["/foo" "/bar" "."]
+ (provided
+  (getenv "Y0_PATH") => "/foo:/bar:."))
+
 ;; ## The $y_0$ Resolver
 
 ;; In $y_0$, a module `a.b.c` is found in file `some/path/a/b/c.y0`, where
