@@ -18,7 +18,8 @@
       (apply func arg-vals))
     (get-or-throw config key "the config")))
 
-(def lang-spec {:parser {:edn {:func edn-parser :args [:root-refer-map]}}
+(def lang-spec {:parser {:edn {:func edn-parser
+                               :args [:root-refer-map :lang :extra-modules]}}
                 :resolver {:prefix-list {:func prefix-list-resolver 
                                          :args [:path-prefixes
                                                 :relative-path-resolution]}}
@@ -31,6 +32,7 @@
 
 (defn language-map-from-config [config]
   (->> (for [[lang conf] config]
-         [lang {:parse (resolve-config-val lang-spec conf :parser)
-                :resolve (resolve-config-val lang-spec conf :resolver)}])
+         (let [conf (assoc conf :lang lang)]
+           [lang {:parse (resolve-config-val lang-spec conf :parser)
+                  :resolve (resolve-config-val lang-spec conf :resolver)}]))
        (into {})))

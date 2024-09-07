@@ -114,15 +114,21 @@ The function `convert-location` takes an Edamame-style location and converts
 it to a $y_0$ canonical form.
 ```clojure
 (fact
- (convert-location {:row 1 :col 2 :end-row 3 :end-col 4}) => {:start 1000002 :end 3000004})
+ (convert-location {:row 1 :col 2 :end-row 3 :end-col 4}) =>
+ {:start 1000002 :end 3000004})
 
 ```
 ## The EDN Parser
 
-`edn-parser` generates a parser for EDN-based languages. It takes a single
-paramter, an initial `refer-map` map, which maps symbols (as strings) to
-namespaces. This should be used to map the language's root namespace's
-symbols to the root namespace, similar to `clojure.core` in Clojure.
+`edn-parser` generates a parser for EDN-based languages. It takes the
+following paramters:
+1. An initial `refer-map` map, which maps symbols (as strings) to namespaces.
+   This should be used to map the language's root namespace's symbols to the
+   root namespace, similar to `clojure.core` in Clojure.
+2. The name of the language, used by the parser to name dependencies.
+3. A list of modules to be added to the dependency list for every module in
+   the language. This is intended for injecting the language's semantic
+   definition as a dependency of each module in the language.
 
 It returns a _parser_, i.e., a function that takes a module name, a module
 path and the textual contents of a module and returns a status containing a
@@ -132,7 +138,7 @@ of dependencies, modules required by this one.
  (let [root-symbols '[foo bar baz]
        root-refer-map (into {} (for [sym root-symbols]
                                  [(name sym) "mylang.core"]))
-       parse (edn-parser root-refer-map)
+       parse (edn-parser root-refer-map "y7" [{:lang "y0" :name "y7.semantics"}])
        status (parse "boo" "/path/to/boo"
                      "(ns boo (:require [some.module]))\na foo goes into a bar")
        {:keys [ok]} status
@@ -144,8 +150,10 @@ of dependencies, modules required by this one.
                              {:start 2000012 :end 2000016 :path "/path/to/boo"}
                              {:start 2000017 :end 2000018 :path "/path/to/boo"}
                              {:start 2000019 :end 2000022 :path "/path/to/boo"}]
-   deps => [{:lang "y0"
-             :name "some.module"}]))
+   deps => [{:lang "y7"
+             :name "some.module"}
+            {:lang "y0"
+             :name "y7.semantics"}]))
 
 ```
 In case of a parsing error, an `:err` status is returned.
@@ -154,7 +162,7 @@ In case of a parsing error, an `:err` status is returned.
  (let [root-symbols '[foo bar baz]
        root-refer-map (into {} (for [sym root-symbols]
                                  [(name sym) "mylang.core"]))
-       parse (edn-parser root-refer-map)
+       parse (edn-parser root-refer-map "y7" [{:lang "y0" :name "y7.semantics"}])
        status (parse "boo" "/path/to/boo"
                      "(ns boo (:require [some.module]))\na foo goes into a bar (")
        {:keys [ok err]} status

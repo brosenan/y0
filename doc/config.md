@@ -130,6 +130,8 @@ environment variable `Y1_PATH`.
                      :relative-path-resolution :dots
                      ;; The file extension for the source files
                      :file-ext "y1"
+                     ;; The modules that define the language's semantics
+                     :extra-modules [{:lang "y0" :name "y1"}]
                      ;; The prefix list comes from an environment variable...
                      :path-prefixes :from-env
                      ;; ...named Y0-PATH
@@ -139,8 +141,10 @@ environment variable `Y1_PATH`.
     (getenv "Y1-PATH") => ".:/foo:/bar"))
    ;; Now we can use parse and see if it works
    (let [{:keys [parse resolve]} (get lang-map1 "y1")]
-     (parse "my.module" "/my/module.y1" "(ns foo) defn a b") =>
-     {:ok '[(y1.core/defn foo/a foo/b) ()]}
+     (parse "my.module" "/my/module.y1" "(ns foo (:require [bar])) defn a b") =>
+     {:ok '[(y1.core/defn foo/a foo/b)
+            ({:lang "y1" :name "bar"}
+             {:lang "y0" :name "y1"})]}
        ;; Checking that we got the resolver we wanted
      (let [path (io/file "./a/b/c.y1")]
        (resolve "a.b.c") => {:ok path}

@@ -66,7 +66,7 @@
                             (assoc :path module-path)))
     (:obj m)))
 
-(defn edn-parser [root-refer-map]
+(defn edn-parser [root-refer-map lang extra-modules]
   (fn [module path text]
     (try
       (let [[ns-decl & statements] (parse-string-all text
@@ -75,9 +75,10 @@
             refer-map (merge refer-map root-refer-map)
             statements (for [statement statements]
                          (convert-ns statement ns-map refer-map))]
-        (ok [statements (for [module module-list]
-                          {:lang "y0"
-                           :name module})]))
+        (ok [statements (concat (for [module module-list]
+                                  {:lang lang
+                                   :name module})
+                                extra-modules)]))
       (catch Exception e
         {:err {:error (.getMessage e)}}))))
 

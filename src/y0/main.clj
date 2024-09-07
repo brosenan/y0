@@ -25,7 +25,9 @@
 
 (defn- main [modules path]
   (let [lang-map {"y0" {:parse (edn-parser
-                                (root-module-symbols y0-symbols "y0.core"))
+                                (root-module-symbols y0-symbols "y0.core")
+                                "y0"
+                                [])
                         :resolve (y0-resolver path)}}
         modules (for [module modules]
                   {:lang "y0"
