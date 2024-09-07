@@ -98,14 +98,13 @@
 ;; keywords and a module system that looks for files based on the roots in the
 ;; environment variable `Y1_PATH`.
 (fact
- (let [root-symbols '[defn deftype declfn defclass definstance]
-       config {"y1" {:name "y1"
+ (let [config {"y1" {:name "y1"
                      ;; Use an EDN parser
                      :parser :edn
                      ;; Initialize the root namespace from a list of symbols 
                      :root-refer-map :root-symbols
                      ;; All these symbols...
-                     :root-symbols root-symbols
+                     :root-symbols '[defn deftype declfn defclass definstance]
                      ;; ...populate this namespace 
                      :root-namespace "y1.core"
                      ;; The resolver is based on a prefix list
@@ -118,10 +117,10 @@
                      ;; The prefix list comes from an environment variable...
                      :path-prefixes :from-env
                      ;; ...named Y0-PATH
-                     :path-prefixes-env "Y0-PATH"}}]
+                     :path-prefixes-env "Y1-PATH"}}]
    (def lang-map1 (language-map-from-config config)) => #'lang-map1
    (provided
-    (getenv "Y0-PATH") => "."))
+    (getenv "Y1-PATH") => ".:/foo:/bar"))
    ;; Now we can use parse and see if it works
    (let [{:keys [parse resolve]} (get lang-map1 "y1")]
      (parse "my.module" "/my/module.y1" "(ns foo) defn a b") =>
