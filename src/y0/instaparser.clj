@@ -24,20 +24,39 @@
                     :start (+ (* (get loc :instaparse.gll/start-line 0) 1000000) (get loc :instaparse.gll/start-column 0))
                     :end (+ (* (get loc :instaparse.gll/end-line 0) 1000000) (get loc :instaparse.gll/end-column 0))}) tree))
 
-(defn add-namespace [node ns identifier-keywords]
-  (let [[kw name & others] node]
+(defn- check-form [form]
+  (let [[kw arg & others] form]
     (cond
-      (not (contains? identifier-keywords kw)) node
-      (not (empty? others)) (throw (Exception. (str kw " node should have one element but has " (-> others count inc))))
-      (not (string? name)) (throw (Exception. (str kw " node should contain a single string. Found: " name)))
-      :else [kw name ns])))
+      (not (empty? others)) (throw (Exception. (str kw " node should contain one element but has " (-> others count inc))))
+      (not (string? arg)) (throw (Exception. (str kw " node should contain a single string. Found: " arg)))
+      :else form)))
+
+(defn add-namespace [node ns identifier-keywords]
+  (let [[kw name] node]
+    (if
+     (contains? identifier-keywords kw)
+      (let [_ (check-form node)]
+        [kw name ns])
+      node)))
 
 (defn deps-extractor [coll-atom kw]
   (fn [node]
-    (let [[kw' module & others] node]
+    (let [[kw' module] node]
       (when (= kw' kw)
-        (cond
-          (not (empty? others)) (throw (Exception. (str kw " node should contain one element but has " (-> others count inc))))
-          (not (string? module)) (throw (Exception. (str kw " node should contain a single string. Found: " module))))
+        (check-form node)
         (swap! coll-atom conj module)))
     node))
+
+(defn convert-int-node [node]
+  (let [[kw val] node]
+    (if (= kw :int)
+      (let [_ (check-form node)]
+        [kw (java.lang.Integer/parseInt val)])
+      node)))
+
+(defn convert-float-node [node]
+  (let [[kw val] node]
+    (if (= kw :float)
+      (let [_ (check-form node)]
+        [kw (java.lang.Double/parseDouble val)])
+      node)))

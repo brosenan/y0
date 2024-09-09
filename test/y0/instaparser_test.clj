@@ -127,7 +127,7 @@
 (fact
  (add-namespace [:identifier "bar" "baz"]
                 "my.ns" #{:identifier}) =>
- (throws ":identifier node should have one element but has 2"))
+ (throws ":identifier node should contain one element but has 2"))
 
 ;; Likewise, if the one element after the keyword is not a string, an exception
 ;; is thrown as well.
@@ -169,3 +169,25 @@
    (throws ":dep node should contain one element but has 2")
    (f [:dep [:qname "some" "module"]]) =>
    (throws ":dep node should contain a single string. Found: [:qname \"some\" \"module\"]")))
+
+;; ### Numeric Literals
+
+;; In order for semantic definitions written in $y_0$ to be able to understand
+;; numerical literals (constants), we them from their string representations
+;; to numeric representation.
+
+;; For integers, this is done on nodes with the keyword `:int` and a single
+;; string argument.
+
+;; The `convert-int-node` function takes a parse-tree node. If it is of the form
+;; `[:int "123"]` it will convert it into a node of the form `[:int 123]`.
+(fact
+ (convert-int-node [:int "123"]) => [:int 123]
+ (convert-int-node [:not-int "123"]) => [:not-int "123"]
+ (convert-int-node [:int "123" "456"]) => (throws ":int node should contain one element but has 2"))
+
+;; Similarly, `convert-float-node` converts nodes with the `:float` keyword.
+(fact
+ (convert-float-node [:float "123.456e+7"]) => [:float 123.456e+7]
+ (convert-float-node [:not-float "12.3"]) => [:not-float "12.3"]
+ (convert-float-node [:float "123." "456"]) => (throws ":float node should contain one element but has 2"))
