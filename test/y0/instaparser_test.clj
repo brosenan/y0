@@ -135,3 +135,37 @@
  (add-namespace [:identifier [:foo "bar"]]
                 "my.ns" #{:identifier}) =>
  (throws ":identifier node should contain a single string. Found: [:foo \"bar\"]"))
+
+;; ### Collecting Dependencies
+
+;; The grammar for the target language should make dependencies very easy to
+;; detect in the parse tree.
+
+;; Like identifiers, the names of the dependent modules should be identified
+;; in a node with a single element -- a string containing the node's name.
+
+;; `deps-extractor` takes an atom holding a collection (typically, it will be
+;; empty upon calling the function) and the designated keyword for marking
+;; dependencies, and returns a function for processing nodes. The function
+;; returns each node unchanged, but in case of a dependency, it will add the
+;; module name to the collection.
+(fact
+ (let [a (atom nil)
+       f (deps-extractor a :dep)]
+   ;; This does not add a dependency to the collection.
+   (f [:import [:dep "some.module"] [:identifier "somemod"]]) =>
+   [:import [:dep "some.module"] [:identifier "somemod"]]
+   @a => nil
+   ;; But this does...
+   (f [:dep "some.module"]) => [:dep "some.module"]
+   @a => ["some.module"]))
+
+;; If the dependency node contains a different number of elements than one, or
+;; that one element is not a string, exceptions are thrown.
+(fact
+ (let [a (atom nil)
+       f (deps-extractor a :dep)]
+   (f [:dep "some.module" "some.other.module"]) =>
+   (throws ":dep node should contain one element but has 2")
+   (f [:dep [:qname "some" "module"]]) =>
+   (throws ":dep node should contain a single string. Found: [:qname \"some\" \"module\"]")))

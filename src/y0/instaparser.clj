@@ -31,3 +31,13 @@
       (not (empty? others)) (throw (Exception. (str kw " node should have one element but has " (-> others count inc))))
       (not (string? name)) (throw (Exception. (str kw " node should contain a single string. Found: " name)))
       :else [kw name ns])))
+
+(defn deps-extractor [coll-atom kw]
+  (fn [node]
+    (let [[kw' module & others] node]
+      (when (= kw' kw)
+        (cond
+          (not (empty? others)) (throw (Exception. (str kw " node should contain one element but has " (-> others count inc))))
+          (not (string? module)) (throw (Exception. (str kw " node should contain a single string. Found: " module))))
+        (swap! coll-atom conj module)))
+    node))
