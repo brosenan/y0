@@ -24,6 +24,10 @@
                     :start (+ (* (get loc :instaparse.gll/start-line 0) 1000000) (get loc :instaparse.gll/start-column 0))
                     :end (+ (* (get loc :instaparse.gll/end-line 0) 1000000) (get loc :instaparse.gll/end-column 0))}) tree))
 
-(comment
-  
-  )
+(defn add-namespace [node ns identifier-keywords]
+  (let [[kw name & others] node]
+    (cond
+      (not (contains? identifier-keywords kw)) node
+      (not (empty? others)) (throw (Exception. (str kw " node should have one element but has " (-> others count inc))))
+      (not (string? name)) (throw (Exception. (str kw " node should contain a single string. Found: " name)))
+      :else [kw name ns])))
