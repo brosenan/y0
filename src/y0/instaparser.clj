@@ -31,12 +31,12 @@
       (not (string? arg)) (throw (Exception. (str kw " node should contain a single string. Found: " arg)))
       :else form)))
 
-(defn add-namespace [node ns identifier-keywords]
+(defn symbolize [node ns identifier-keywords]
   (let [[kw name] node]
     (if
      (contains? identifier-keywords kw)
       (let [_ (check-form node)]
-        [kw name ns])
+        [kw (symbol ns name)])
       node)))
 
 (defn deps-extractor [coll-atom kw]

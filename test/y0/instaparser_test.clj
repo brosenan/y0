@@ -106,17 +106,17 @@
 ;; $y_0$ lauguage definition to understand that these two different symbols
 ;; refer to the same thing.
 
-;; ### Adding Namespaces to Identifiers
+;; ### Turning Identifiers into Symbols
 
-;; The function `add-namespace` takes a parse-tree node, a namespace string and
+;; The function `symbolize` takes a parse-tree node, a namespace string and
 ;; a set of keywords for what counts as "identifiers", and returns the same
-;; node, either updated with a namespace added, or untouched, if the node is not
-;; an identifier.
+;; node, either updated with the identifier string replaced with a symbol, or
+;; untouched, if the node is not an identifier.
 (fact
- (add-namespace [:identifier "bar"]
-                "my.ns" #{:identifier}) => [:identifier "bar" "my.ns"]
- (add-namespace [:foo [:identifier "bar"] [:identifier "baz"]]
-                "my.ns" #{:identifier}) =>
+ (symbolize [:identifier "bar"]
+            "my.ns" #{:identifier}) => [:identifier 'my.ns/bar]
+ (symbolize [:foo [:identifier "bar"] [:identifier "baz"]]
+            "my.ns" #{:identifier}) =>
  [:foo [:identifier "bar"] [:identifier "baz"]])
 
 ;; As can be seen, the namespace is added as the second element to an identifier
@@ -125,15 +125,15 @@
 ;; If the node's keyword appears in the set but has more than one element, an
 ;; exception is raised.
 (fact
- (add-namespace [:identifier "bar" "baz"]
-                "my.ns" #{:identifier}) =>
+ (symbolize [:identifier "bar" "baz"]
+            "my.ns" #{:identifier}) =>
  (throws ":identifier node should contain one element but has 2"))
 
 ;; Likewise, if the one element after the keyword is not a string, an exception
 ;; is thrown as well.
 (fact
- (add-namespace [:identifier [:foo "bar"]]
-                "my.ns" #{:identifier}) =>
+ (symbolize [:identifier [:foo "bar"]]
+            "my.ns" #{:identifier}) =>
  (throws ":identifier node should contain a single string. Found: [:foo \"bar\"]"))
 
 ;; ### Collecting Dependencies
