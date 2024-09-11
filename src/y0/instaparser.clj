@@ -39,13 +39,12 @@
         [kw (symbol ns name)])
       node)))
 
-(defn deps-extractor [coll-atom kw]
-  (fn [node]
-    (let [[kw' module] node]
-      (when (= kw' kw)
-        (check-form node)
-        (swap! coll-atom conj module)))
-    node))
+(defn extract-deps [node coll-atom kw]
+  (let [[kw' module] node]
+    (when (= kw' kw)
+      (check-form node)
+      (swap! coll-atom conj module)))
+  node)
 
 (defn convert-int-node [node]
   (let [[kw val] node]

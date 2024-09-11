@@ -166,21 +166,19 @@ detect in the parse tree.
 Like identifiers, the names of the dependent modules should be identified
 in a node with a single element -- a string containing the node's name.
 
-`deps-extractor` takes an atom holding a collection (typically, it will be
-empty upon calling the function) and the designated keyword for marking
-dependencies, and returns a function for processing nodes. The function
-returns each node unchanged, but in case of a dependency, it will add the
-module name to the collection.
+`extract-deps` takes a node, an atom holding a collection (typically, it will
+be empty upon calling the function) and the designated keyword for marking
+dependencies, and returns the node unchanged, but in case of a dependency, it
+adds the module name to the collection.
 ```clojure
 (fact
- (let [a (atom nil)
-       f (deps-extractor a :dep)]
+ (let [a (atom nil)]
    ;; This does not add a dependency to the collection.
-   (f [:import [:dep "some.module"] [:identifier "somemod"]]) =>
+   (extract-deps [:import [:dep "some.module"] [:identifier "somemod"]] a :dep) =>
    [:import [:dep "some.module"] [:identifier "somemod"]]
    @a => nil
    ;; But this does...
-   (f [:dep "some.module"]) => [:dep "some.module"]
+   (extract-deps [:dep "some.module"] a :dep) => [:dep "some.module"]
    @a => ["some.module"]))
 
 ```
@@ -188,11 +186,10 @@ If the dependency node contains a different number of elements than one, or
 that one element is not a string, exceptions are thrown.
 ```clojure
 (fact
- (let [a (atom nil)
-       f (deps-extractor a :dep)]
-   (f [:dep "some.module" "some.other.module"]) =>
+ (let [a (atom nil)]
+   (extract-deps [:dep "some.module" "some.other.module"] a :dep) =>
    (throws ":dep node should contain one element but has 2")
-   (f [:dep [:qname "some" "module"]]) =>
+   (extract-deps [:dep [:qname "some" "module"]] a :dep) =>
    (throws ":dep node should contain a single string. Found: [:qname \"some\" \"module\"]")))
 
 ```
