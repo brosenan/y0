@@ -250,13 +250,13 @@ function returns a status containing the module's `statements`: the parse
 tree with the top-level label removed, and a set of dependencies.
 
 In the statements, identifiers are replaced with symbols and `:int` and
-`:float` literals are replaced with actual values.
+`:float` literals are replaced with actual values. Each node in the
+parse-tree is given a location.
 ```clojure
 (fact
  (def sample-text1 "import foo.core;
                     import bar.core;
-                    
-                    
+
                     a = -3;
                     b = 5.7;
                     x = a;")
@@ -271,6 +271,10 @@ In the statements, identifiers are replaced with symbols and `:int` and
     [:statement [:assign [:identifier 'my.module/b] [:expr [:float 5.7]]]]
     [:statement
      [:assign [:identifier 'my.module/x] [:expr [:identifier 'my.module/a]]]]]
+   ;; Location of the `a` in `a = -3`
+   (-> statements (nth 2) second second meta) => {:path "/path/to/my-module.y7"
+                                                  :start 2000037
+                                                  :end 4000022}
    deps => [{:lang "y7" :name "bar.core"}
             {:lang "y7" :name "foo.core"}]))
 ```

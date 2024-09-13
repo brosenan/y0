@@ -76,16 +76,17 @@
 (defn instaparser [lang grammar id-kws dep-kw]
   (fn [module path text]
     (let-s [parser (ok (instaparse-grammar grammar))
-            parse-tree (wrap-parse parser text)
-            statements (ok (drop 1 parse-tree))
-            deps-atom (ok (atom nil))
-            statements (ok (vec (postwalk-with-meta
-                                 #(-> %
-                                      (symbolize module id-kws)
-                                      (extract-deps deps-atom dep-kw)
-                                      convert-int-node
-                                      convert-float-node) statements)))
-            deps (ok (vec (for [dep @deps-atom]
-                            {:lang lang
-                             :name dep})))]
-           (ok [statements deps]))))
+            parse-tree (wrap-parse parser text)]
+           (let [statements (drop 1 parse-tree)
+                 deps-atom (atom nil)
+                 statements (add-locations statements path)
+                 statements (vec (postwalk-with-meta
+                                  #(-> %
+                                       (symbolize module id-kws)
+                                       (extract-deps deps-atom dep-kw)
+                                       convert-int-node
+                                       convert-float-node) statements))
+                 deps (vec (for [dep @deps-atom]
+                             {:lang lang
+                              :name dep}))]
+             (ok [statements deps])))))
