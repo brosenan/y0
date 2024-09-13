@@ -32,15 +32,22 @@
       (not (string? arg)) (throw (Exception. (str kw " node should contain a single string. Found: " arg)))
       :else form)))
 
-(defn symbolize [node ns identifier-keywords]
-  (if (vector? node)
-    (let [[kw name] node]
-      (if
-       (contains? identifier-keywords kw)
-        (let [_ (check-form node)]
-          [kw (symbol ns name)])
-        node))
-    node))
+(defn symbolize
+  ([node ns identifier-keywords]
+   (if (keyword? identifier-keywords)
+     (symbolize node ns #{identifier-keywords} true)
+     (symbolize node ns identifier-keywords false)))
+  ([node ns identifier-keywords extract-sym]
+   (if (vector? node)
+     (let [[kw name] node]
+       (if
+        (contains? identifier-keywords kw)
+         (let [_ (check-form node)]
+           (if extract-sym
+             (with-meta (symbol ns name) (meta node))
+             [kw (symbol ns name)]))
+         node))
+     node)))
 
 (defn extract-deps [node coll-atom kw]
   (when (vector? node)

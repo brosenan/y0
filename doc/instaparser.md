@@ -159,6 +159,26 @@ is thrown as well.
  (throws ":identifier node should contain a single string. Found: [:foo \"bar\"]"))
 
 ```
+We allow for a set of identifier keywords because some languages have more
+than one kind of identifier, e.g., ones that start with a small letter vs.
+ones that start with a capital letter, with different roles in the syntax.
+
+In the more common case, where there is only one kind of identifier, a
+keyword can be provided instead of a set. If this is the case, rather than
+replacing the string within the node, the symbol replaces the entire node.
+```clojure
+(fact
+ (symbolize [:identifier "bar"]
+            "my.ns" :identifier) => 'my.ns/bar)
+
+```
+When replacing the node with a symbol, the symbol is given the node's meta.
+```clojure
+(fact
+ (meta (symbolize (with-meta [:identifier "bar"] {:foo :bar})
+                  "my.ns" :identifier)) => {:foo :bar})
+
+```
 ### Collecting Dependencies
 
 The grammar for the target language should make dependencies very easy to
@@ -240,7 +260,7 @@ language map.
                 float = #'-?[1-9][0-9]*([.][0-9]+)?([eE][+\\-][0-9]+)?'
                 --layout--
                 layout = #'\\s'+"]
-  (def my-parser (instaparser "y7" grammar #{:identifier} :dep)) =>
+  (def my-parser (instaparser "y7" grammar :identifier :dep)) =>
    #'my-parser)
  my-parser => fn?)
 
@@ -267,10 +287,10 @@ parse-tree is given a location.
    statements =>
    [[:import [:dep "foo.core"]]
     [:import [:dep "bar.core"]]
-    [:statement [:assign [:identifier 'my.module/a] [:expr [:int -3]]]]
-    [:statement [:assign [:identifier 'my.module/b] [:expr [:float 5.7]]]]
+    [:statement [:assign 'my.module/a [:expr [:int -3]]]]
+    [:statement [:assign 'my.module/b [:expr [:float 5.7]]]]
     [:statement
-     [:assign [:identifier 'my.module/x] [:expr [:identifier 'my.module/a]]]]]
+     [:assign 'my.module/x [:expr 'my.module/a]]]]
    ;; Location of the `a` in `a = -3`
    (-> statements (nth 2) second second meta) => {:path "/path/to/my-module.y7"
                                                   :start 2000037
