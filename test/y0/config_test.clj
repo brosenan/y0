@@ -93,13 +93,14 @@
 ;; that maps language names into configs for these languages, and returns a
 ;; language map which can be used for loading modules in these languages.
 
+;; ### EDN-Based Language Config
+
 ;; The following configuration could be the configuration for $y_1$ (our
 ;; [example language](y1.md)). It defines a EDN-based parser with the language's
 ;; keywords and a module system that looks for files based on the roots in the
 ;; environment variable `Y1_PATH`.
 (fact
- (let [config {"y1" {:name "y1"
-                     ;; Use an EDN parser
+ (let [config {"y1" {;; Use an EDN parser
                      :parser :edn
                      ;; Initialize the root namespace from a list of symbols 
                      :root-refer-map :root-symbols
@@ -134,3 +135,45 @@
        (resolve "a.b.c") => {:ok path}
        (provided
         (exists? path) => true))))
+
+;; ### Instaparse-Based Language Config
+
+;; The following example language configuration uses an Instaparse-based parser.
+(fact
+ (let [config {"c0" {;; Use an Instaparser
+                     :parser :insta
+                     :grammar "compilation_unit = import* statement*
+                               import = <'import'> dep <';'>
+                               dep = #'[a-z_0-9.]+'
+                               statement = assign
+                               assign = identifier <'='> expr <';'>
+                               identifier = #'[a-zA-Z_][a-zA-Z_0-9]*'
+                               expr = literal | identifier
+                               <literal> = int / float
+                               int = #'-?[1-9][0-9]*'
+                               float = #'-?[1-9][0-9]*([.][0-9]+)?([eE][+\\-][0-9]+)?'
+                               --layout--
+                               layout = #'\\s'+"
+                     ;; The keyword (or keywords) representing an identifier in
+                     ;; the grammar
+                     :identifier-kws :identifier
+                     ;; The keyword representing a dependency module name in the
+                     ;; grammar
+                     :dependency-kw :dep
+                     ;; Same resolver as in the y1 example above, adapted to c0.
+                     :resolver :prefix-list
+                     :relative-path-resolution :dots
+                     :file-ext "c0"
+                     :extra-modules [{:lang "y0" :name "c0"}]
+                     :path-prefixes :from-env
+                     :path-prefixes-env "C0-PATH"}}]
+   (def lang-map1 (language-map-from-config config)) => #'lang-map1
+   (provided
+    (getenv "C0-PATH") => ".:/foo:/bar"))
+   ;; Now we can use parse and see if it works
+ (let [{:keys [parse _resolve]} (get lang-map1 "c0")]
+   (parse "my.module" "/my/module.c0" "import foo; a = 1; b = 2.3;") =>
+   {:ok '[[[:import [:dep "foo"]]
+           [:statement [:assign my.module/a [:expr [:int 1]]]]
+           [:statement [:assign my.module/b [:expr [:float 2.3]]]]]
+          [{:lang "c0" :name "foo"}]]}))

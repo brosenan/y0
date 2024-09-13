@@ -1,7 +1,8 @@
 (ns y0.config
   (:require [y0.edn-parser :refer [edn-parser root-module-symbols]]
             [y0.resolvers :refer [path-prefixes-from-env prefix-list-resolver
-                                  qname-to-rel-path-resolver]]))
+                                  qname-to-rel-path-resolver]]
+            [y0.instaparser :refer [instaparser]]))
 
 (defn- get-or-throw [m key name]
   (if (contains? m key)
@@ -19,7 +20,9 @@
     (get-or-throw config key "the config")))
 
 (def lang-spec {:parser {:edn {:func edn-parser
-                               :args [:root-refer-map :lang :extra-modules]}}
+                               :args [:root-refer-map :lang :extra-modules]}
+                         :insta {:func instaparser
+                                 :args [:lang :grammar :identifier-kws :dependency-kw]}}
                 :resolver {:prefix-list {:func prefix-list-resolver 
                                          :args [:path-prefixes
                                                 :relative-path-resolution]}}
