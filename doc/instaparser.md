@@ -5,6 +5,7 @@
     * [Turning Identifiers into Symbols](#turning-identifiers-into-symbols)
     * [Collecting Dependencies](#collecting-dependencies)
     * [Numeric Literals](#numeric-literals)
+  * [The Parser Function](#the-parser-function)
 ```clojure
 (ns y0.instaparser-test
   (:require [midje.sweet :refer [fact => throws]]
@@ -217,5 +218,60 @@ Similarly, `convert-float-node` converts nodes with the `:float` keyword.
  (convert-float-node [:float "123.456e+7"]) => [:float 123.456e+7]
  (convert-float-node [:not-float "12.3"]) => [:not-float "12.3"]
  (convert-float-node [:float "123." "456"]) => (throws ":float node should contain one element but has 2"))
+
+```
+## The Parser Function
+
+`instaparser` takes a grammar string, the name of the language, a set of
+keywords representing identifiers and a single keyword representing a
+dependency module, and returns a `:parse` function which can be placed in a
+language map.
+```clojure
+(fact
+ (let [grammar "compilation_unit = import* statement*
+                import = <'import'> dep <';'>
+                dep = #'[a-z_0-9.]+'
+                statement = assign
+                assign = identifier <'='> expr <';'>
+                identifier = #'[a-zA-Z_][a-zA-Z_0-9]*'
+                expr = literal | identifier
+                <literal> = int / float
+                int = #'-?[1-9][0-9]*'
+                float = #'-?[1-9][0-9]*([.][0-9]+)?([eE][+\\-][0-9]+)?'
+                --layout--
+                layout = #'\\s'+"]
+  (def my-parser (instaparser "y7" grammar #{:identifier} :dep)) =>
+   #'my-parser)
+ my-parser => fn?)
+
+```
+Given a module name, a module path and the text of the module, the resulting
+function returns a status containing the module's `statements`: the parse
+tree with the top-level label removed, and a set of dependencies.
+
+In the statements, identifiers are replaced with symbols and `:int` and
+`:float` literals are replaced with actual values.
+```clojure
+(fact
+ (def sample-text1 "import foo.core;
+                    import bar.core;
+                    
+                    
+                    a = -3;
+                    b = 5.7;
+                    x = a;")
+ (let [
+       status (my-parser "my.module" "/path/to/my-module.y7" sample-text1)
+       {:keys [ok]} status
+       [statements deps] ok]
+   statements =>
+   [[:import [:dep "foo.core"]]
+    [:import [:dep "bar.core"]]
+    [:statement [:assign [:identifier 'my.module/a] [:expr [:int -3]]]]
+    [:statement [:assign [:identifier 'my.module/b] [:expr [:float 5.7]]]]
+    [:statement
+     [:assign [:identifier 'my.module/x] [:expr [:identifier 'my.module/a]]]]]
+   deps => [{:lang "y7" :name "bar.core"}
+            {:lang "y7" :name "foo.core"}]))
 ```
 

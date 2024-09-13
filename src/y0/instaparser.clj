@@ -1,7 +1,8 @@
 (ns y0.instaparser
   (:require [instaparse.core :as insta]
             [clojure.string :as str]
-            [y0.term-utils :refer [postwalk-meta]]))
+            [y0.term-utils :refer [postwalk-meta postwalk-with-meta]]
+            [y0.status :refer [ok let-s]]))
 
 (def layout-separator "--layout--")
 
@@ -32,30 +33,59 @@
       :else form)))
 
 (defn symbolize [node ns identifier-keywords]
-  (let [[kw name] node]
-    (if
-     (contains? identifier-keywords kw)
-      (let [_ (check-form node)]
-        [kw (symbol ns name)])
-      node)))
+  (if (vector? node)
+    (let [[kw name] node]
+      (if
+       (contains? identifier-keywords kw)
+        (let [_ (check-form node)]
+          [kw (symbol ns name)])
+        node))
+    node))
 
 (defn extract-deps [node coll-atom kw]
-  (let [[kw' module] node]
-    (when (= kw' kw)
-      (check-form node)
-      (swap! coll-atom conj module)))
+  (when (vector? node)
+    (let [[kw' module] node]
+      (when (= kw' kw)
+        (check-form node)
+        (swap! coll-atom conj module))))
   node)
 
 (defn convert-int-node [node]
-  (let [[kw val] node]
-    (if (= kw :int)
-      (let [_ (check-form node)]
-        [kw (java.lang.Integer/parseInt val)])
-      node)))
+  (if (vector? node)
+    (let [[kw val] node]
+      (if (= kw :int)
+        (let [_ (check-form node)]
+          [kw (java.lang.Integer/parseInt val)])
+        node))
+    node))
 
 (defn convert-float-node [node]
-  (let [[kw val] node]
-    (if (= kw :float)
-      (let [_ (check-form node)]
-        [kw (java.lang.Double/parseDouble val)])
-      node)))
+  (if (vector? node)
+    (let [[kw val] node]
+      (if (= kw :float)
+        (let [_ (check-form node)]
+          [kw (java.lang.Double/parseDouble val)])
+        node))
+    node))
+
+(defn- wrap-parse [func & args]
+  (try
+    (ok (apply func args))
+    (catch Exception e {:err [(.getMessage e)]})))
+
+(defn instaparser [lang grammar id-kws dep-kw]
+  (fn [module path text]
+    (let-s [parser (ok (instaparse-grammar grammar))
+            parse-tree (wrap-parse parser text)
+            statements (ok (drop 1 parse-tree))
+            deps-atom (ok (atom nil))
+            statements (ok (vec (postwalk-with-meta
+                                 #(-> %
+                                      (symbolize module id-kws)
+                                      (extract-deps deps-atom dep-kw)
+                                      convert-int-node
+                                      convert-float-node) statements)))
+            deps (ok (vec (for [dep @deps-atom]
+                            {:lang lang
+                             :name dep})))]
+           (ok [statements deps]))))
