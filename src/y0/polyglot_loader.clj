@@ -31,11 +31,11 @@
     (if (empty? ms)
       (ok mstore)
       (let [[m & ms] ms]
-           (if (contains? mstore (module-id m))
-             (recur ms mstore)
-             (let-s [m (load-module m lang-map)]
-                    (recur (concat ms (:deps m))
-                           (assoc mstore (module-id m) m))))))))
+        (if (contains? mstore (module-id m))
+          (recur ms mstore)
+          (let-s [m (load-module m lang-map)]
+                 (recur (concat ms (:deps m))
+                        (assoc mstore (module-id m) m))))))))
 
 (defn mstore-sources [mstore]
   (set (for [[mid m] mstore
