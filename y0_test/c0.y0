@@ -1,0 +1,9 @@
+(ns c0)
+
+;; # $c_0$ is not C
+
+(all [var val]
+     [:assign var val] =>
+     (assert
+      (exist []
+             (= var val ! var "does not equal" val))))

@@ -25,7 +25,7 @@
        :grammar "compilation_unit = import* statement*
                  import = <'import'> dep <';'>
                  dep = #'[a-z_0-9.]+'
-                 statement = assign
+                 <statement> = assign
                  assign = identifier <'='> expr <';'>
                  identifier = #'[a-zA-Z_][a-zA-Z_0-9]*'
                  expr = literal | identifier
