@@ -30,13 +30,20 @@
     val
     (throw (Exception. (str "Missing expected environment variable: " env)))))
 
+(defn- lazy-val [thunk]
+  (let [a (atom nil)]
+    (fn []
+      (when (nil? @a)
+        (reset! a (thunk)))
+      @a)))
+
 (defn path-prefixes-from-env [env]
-  (reify clojure.lang.ISeq
-    (seq [_this]
-      (seq (str/split (getenv env) #"[:]")))
-    (next [this] (rest (seq this)))
-    (first [this] (first (seq this)))
-    (more [this] (next this))))
+  (let [s (lazy-val #(seq (str/split (getenv env) #"[:]")))]
+    (reify clojure.lang.ISeq
+      (seq [_this] (s))
+      (next [_this] (rest (s)))
+      (first [_this] (first (s)))
+      (more [this] (next this)))))
 
 (defn y0-resolver [y0-path]
   (prefix-list-resolver y0-path (qname-to-rel-path-resolver "y0")))
