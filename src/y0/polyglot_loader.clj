@@ -6,17 +6,21 @@
   (ok m assoc :text (slurp path)))
 
 (defn load-module [module lang-map]
-  (let [{:keys [parse resolve]} (get lang-map (:lang module))]
-    (cond
-      (contains? module :statements) (ok module)
-      (contains? module :text) (let-s [[statements deps] (parse (:name module) (:path module) (:text module))]
-                                      (ok (-> module
-                                              (assoc :statements statements)
-                                              (assoc :deps deps))))
-      (contains? module :path) (->s (slurp-text module) (recur lang-map))
-      (contains? module :name) (let-s [path (resolve (:name module))
-                                       module (ok module assoc :path path)]
-                                      (recur module lang-map)))))
+  (let [{:keys [lang]} module]
+    (if (contains? lang-map lang)
+      (let [lang-def (get lang-map lang)
+            {:keys [parse resolve]} lang-def]
+        (cond
+          (contains? module :statements) (ok module)
+          (contains? module :text) (let-s [[statements deps] (parse (:name module) (:path module) (:text module))]
+                                          (ok (-> module
+                                                  (assoc :statements statements)
+                                                  (assoc :deps deps))))
+          (contains? module :path) (->s (slurp-text module) (recur lang-map))
+          (contains? module :name) (let-s [path (resolve (:name module))
+                                           module (ok module assoc :path path)]
+                                          (recur module lang-map))))
+      {:err ["Language" lang "is not supported"]})))
 
 (defn module-id [{:keys [lang name]}]
   (str lang ":" name))
@@ -42,7 +46,7 @@
   (->> (for [[mid m] mstore
              dep (:deps m)]
          {(module-id dep) #{mid}})
-       (reduce (partial merge-with union))))
+       (reduce (partial merge-with union) {})))
 
 (defn mstore-toposort [mstore]
   (let [refs (mstore-refs mstore)

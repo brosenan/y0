@@ -26,7 +26,9 @@
               (recur paths))))))))
 
 (defn getenv [env]
-  (java.lang.System/getenv env))
+  (if-let [val (java.lang.System/getenv env)]
+    val
+    (throw (Exception. (str "Missing expected environment variable: " env)))))
 
 (defn path-prefixes-from-env [env]
   (str/split (getenv env) #"[:]"))
