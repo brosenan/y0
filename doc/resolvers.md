@@ -73,6 +73,17 @@ and returns its contents, split on the colon (`:`) character.
   (getenv "Y0_PATH") => "/foo:/bar:."))
 
 ```
+The sequence is lazy, and access to the environment variable is only made
+once the first element is being fected.
+```clojure
+(fact
+ (let [paths (path-prefixes-from-env "Y0_PATH")]
+   (first paths) => "/foo"
+   (provided
+    (getenv "Y0_PATH") => "/foo:/bar:.")))
+
+
+```
 ## The $y_0$ Resolver
 
 In $y_0$, a module `a.b.c` is found in file `some/path/a/b/c.y0`, where

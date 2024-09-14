@@ -121,9 +121,7 @@
                      :path-prefixes :from-env
                      ;; ...named Y0-PATH
                      :path-prefixes-env "Y1-PATH"}}]
-   (def lang-map1 (language-map-from-config config)) => #'lang-map1
-   (provided
-    (getenv "Y1-PATH") => ".:/foo:/bar"))
+   (def lang-map1 (language-map-from-config config)) => #'lang-map1)
    ;; Now we can use parse and see if it works
    (let [{:keys [parse resolve]} (get lang-map1 "y1")]
      (parse "my.module" "/my/module.y1" "(ns foo (:require [bar])) defn a b") =>
@@ -134,7 +132,8 @@
      (let [path (io/file "./a/b/c.y1")]
        (resolve "a.b.c") => {:ok path}
        (provided
-        (exists? path) => true))))
+        (exists? path) => true
+        (getenv "Y1-PATH") => ".:/foo:/bar"))))
 
 ;; ### Instaparse-Based Language Config
 
@@ -167,9 +166,7 @@
                      :extra-modules [{:lang "y0" :name "c0"}]
                      :path-prefixes :from-env
                      :path-prefixes-env "C0-PATH"}}]
-   (def lang-map1 (language-map-from-config config)) => #'lang-map1
-   (provided
-    (getenv "C0-PATH") => ".:/foo:/bar"))
+   (def lang-map1 (language-map-from-config config)) => #'lang-map1)
    ;; Now we can use parse and see if it works
  (let [{:keys [parse _resolve]} (get lang-map1 "c0")]
    (parse "my.module" "/my/module.c0" "import foo; a = 1; b = 2.3;") =>

@@ -31,7 +31,12 @@
     (throw (Exception. (str "Missing expected environment variable: " env)))))
 
 (defn path-prefixes-from-env [env]
-  (str/split (getenv env) #"[:]"))
+  (reify clojure.lang.ISeq
+    (seq [_this]
+      (seq (str/split (getenv env) #"[:]")))
+    (next [this] (rest (seq this)))
+    (first [this] (first (seq this)))
+    (more [this] (next this))))
 
 (defn y0-resolver [y0-path]
   (prefix-list-resolver y0-path (qname-to-rel-path-resolver "y0")))
