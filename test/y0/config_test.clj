@@ -173,4 +173,5 @@
    {:ok '[[[:import [:dep "foo"]]
            [:statement [:assign my.module/a [:expr [:int 1]]]]
            [:statement [:assign my.module/b [:expr [:float 2.3]]]]]
-          [{:lang "c0" :name "foo"}]]}))
+          [{:lang "c0" :name "foo"}
+           {:lang "y0" :name "c0"}]]}))

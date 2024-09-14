@@ -80,7 +80,7 @@
     (ok (apply func args))
     (catch Exception e {:err [(.getMessage e)]})))
 
-(defn instaparser [lang grammar id-kws dep-kw]
+(defn instaparser [lang grammar id-kws dep-kw extra-deps]
   (fn [module path text]
     (let-s [parser (ok (instaparse-grammar grammar))
             parse-tree (wrap-parse parser text)]
@@ -93,7 +93,9 @@
                                        (extract-deps deps-atom dep-kw)
                                        convert-int-node
                                        convert-float-node) statements))
-                 deps (vec (for [dep @deps-atom]
-                             {:lang lang
-                              :name dep}))]
+                 deps (-> (for [dep @deps-atom]
+                            {:lang lang
+                             :name dep})
+                          (concat extra-deps)
+                          vec)]
              (ok [statements deps])))))

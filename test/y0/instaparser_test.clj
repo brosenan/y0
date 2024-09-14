@@ -207,10 +207,14 @@
 
 ;; ## The Parser Function
 
-;; `instaparser` takes a grammar string, the name of the language, a set of
-;; keywords representing identifiers and a single keyword representing a
-;; dependency module, and returns a `:parse` function which can be placed in a
-;; language map.
+;; `instaparser` takes:
+;; 1. a grammar string,
+;; 2. the name of the language,
+;; 3. a set of keywords representing identifiers
+;; 4. a single keyword representing a dependency module,
+;; 5. a list module (maps with `:lang` and `:name`) representing _additional_
+;;    dependencies (usually used for the language semantic definition in $y_0$)
+;; and returns a `:parse` function which can be placed in a language map.
 (fact
  (let [grammar "compilation_unit = import* statement*
                 import = <'import'> dep <';'>
@@ -224,7 +228,11 @@
                 float = #'-?[1-9][0-9]*([.][0-9]+)?([eE][+\\-][0-9]+)?'
                 --layout--
                 layout = #'\\s'+"]
-  (def my-parser (instaparser "y7" grammar :identifier :dep)) =>
+  (def my-parser (instaparser "y7"
+                              grammar
+                              :identifier
+                              :dep
+                              [{:lang "y0" :name "y7"}])) =>
    #'my-parser)
  my-parser => fn?)
 
@@ -258,4 +266,5 @@
                                                   :start 2000037
                                                   :end 4000022}
    deps => [{:lang "y7" :name "bar.core"}
-            {:lang "y7" :name "foo.core"}]))
+            {:lang "y7" :name "foo.core"}
+            {:lang "y0" :name "y7"}]))
