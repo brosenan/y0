@@ -157,10 +157,6 @@
 (all [x expr t]
      (typeof-let x expr t ! "let requires a vector as its first argument." x "is given"))
 
-(assertx
- (exist [t] (typeof (let 2 3) t)
-        ! "let requires a vector as its first argument." 2 "is given"))
-
 ;; Now we provide rules for a vector of at least two elements.
 (all [var var-expr var-expr-pairs expr t]
      (typeof-let [var var-expr & var-expr-pairs] expr t) <-
@@ -313,8 +309,10 @@
 ;; the parameters vector consists of name, type pairs.
 
 ;; As our running example, let us consider the following function:
-(defn square [x float]
-  (* x x))
+;; ```clojure
+;; (defn square [x float]
+;;   (* x x))
+;; ```
 
 ;; This function has a single parameter, `x` of type `float`. It multiplies it
 ;; by itself to give the square. The return type is not provided explicitly in
@@ -417,6 +415,10 @@
      (= args ()
         ! "Too many argument given to function" name "."
         args "are extra"))
+
+;; Now we can define `square` for real.
+(defn square [x float]
+  (* x x))
 
 ;; We demonstrate it by inferring the type of an expression containing
 ;; `square`, as we defined it above.
@@ -554,33 +556,6 @@
  (type-constructors ((bar string)
                      (foo x float)) ! x "is not a type"))
 
-;; `type-constructors` is used along with `decltypes-` to check that given that
-;; all type parameters are types, the constructors parameters are types.
-(assert
- (given (deftype foo [t]
-          (foo-list (list t))
-          (foo-vec (vector t))))
- (given (deftype foo [t]
-          (foo-list (list t))
-          (foo-vec (vector x)))
-        ! x "is not a type" "in" (deftype foo [t]
-                                   (foo-list (list t))
-                                   (foo-vec (vector x))))
- (given (deftype :foo [t]
-          (foo-list (list t))
-          (foo-vec (vector t)))
-        ! "Type name must be a symbol." :foo "is given"
-        "in" (deftype :foo [t]
-               (foo-list (list t))
-               (foo-vec (vector t))))
- (given (deftype foo [4]
-          (foo-list (list t))
-          (foo-vec (vector t)))
-        ! "Expected a symbol, found" 4
-        "in" (deftype foo [4]
-               (foo-list (list t))
-               (foo-vec (vector t)))))
-
 ;; ### Constructors
 
 ;; The second statement translated from a `deftype` statement is `defctors-`.
@@ -648,6 +623,31 @@
           (foo-vec (vector t)))
         (typeof (foo-vec [1 2 3]) (foo int))))
 
+;; An here are some of the errors that are detected from faulty definitions.
+(assert
+ (given (deftype foo [t]
+          (foo-list (list t))
+          (foo-vec (vector x)))
+        ! x "is not a type" "in" (deftype foo [t]
+                                   (foo-list (list t))
+                                   (foo-vec (vector x))))
+ (given (deftype :foo [t]
+          (foo-list (list t))
+          (foo-vec (vector t)))
+        ! "Type name must be a symbol." :foo "is given"
+        "in" (deftype :foo [t]
+               (foo-list (list t))
+               (foo-vec (vector t))))
+ (given (deftype foo [4]
+          (foo-list (list t))
+          (foo-vec (vector t)))
+        ! "Expected a symbol, found" 4
+        "in" (deftype foo [4]
+               (foo-list (list t))
+               (foo-vec (vector t)))))
+
+
+               
 ;; ### Deconstructing ADT Values
 
 ;; Deconstruction of ADT values is done through `case` expressions. They have
@@ -783,6 +783,10 @@
           (methods-for-class name types' methods') <-
           (replace-meta types [types methods] [types' methods'])))
 
+;; **TODO:** Reorganize the rules so that this is not necessary.
+(all [name types methods]
+     (defmethods- name types methods) =>)
+
 
 ;; This definition translates a `defclass` statement into three things:
 ;; 1. An assertion that checks that the `name` is a symbol, `types` is a vector
@@ -898,13 +902,6 @@
 
 ;; #### Method Definitions
 
-;; A `defmethods-` statement translates into individual `defmethod-`
-;; statements.
-(all [name types method methods]
-     (defmethods- name types (method & methods)) =>
-     (defmethod- name types method)
-     (defmethods- name types methods))
-
 ;; `defmethod-` is defined for different kinds of methods. Currently, only
 ;; monomorphic methods are supported. The following is their definition.
 (all [class types method params ret-type]
@@ -917,6 +914,13 @@
                                [[self-type & aux-types] params' ret-type'])
                  (check-decl-types params' args method)
                  (class self-type aux-types ! "in method call" ? "with param types" params'))))
+
+;; A `defmethods-` statement translates into individual `defmethod-`
+;; statements.
+(all [name types method methods]
+     (defmethods- name types (method & methods)) =>
+     (defmethod- name types method)
+     (defmethods- name types methods))
 
 ;; With the above definition of the `Show` class (and no instances), we expect
 ;; type-checking on the `show` function to fail on the call to the class
@@ -1057,7 +1061,7 @@
  (type-constraints [(Show string int) (Convertable- int float)]
                    ! "Too many type arguments given to class" Show ":"
                    int "is unmatched")
- ;; TODO: This should fail.
+ ;; **TODO:** This should fail.
  (type-constraints [(Show) (Convertable- int)]))
 
 ;; Given constraints with actual types, `check-constraints` checks that they

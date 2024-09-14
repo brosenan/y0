@@ -1,7 +1,8 @@
 (ns y0.rules-test
   (:require [midje.sweet :refer [fact =>]]
-            [y0.rules :refer [new-vars add-rule satisfy-goal]]
-            [y0.core :refer [all <- ! &]]
+            [y0.rules :refer [new-vars add-rule satisfy-goal
+                              apply-normal-statement]]
+            [y0.core :refer [all] :as y0]
             [y0.status :refer [->s ok let-s]]
             [y0.predstore :refer [match-rule pred-key]]
             [y0.explanation :refer [explanation-to-str]]))
@@ -157,3 +158,46 @@
    (explanation-to-str (:err status)) =>
    "Cannot provide an amount for a vector containing 6 with some context"))
 
+;; ## Handling Statements
+
+;; A full account of the handling of statements and translation rules is given
+;; [here](statements.md). Here, however, we describe behavior that cannot be
+;; properly tested internally, from within $y_0$.
+
+;; ### Reporting Unhandled Statements
+
+;; $y_0$ statements can be of any shape and form (so long that they are
+;; representable as EDN s-expressions). However, they only have meaning if they
+;; are either of one of the two statements types that have built-in behavior
+;; (namely, `all` or `assert`), or if there is a translation rule that operates
+;; on them.
+
+;; Because other statements have no effect, we make them illegal. This makes
+;; sure that every statement is accounted for and avoids situations where a
+;; translation rule that should have acted on a family of statements actually
+;; fails to do so because it got the pattern wrong.
+
+;; The function `apply-normal-statement` is responsible for handling "normal"
+;; statements, i.e., statements that are not explicitly understood by $y_0$. It
+;; takes a predstore, the statement and a map of variables and returns the
+;; updated predstore, after applying all relevant translation rules and thus
+;; adding all resulting statements.
+
+;; `apply-normal-statement` succeeds if the statement matches at least on
+;; translation rule.
+(fact
+ (let [x (atom nil)
+       status (->s (ok {})
+                   (add-rule `(all [x] (my-stmt x) y0/=> (assert (= x x))) {})
+                   (apply-normal-statement `(my-stmt 123) {}))]
+   (:err status) => nil?))
+
+;; However, without first introducing a translation rule, the statement is
+;; pointless and therefore not allowed.
+(fact
+ (let [x (atom nil)
+       status (->s (ok {})
+                   (apply-normal-statement `(my-stmt 123) {}))]
+   (:err status) =>
+   ["No rules are defined to translate statement" `(my-stmt 123)
+    "and therefore it does not have any meaning"]))

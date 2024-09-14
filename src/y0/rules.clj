@@ -131,16 +131,22 @@
                         (nil? origin))]
                  (recur assertions)))))))
 
-(defn- apply-normal-statement [ps statement vars]
+(defn apply-normal-statement [ps statement vars]
   (let-s [statement (ok statement replace-vars vars)
-          ps (store-statement ps statement)]
-    (loop [trans-rules (seq (get-rules-to-match ps statement))
-           ps ps]
-      (if (empty? trans-rules)
-        (ok ps)
-        (let-s [[rule & rules] (ok trans-rules)
-                ps (rule statement ps)]
-               (recur rules ps))))))
+          ps (store-statement ps statement)
+          trans-rules (ok (seq (get-rules-to-match ps statement)))]
+         (if (and (empty? trans-rules)
+                  (not= (first statement) `all)
+                  (not= (first statement) `assert))
+           {:err ["No rules are defined to translate statement" statement
+                  "and therefore it does not have any meaning"]}
+           (loop [trans-rules trans-rules
+                  ps ps]
+             (if (empty? trans-rules)
+               (ok ps)
+               (let-s [[rule & rules] (ok trans-rules)
+                       ps (rule statement ps)]
+                      (recur rules ps)))))))
 
 (defn- apply-with-meta-block [ps statement vars]
   (let-s [[_with-meta bindings statement] (ok statement)
