@@ -22,14 +22,28 @@
  "c0" {;; Use an Instaparser
        :parser :insta
        ;; The grammar with a layout section
-       :grammar "compilation_unit = import* statement*
+       :grammar "compilation_unit = import* definition*
+                 
                  import = <'import'> dep <';'>
                  dep = #'[a-z_0-9.]+'
+                 
+                 <definition> = func_decl | func_def
+                 func_decl = type identifier <'('> arg_defs <')'> <';'>
+                 func_def = type identifier <'('> arg_defs <')'> <'{'> statement* <'}'>
+                 
+                 arg_defs = ((arg_def <','>)* arg_def)?
+                 arg_def = type identifier
+
+                 <type> = ('int' | 'float') / identifier
+
                  <statement> = assign
-                 assign = identifier <'='> expr <';'>
-                 identifier = #'[a-zA-Z_][a-zA-Z_0-9]*'
+
+                 assign = type identifier <'='> expr <';'>
+
                  expr = literal | identifier
                  <literal> = int / float
+                 
+                 identifier = #'[a-zA-Z_][a-zA-Z_0-9]*'
                  int = #'-?[1-9][0-9]*'
                  float = #'-?[1-9][0-9]*([.][0-9]+)?([eE][+\\-][0-9]+)?'
                  --layout--

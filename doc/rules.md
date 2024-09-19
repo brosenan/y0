@@ -9,7 +9,7 @@
   (:require [midje.sweet :refer [fact =>]]
             [y0.rules :refer [new-vars add-rule satisfy-goal
                               apply-normal-statement]]
-            [y0.core :refer [all] :as y0]
+            [y0.core :refer [all !] :as y0]
             [y0.status :refer [->s ok let-s]]
             [y0.predstore :refer [match-rule pred-key]]
             [y0.explanation :refer [explanation-to-str]]))

@@ -1,2 +1,5 @@
-a = 1;
-b = a;
+int foo(float a) {
+    int a = 1;
+    int b = a;
+    float c = 3.14;
+}
