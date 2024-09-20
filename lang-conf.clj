@@ -34,7 +34,7 @@
                  arg_defs = ((arg_def <','>)* arg_def)?
                  arg_def = type identifier
 
-                 <type> = pointer_type | 'int' | 'float'
+                 <type> = pointer_type | 'int' | 'float' | 'string'
                  pointer_type = type <'ptr'>
 
                  <statement> = vardef | assign
@@ -47,7 +47,7 @@
                  <mult_expr> = unary_expr | mult | div | mod
                  <unary_expr> = atomic_expr | addressof | deref | minus
                  <atomic_expr> = literal | identifier | <'('> expr <')'>
-                 <literal> = int / float
+                 <literal> = (int / float) | string
 
                  addressof = <'&'> unary_expr
                  deref = <'*'> unary_expr
@@ -61,6 +61,7 @@
                  identifier = #'[a-zA-Z_][a-zA-Z_0-9]*'
                  int = #'-?[1-9][0-9]*'
                  float = #'-?[1-9][0-9]*([.][0-9]+)?([eE][+\\-][0-9]+)?'
+                 string = #'\"([^\"\\\\]|\\\\.)*\"'
                  --layout--
                  layout = #'\\s'+"
        ;; The keyword (or keywords) representing an identifier in
