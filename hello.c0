@@ -1,5 +1,6 @@
-int foo(float a) {
+int foo(float x) {
     int a = 1;
     int b = a;
-    float c = 3.14;
+    float c = x;
+    x = 3.14;
 }

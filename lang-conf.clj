@@ -36,9 +36,10 @@
 
                  <type> = ('int' | 'float') / identifier
 
-                 <statement> = assign
+                 <statement> = vardef | assign
 
-                 assign = type identifier <'='> expr <';'>
+                 vardef = type identifier <'='> expr <';'>
+                 assign = expr <'='> expr <';'>
 
                  expr = literal | identifier
                  <literal> = int / float

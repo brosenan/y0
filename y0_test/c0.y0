@@ -26,6 +26,13 @@
 (all [n]
      (typeof [:float n] "float"))
 
+;; ### Left Hand Expressions
+(all [x]
+     (lexpr x ! x "is not a left-hand expression"))
+(all [x]
+     (lexpr [:expr x]) <-
+     (lexpr x))
+
 ;; ## Statements
 
 (all [stms]
@@ -41,7 +48,7 @@
 
 ; TODO: Introduce variable in scope
 (all [t var val stms]
-     (statement [:assign t var val] stms) <-
+     (statement [:vardef t var val] stms) <-
      (type t)
      (exist [t']
             (typeof val t')
@@ -50,9 +57,21 @@
      (given (declvar var t)
             (statements stms)))
 
+(all [var val stms]
+     (statement [:assign var val] stms) <-
+     (lexpr var)
+     (exist [t]
+            (typeof var t)
+            (exist [t']
+                   (typeof val t')
+                   (= t t' ! "Type mismatch. Variable" var "was given type" t
+                      "but was assign value of type" t')))
+     (statements stms))
+
 (all [var t]
      (declvar var t) =>
-     (all [] (typeof var t)))
+     (all [] (typeof var t))
+     (all [] (lexpr var)))
 
 ;; ## Function Definitions
 (all [l]
