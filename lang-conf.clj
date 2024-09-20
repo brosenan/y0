@@ -34,8 +34,8 @@
                  arg_defs = ((arg_def <','>)* arg_def)?
                  arg_def = type identifier
 
-                 <type> = (pointer_type | 'int' | 'float') / identifier
-                 pointer_type = type <'*'>
+                 <type> = pointer_type | 'int' | 'float'
+                 pointer_type = type <'ptr'>
 
                  <statement> = vardef | assign
 
@@ -43,15 +43,20 @@
                  assign = expr <'='> expr <';'>
 
                  expr = sum_expr
-                 <sum_expr> = mult_expr | add
-                 <mult_expr> = unary_expr
-                 <unary_expr> = atomic_expr | addressof | deref
-                 <atomic_expr> = literal | identifier
+                 <sum_expr> = mult_expr | add | sub
+                 <mult_expr> = unary_expr | mult | div | mod
+                 <unary_expr> = atomic_expr | addressof | deref | minus
+                 <atomic_expr> = literal | identifier | <'('> expr <')'>
                  <literal> = int / float
 
                  addressof = <'&'> unary_expr
                  deref = <'*'> unary_expr
                  add = sum_expr <'+'> mult_expr
+                 sub = sum_expr <'-'> mult_expr
+                 mult = mult_expr <'*'> unary_expr
+                 div = mult_expr <'/'> unary_expr
+                 mod = mult_expr <'%'> unary_expr
+                 minus = <'-'> unary_expr
                  
                  identifier = #'[a-zA-Z_][a-zA-Z_0-9]*'
                  int = #'-?[1-9][0-9]*'

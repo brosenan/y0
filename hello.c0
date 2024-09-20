@@ -3,8 +3,8 @@ int foo(float x) {
     int b = a;
     float c = x;
     x = 3.14;
-    int* p = &a;
+    int ptr p = &a;
     *p = 2;
     a = 1+2;
-    c = 1.2 + 3.4;
+    c = 1.2 + 3.4 * (7.0 - 2.0) % 5.0 / 4.0;
 }
