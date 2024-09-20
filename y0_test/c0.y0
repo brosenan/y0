@@ -14,6 +14,8 @@
      (type "int"))
 (all []
      (type "float"))
+(all [t]
+     (type [:pointer_type t]))
 
 ;; ## Expressions
 (all [x t]
@@ -25,6 +27,16 @@
      (typeof [:int n] "int"))
 (all [n]
      (typeof [:float n] "float"))
+(all [x t]
+     (typeof [:addressof x] [:pointer_type t]) <-
+     (addressable x)
+     (typeof x t))
+(all [x t]
+     (typeof [:deref x] t) <-
+     (exist [t']
+            (typeof x t')
+            (= t' [:pointer_type t] ! "Expected" x "to be a pointer but"
+               t' "was inferred")))
 
 ;; ### Left Hand Expressions
 (all [x]
@@ -32,6 +44,12 @@
 (all [x]
      (lexpr [:expr x]) <-
      (lexpr x))
+(all [p]
+     (lexpr [:deref p]))
+
+ ;; ### Addressable Expressions
+(all [x]
+     (addressable x ! x "does not have an address"))
 
 ;; ## Statements
 
@@ -71,7 +89,8 @@
 (all [var t]
      (declvar var t) =>
      (all [] (typeof var t))
-     (all [] (lexpr var)))
+     (all [] (lexpr var))
+     (all [] (addressable var)))
 
 ;; ## Function Definitions
 (all [l]
