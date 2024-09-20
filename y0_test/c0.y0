@@ -17,6 +17,16 @@
 (all [t]
      (type [:pointer_type t]))
 
+;; ### Types of Results of Arithmetic Operators
+(all [ta tb t]
+     (arith-type ta tb ta) <-
+     (arith-type ta)
+     (= ta tb ! "Type mismatch in arithmetic operator:" ta "vs." tb))
+
+(all [t]
+     (arith-type t ! "Cannot do arithmetics on type" t))
+(all [] (arith-type "int"))
+(all [] (arith-type "float"))
 ;; ## Expressions
 (all [x t]
      (typeof x t ! "Invalid expression" x))
@@ -37,6 +47,13 @@
             (typeof x t')
             (= t' [:pointer_type t] ! "Expected" x "to be a pointer but"
                t' "was inferred")))
+(all [a b t]
+     (typeof [:add a b] t) <-
+     (exist [ta]
+            (typeof a ta)
+            (exist [tb]
+                   (typeof b tb)
+                   (arith-type ta tb t ! "when adding" a "and" b))))
 
 ;; ### Left Hand Expressions
 (all [x]

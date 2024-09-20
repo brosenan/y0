@@ -43,7 +43,7 @@
                  assign = expr <'='> expr <';'>
 
                  expr = sum_expr
-                 <sum_expr> = mult_expr
+                 <sum_expr> = mult_expr | add
                  <mult_expr> = unary_expr
                  <unary_expr> = atomic_expr | addressof | deref
                  <atomic_expr> = literal | identifier
@@ -51,6 +51,7 @@
 
                  addressof = <'&'> unary_expr
                  deref = <'*'> unary_expr
+                 add = sum_expr <'+'> mult_expr
                  
                  identifier = #'[a-zA-Z_][a-zA-Z_0-9]*'
                  int = #'-?[1-9][0-9]*'
