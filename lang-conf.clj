@@ -58,7 +58,8 @@
                  mod = mult_expr <'%'> unary_expr
                  minus = <'-'> unary_expr
                  
-                 identifier = #'[a-zA-Z_][a-zA-Z_0-9]*'
+                 keyword = 'int' | 'string' | 'float' | 'ptr'
+                 identifier = !keyword #'[a-zA-Z_][a-zA-Z_0-9]*'
                  int = #'-?[1-9][0-9]*'
                  float = #'-?[1-9][0-9]*([.][0-9]+)?([eE][+\\-][0-9]+)?'
                  string = #'\"([^\"\\\\]|\\\\.)*\"'
