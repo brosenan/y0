@@ -21,9 +21,12 @@
             v)]
     [s v]))
 
-(defn process-lines [sm s v lines]
-  (if (empty? lines)
-    v
-    (let [[line & lines] lines
-          [s v] (apply-line sm s v line)]
-      (recur sm s v lines))))
+(defn process-lines
+  ([sm v lines]
+   (process-lines sm :init v lines))
+  ([sm s v lines]
+   (if (empty? lines)
+     v
+     (let [[line & lines] lines
+           [s v] (apply-line sm s v line)]
+       (recur sm s v lines)))))

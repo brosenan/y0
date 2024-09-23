@@ -134,9 +134,10 @@ If one pattern matches, `:transition` and `:update-fn` are applied.
 ```
 ### Processing a Complete File
 
-Given a state-machine definition, an intial state (keyword and value) and the
-contents of an input file given as a sequence of lines, `process-lines`
-will return the state (value) after processing the entire file.
+Given a state-machine definition, an intial state (value) and the contents of
+an input file given as a sequence of lines, `process-lines` will return the
+state (value) after processing the entire file. The state keyword is assumed
+to be `:init`.
 ```clojure
 (fact
  (let [file ["Hello"
@@ -149,7 +150,7 @@ will return the state (value) after processing the entire file.
              "class Bar {"
              "}"
              "```"]]
-   (process-lines statemachine-example :init {} file) =>
+   (process-lines statemachine-example {} file) =>
    {:code-blocks [["class Bar {"
                    "}"]
                   ["void foo() {"
