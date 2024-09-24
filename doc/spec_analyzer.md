@@ -3,6 +3,7 @@
     * [Finding a Matching Transition](#finding-a-matching-transition)
     * [Stepwise Activation](#stepwise-activation)
     * [Processing a Complete File](#processing-a-complete-file)
+  * [Language Spec Analysis](#language-spec-analysis)
 ```clojure
 (ns y0.spec-analyzer-test
   (:require [midje.sweet :refer [fact => throws provided anything]]
@@ -29,8 +30,8 @@ fields:
 1. `:pattern`: A regex to match a line, triggering the rule.
 2. `:transition`: A keyword representing the next state, given the trigger.
 3. `:update-fn`: A function which updates the state value. This function
-   takes the previous state value and the line, and returns the new state
-   value.
+   takes the previous state value and the line's matches, as returned by the
+   `:pattern`, and returns the new state value.
 
 Let us consider the following state-machine example, which we will use to
 demonstrate this mechanism. It is a state-machine for Markdown files, which
@@ -38,20 +39,22 @@ collects all the code-snippets in the markdown into a vector.
 ```clojure
 (def statemachine-example
   {:init [;; Start a code-block
-          {:pattern #"```.*"
+          {:pattern #"```(.*)"
            :transition :code
-           :update-fn (fn [v _line]
-                        (assoc v :current []))}]
+           :update-fn (fn [v [_line lang]]
+                        (-> v
+                            (assoc :current [])
+                            (update :languages #(conj % lang))))}]
    :code [;; At the end of the code-block, append the current code block to
           ;; :code-blocks
-          {:pattern #"```.*"
+          {:pattern #"```"
            :transition :init
-           :update-fn (fn [v _line]
+           :update-fn (fn [v _matches]
                         (-> v
                             (update :code-blocks #(conj % (:current v)))
                             (dissoc :current)))}
           ;; In any line within the code block, append the contents to :current
-          {:update-fn (fn [v line]
+          {:update-fn (fn [v [line]]
                         (update v :current #(conj % line)))}]})
 
 ```
@@ -63,49 +66,50 @@ Given a specific state and a line, how do we choose the transition to be
 applied (if any)?
 
 `find-transition` takes a state-spec (vector of transitions) and a line, and
-returns the matching pattern, if any.
+returns the matching pattern, if any, and the match, as returned by the
+regex.
 
-If no pattern matches, it returns `{}`.
+If no pattern matches, it returns `[{} nil]`.
 ```clojure
 (fact
  (find-transition [{:pattern #"^```"
                     :transition :foo}
                    {:pattern #"^#+"
                     :transition :bar}] "hello, world") =>
- {})
+ [{} nil])
 
 ```
 If a pattern matches the line, the respective transition is returned, with
 the `:pattern` removed.
 ```clojure
 (fact
- (find-transition [{:pattern #"```.*"
+ (find-transition [{:pattern #"```(.*)"
                     :transition :foo}
-                   {:pattern #"#+.*"
+                   {:pattern #"#+ *(.*)"
                     :transition :bar}] "### Hello, World") =>
- {:transition :bar})
+ [{:transition :bar} ["### Hello, World" "Hello, World"]])
 
 ```
 If a transition has no `:pattern`, it matches any line.
 ```clojure
 (fact
- (find-transition [{:pattern #"```.*"
+ (find-transition [{:pattern #"```(.*)"
                     :transition :foo}
-                   {:pattern #"#+.*"
+                   {:pattern #"#+ *(.*)"
                     :transition :bar}
                    {:transition :baz}] "hello, world") =>
- {:transition :baz})
+ [{:transition :baz} ["hello, world"]])
 
 ```
 If more than one transition matches, the first is returned.
 ```clojure
 (fact
- (find-transition [{:pattern #"```.*"
+ (find-transition [{:pattern #"```(.*)"
                     :transition :foo}
-                   {:pattern #"#+.*"
+                   {:pattern #"#+ *(.*)"
                     :transition :bar}
                    {:transition :baz}] "```c++") =>
- {:transition :foo})
+ [{:transition :foo} ["```c++" "c++"]])
 
 ```
 ### Stepwise Activation
@@ -126,7 +130,8 @@ If one pattern matches, `:transition` and `:update-fn` are applied.
 (fact
  (apply-line statemachine-example :init {:foo :bar}
              "```c++") => [:code {:foo :bar
-                                  :current []}]
+                                  :current []
+                                  :languages ["c++"]}]
  (apply-line statemachine-example :code {:current []}
              "println('hello, world')") =>
  [:code {:current ["println('hello, world')"]}])
@@ -154,6 +159,33 @@ to be `:init`.
    {:code-blocks [["class Bar {"
                    "}"]
                   ["void foo() {"
-                   "}"]]}))
+                   "}"]]
+    :languages ["java" "c++"]}))
+
+```
+## Language Spec Analysis
+
+After having built the necessary building blocks, we are ready to process
+Markdown files that represent language sepcs.
+
+The function `process-lang-spec` takes an initial state value and a sequence
+of lines, and returns the state after processing these lines.
+
+A language spec Markdown file must specify the language it is specifying.
+This language must have an entry in the
+[language config](config.md#language-configuration).
+
+To specify the language in the markdown, in a separate line, write:
+```md
+Language: `my-language-name`
+```
+
+`process-lang-spec`, in its initial state, adds a `:lang` key to the state.
+```clojure
+(fact
+ (process-lang-spec {} ["Some unrelated line"
+                        "Language: `y18`"
+                        "some other unrelated line..."])
+ => {:lang "y18"})
 ```
 
