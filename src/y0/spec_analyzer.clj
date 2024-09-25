@@ -12,26 +12,26 @@
               [(dissoc trans :pattern) matches]))
           [trans [line]])))))
 
-(defn apply-line [sm s v line]
-  (let [state-spec (get sm s)
+(defn apply-line [sm v line]
+  (let [s (:state v)
+        state-spec (get sm s)
         [trans matches] (find-transition state-spec line)
         s (if (contains? trans :transition)
             (:transition trans)
             s)
+        v (assoc v :state s)
         v (if (contains? trans :update-fn)
             ((:update-fn trans) v matches)
             v)]
-    [s v]))
+    v))
 
 (defn process-lines
   ([sm v lines]
-   (process-lines sm :init v lines))
-  ([sm s v lines]
    (if (empty? lines)
      v
      (let [[line & lines] lines
-           [s v] (apply-line sm s v line)]
-       (recur sm s v lines)))))
+           v (apply-line sm v line)]
+       (recur sm v lines)))))
 
 (def lang-spec-sm
   {:init [{:pattern #"[Ll]anguage: +`(.*)`"

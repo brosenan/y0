@@ -96,31 +96,36 @@
 
 ;; ### Stepwise Activation
 
-;; The function `apply-line` takes a state-machine, a state keyword, a state
-;; value and a line and returns a pair `[state val]` containing the state
-;; keyword and the value, after applying the line.
+;; The function `apply-line` takes a state-machine, a state and a line and
+;; returns the state, after applying the line. The state is a map which contains
+;; a `:state` key, which corresponding value is the state keyword.
 
 ;; If None of the transitions hold for the line, the state is unchanged.
 (fact
- (apply-line statemachine-example :init {:foo :bar}
-             "Some uninteresting line") => [:init {:foo :bar}])
+ (apply-line statemachine-example {:state :init
+                                   :foo :bar}
+             "Some uninteresting line") => {:foo :bar
+                                            :state :init})
 
 ;; If one pattern matches, `:transition` and `:update-fn` are applied.
 (fact
- (apply-line statemachine-example :init {:foo :bar}
-             "```c++") => [:code {:foo :bar
-                                  :current []
-                                  :languages ["c++"]}]
- (apply-line statemachine-example :code {:current []}
+ (apply-line statemachine-example {:foo :bar
+                                   :state :init}
+             "```c++") => {:foo :bar
+                           :current []
+                           :languages ["c++"]
+                           :state :code}
+ (apply-line statemachine-example {:current []
+                                   :state :code}
              "println('hello, world')") =>
- [:code {:current ["println('hello, world')"]}])
+ {:current ["println('hello, world')"]
+  :state :code})
 
 ;; ### Processing a Complete File
 
-;; Given a state-machine definition, an intial state (value) and the contents of
-;; an input file given as a sequence of lines, `process-lines` will return the
-;; state (value) after processing the entire file. The state keyword is assumed
-;; to be `:init`.
+;; Given a state-machine definition, an intial state and the contents of an
+;; input file given as a sequence of lines, `process-lines` will return the
+;; state after processing the entire file.
 (fact
  (let [file ["Hello"
              "```c++"
@@ -132,12 +137,13 @@
              "class Bar {"
              "}"
              "```"]]
-   (process-lines statemachine-example {} file) =>
+   (process-lines statemachine-example {:state :init} file) =>
    {:code-blocks [["class Bar {"
                    "}"]
                   ["void foo() {"
                    "}"]]
-    :languages ["java" "c++"]}))
+    :languages ["java" "c++"]
+    :state :init}))
 
 ;; ## Language Spec Analysis
 
@@ -158,7 +164,8 @@
 
 ;; `process-lang-spec`, in its initial state, adds a `:lang` key to the state.
 (fact
- (process-lang-spec {} ["Some unrelated line"
-                        "Language: `y18`"
-                        "some other unrelated line..."])
- => {:lang "y18"})
+ (process-lang-spec {:state :init}
+                    ["Some unrelated line"
+                     "Language: `y18`"
+                     "some other unrelated line..."])
+ => {:lang "y18" :state :init})
