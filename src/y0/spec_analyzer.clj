@@ -12,10 +12,8 @@
               [(dissoc trans :pattern) matches]))
           [trans [line]])))))
 
-(defn apply-line [sm v line]
-  (let [s (:state v)
-        state-spec (get sm s)
-        [trans matches] (find-transition state-spec line)
+(defn- apply-line-single-state [s state-spec v line]
+  (let [[trans matches] (find-transition state-spec line)
         s (if (contains? trans :transition)
             (:transition trans)
             s)
@@ -24,6 +22,14 @@
             ((:update-fn trans) v matches)
             v)]
     v))
+
+(defn apply-line [sm v line]
+  (let [s (:state v)
+        state-spec (get sm s)
+        v (if (contains? sm :any)
+            (apply-line-single-state s (get sm :any) v line)
+            v)]
+    (apply-line-single-state s state-spec v line)))
 
 (defn process-lines
   ([sm v lines]

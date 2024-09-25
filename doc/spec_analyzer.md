@@ -143,6 +143,24 @@ If one pattern matches, `:transition` and `:update-fn` are applied.
   :state :code})
 
 ```
+If the state-machine contains a state `:any`, its transitions are considered
+regardless of the current state. This is useful for things like counting
+line numbers, which should be done at any state.
+```clojure
+(fact
+ (let [sm (assoc statemachine-example
+                 :any
+                 [{:update-fn (fn [v _matches]
+                                (update v :linenum (fnil inc 0)))}])]
+   (apply-line sm {:foo :bar
+                   :state :init}
+               "```c++") => {:foo :bar
+                             :current []
+                             :languages ["c++"]
+                             :linenum 1
+                             :state :code}))
+
+```
 ### Processing a Complete File
 
 Given a state-machine definition, an intial state and the contents of an
