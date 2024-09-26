@@ -18,7 +18,9 @@
        ;; The prefix list comes from an environment variable...
        :path-prefixes :from-env
        ;; ...named Y0-PATH
-       :path-prefixes-env "Y1-PATH"}
+       :path-prefixes-env "Y1-PATH"
+       ;; Read files using Clojure's slurp function.
+       :reader :slurp}
  "c0" {;; Use an Instaparser
        :parser :insta
        ;; The grammar with a layout section
@@ -83,4 +85,6 @@
        ;; The prefix list comes from an environment variable...
        :path-prefixes :from-env
        ;; ...named C0-PATH
-       :path-prefixes-env "C0-PATH"}}
+       :path-prefixes-env "C0-PATH"
+       ;; Read files using Clojure's slurp function.
+       :reader :slurp}}

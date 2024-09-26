@@ -19,24 +19,28 @@
       (apply func arg-vals))
     (get-or-throw config key "the config")))
 
-(def lang-spec {:parser {:edn {:func edn-parser
-                               :args [:root-refer-map :lang :extra-modules]}
-                         :insta {:func instaparser
-                                 :args [:lang :grammar :identifier-kws
-                                        :dependency-kw :extra-modules]}}
-                :resolver {:prefix-list {:func prefix-list-resolver 
-                                         :args [:path-prefixes
-                                                :relative-path-resolution]}}
-                :root-refer-map {:root-symbols {:func root-module-symbols
-                                                :args [:root-symbols :root-namespace]}}
-                :relative-path-resolution {:dots {:func qname-to-rel-path-resolver
-                                                  :args [:file-ext]}}
-                :path-prefixes {:from-env {:func path-prefixes-from-env
-                                           :args [:path-prefixes-env]}}})
+(def lang-config-spec
+  {:parser {:edn {:func edn-parser
+                  :args [:root-refer-map :lang :extra-modules]}
+            :insta {:func instaparser
+                    :args [:lang :grammar :identifier-kws
+                           :dependency-kw :extra-modules]}}
+   :resolver {:prefix-list {:func prefix-list-resolver
+                            :args [:path-prefixes
+                                   :relative-path-resolution]}}
+   :reader {:slurp {:func (constantly slurp)
+                    :args []}}
+   :root-refer-map {:root-symbols {:func root-module-symbols
+                                   :args [:root-symbols :root-namespace]}}
+   :relative-path-resolution {:dots {:func qname-to-rel-path-resolver
+                                     :args [:file-ext]}}
+   :path-prefixes {:from-env {:func path-prefixes-from-env
+                              :args [:path-prefixes-env]}}})
 
 (defn language-map-from-config [config]
   (->> (for [[lang conf] config]
          (let [conf (assoc conf :lang lang)]
-           [lang {:parse (resolve-config-val lang-spec conf :parser)
-                  :resolve (resolve-config-val lang-spec conf :resolver)}]))
+           [lang {:parse (resolve-config-val lang-config-spec conf :parser)
+                  :read (resolve-config-val lang-config-spec conf :reader)
+                  :resolve (resolve-config-val lang-config-spec conf :resolver)}]))
        (into {})))

@@ -2,21 +2,21 @@
   (:require [y0.status :refer [ok ->s let-s]]
             [clojure.set :refer [union]]))
 
-(defn- slurp-text [{:keys [path] :as m}]
-  (ok m assoc :text (slurp path)))
+(defn- slurp-text [{:keys [path] :as m} read-fn]
+  (ok m assoc :text (read-fn path)))
 
 (defn load-module [module lang-map]
   (let [{:keys [lang]} module]
     (if (contains? lang-map lang)
       (let [lang-def (get lang-map lang)
-            {:keys [parse resolve]} lang-def]
+            {:keys [parse read resolve]} lang-def]
         (cond
           (contains? module :statements) (ok module)
           (contains? module :text) (let-s [[statements deps] (parse (:name module) (:path module) (:text module))]
                                           (ok (-> module
                                                   (assoc :statements statements)
                                                   (assoc :deps deps))))
-          (contains? module :path) (->s (slurp-text module) (recur lang-map))
+          (contains? module :path) (->s (slurp-text module read) (recur lang-map))
           (contains? module :name) (let-s [path (resolve (:name module))
                                            module (ok module assoc :path path)]
                                           (recur module lang-map))))

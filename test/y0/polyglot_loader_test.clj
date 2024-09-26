@@ -34,10 +34,13 @@
 ;; 6. `:deps`, containing a collection of modules (with at least`:lang` and
 ;;    `:name`), representing the module's dependencies.
 
-;; A language is also represented as a map, with two keys, `:resolve` and
-;; `:parse`. `:resolve` takes the value of a module's `:name` and returns the
-;; value of its `:path`. `:parse` takes `:name`, `:path` and `:text` and
-;; returns the values of `:statements` and `:deps`, as a tuple.
+;; A language is also represented as a map, with the following keys, each
+;; holding a function:
+;; * `:resolve` takes the value of a module's `:name` and returns the value of
+;;   its `:path`.
+;; * `:read` takes the value of a module's `:path` and returns its `:text`.
+;; * `:parse` takes `:name`, `:path` and `:text` and returns the values of
+;;   `:statements` and `:deps`, as a tuple.
 
 ;; The collection of all supported languages is contained in a _language map_,
 ;; which maps a language name (string) to its representation.
@@ -48,12 +51,18 @@
 ;; keys and a language map, and completes it.
 
 ;; For the following examples, let us use the following language-map:
+(defn- my-read1 [path]
+  (str "the contents of " path))
+(defn- my-read2 [path]
+  (str "the other contents of " path))
 (def lang-map {"y1" {:resolve (constantly (ok "some/path"))
+                     :read my-read1
                      :parse (fn [name _path text]
                               (ok [`[parsing ~text]
                                    [{:lang "y1"
                                      :name (str name 2)}]]))}
                "y2" {:resolve #(ok % assoc :path "some/other/path")
+                     :read my-read2
                      :parse (fn [name _path text]
                               (ok [`[something-else ~text]
                                    [{:lang "y2"
@@ -88,12 +97,10 @@
  => {:ok {:lang "y1"
           :name "foo"
           :path "path/to/foo.y1"
-          :text "text inside foo.y1"
-          :statements `[parsing "text inside foo.y1"]
+          :text "the contents of path/to/foo.y1"
+          :statements `[parsing "the contents of path/to/foo.y1"]
           :deps [{:lang "y1"
-                  :name "foo2"}]}}
- (provided
-  (slurp "path/to/foo.y1") => "text inside foo.y1"))
+                  :name "foo2"}]}})
 
 ;; If `:path` is not provided, but `:name` is, `:resolve` is called to resolve
 ;; the path.
@@ -103,12 +110,10 @@
  => {:ok {:lang "y1"
           :name "foo"
           :path "some/path"
-          :text "text inside foo.y1"
-          :statements `[parsing "text inside foo.y1"]
+          :text "the contents of some/path"
+          :statements `[parsing "the contents of some/path"]
           :deps [{:lang "y1"
-                  :name "foo2"}]}}
- (provided
-  (slurp "some/path") => "text inside foo.y1"))
+                  :name "foo2"}]}})
 
 ;; ## Module Store
 
@@ -151,6 +156,8 @@
 (def lang-map2
   {"y2" {:resolve (fn [name]
                     (ok (str "/" name ".y2")))
+         :read (fn [path]
+                 (str "text in " path))
          :parse (fn [name path text]
                   (ok [[name text]
                        (for [dep (my-deps name)]
@@ -161,50 +168,43 @@
 (fact
  (def my-mstore (unwrap-status (load-with-deps [{:lang "y2" :name "m12"}] lang-map2)))
  => #'my-mstore
- (provided
-  (slurp "/m12.y2") => "text in m12"
-  (slurp "/m6.y2") => "text in m6"
-  (slurp "/m4.y2") => "text in m4"
-  (slurp "/m3.y2") => "text in m3"
-  (slurp "/m2.y2") => "text in m2"
-  (slurp "/m1.y2") => "text in m1")
  my-mstore => {"y2:m12" {:lang "y2"
                          :name "m12"
                          :path "/m12.y2"
-                         :text "text in m12"
-                         :statements ["m12" "text in m12"]
+                         :text "text in /m12.y2"
+                         :statements ["m12" "text in /m12.y2"]
                          :deps [{:lang "y2" :name "m6"}
                                 {:lang "y2" :name "m4"}]}
                "y2:m6" {:lang "y2"
                         :name "m6"
                         :path "/m6.y2"
-                        :text "text in m6"
-                        :statements ["m6" "text in m6"]
+                        :text "text in /m6.y2"
+                        :statements ["m6" "text in /m6.y2"]
                         :deps [{:lang "y2" :name "m3"}
                                {:lang "y2" :name "m2"}]}
                "y2:m4" {:lang "y2"
                         :name "m4"
                         :path "/m4.y2"
-                        :text "text in m4"
-                        :statements ["m4" "text in m4"]
+                        :text "text in /m4.y2"
+                        :statements ["m4" "text in /m4.y2"]
                         :deps [{:lang "y2" :name "m2"}]}
                "y2:m3" {:lang "y2"
                         :name "m3"
                         :path "/m3.y2"
-                        :text "text in m3"
-                        :statements ["m3" "text in m3"]
+                        :text "text in /m3.y2"
+                        :statements ["m3" "text in /m3.y2"]
                         :deps [{:lang "y2" :name "m1"}]}
                "y2:m2" {:lang "y2"
                         :name "m2"
                         :path "/m2.y2"
-                        :text "text in m2"
-                        :statements ["m2" "text in m2"]
+                        :text "text in /m2.y2"
+                        :statements ["m2" "text in /m2.y2"]
                         :deps [{:lang "y2" :name "m1"}]}
                "y2:m1" {:lang "y2"
                         :name "m1"
                         :path "/m1.y2"
-                        :text "text in m1"
-                        :statements ["m1" "text in m1"]
+                        :text "text in /m1.y2"
+                        :statements ["m1" "text in /m1.y2"]
                         :deps []}})
 
 ;; ### Topological Sorting of a Module Store
@@ -281,10 +281,11 @@
 (fact
  (let-s [mstore (eval-mstore my-mstore fake-eval-statements {:bar :baz})]
         (do
-          (-> mstore (get "y2:m12") :predstore :foo) => ["m1" "text in m1"
-                                                         "m3" "text in m3"
-                                                         "m2" "text in m2"
-                                                         "m6" "text in m6"
-                                                         "m4" "text in m4"
-                                                         "m12" "text in m12"]
+          (-> mstore (get "y2:m12") :predstore :foo) =>
+          ["m1" "text in /m1.y2"
+           "m3" "text in /m3.y2"
+           "m2" "text in /m2.y2"
+           "m6" "text in /m6.y2"
+           "m4" "text in /m4.y2"
+           "m12" "text in /m12.y2"]
           (-> mstore (get "y2:m12") :predstore :bar) => :baz)))

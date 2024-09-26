@@ -138,10 +138,12 @@ environment variable `Y1_PATH`.
                      ;; The prefix list comes from an environment variable...
                      :path-prefixes :from-env
                      ;; ...named Y0-PATH
-                     :path-prefixes-env "Y1-PATH"}}]
+                     :path-prefixes-env "Y1-PATH"
+                     ;; Files are read using Clojure's slurp function.
+                     :reader :slurp}}]
    (def lang-map1 (language-map-from-config config)) => #'lang-map1)
    ;; Now we can use parse and see if it works
-   (let [{:keys [parse resolve]} (get lang-map1 "y1")]
+   (let [{:keys [parse read resolve]} (get lang-map1 "y1")]
      (parse "my.module" "/my/module.y1" "(ns foo (:require [bar])) defn a b") =>
      {:ok '[(y1.core/defn foo/a foo/b)
             ({:lang "y1" :name "bar"}
@@ -151,7 +153,9 @@ environment variable `Y1_PATH`.
        (resolve "a.b.c") => {:ok path}
        (provided
         (exists? path) => true
-        (getenv "Y1-PATH") => ".:/foo:/bar"))))
+        (getenv "Y1-PATH") => ".:/foo:/bar"))
+     ;; :read is a function that actually (tries to) reads files
+     (read "a-path-that-does-not-exist") => (throws java.io.FileNotFoundException)))
 
 ```
 ### Instaparse-Based Language Config
@@ -185,7 +189,8 @@ The following example language configuration uses an Instaparse-based parser.
                      :file-ext "c0"
                      :extra-modules [{:lang "y0" :name "c0"}]
                      :path-prefixes :from-env
-                     :path-prefixes-env "C0-PATH"}}]
+                     :path-prefixes-env "C0-PATH"
+                     :reader :slurp}}]
    (def lang-map1 (language-map-from-config config)) => #'lang-map1)
    ;; Now we can use parse and see if it works
  (let [{:keys [parse _resolve]} (get lang-map1 "c0")]

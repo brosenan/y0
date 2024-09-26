@@ -40,6 +40,7 @@
                                            (root-module-symbols y0-symbols "y0.core")
                                            "y0"
                                            [])
+                                   :read slurp
                                    :resolve (y0-resolver path)}}))
         modules (for [module modules]
                   {:lang language
