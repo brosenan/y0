@@ -84,12 +84,17 @@
                            (eval-mstore mstore #(apply-statements %2 %1 {}) ps))]
          (-> v
              (dissoc :current-block)
-             (dissoc :code-block-start)
-             (update-if (constantly (contains? status :err))
-                        :errors #(conj % {:line (:code-block-start v)
-                                          :explanation (:err status)})))))}]
+             (assoc :current-status status))))}]
    :status [{:pattern #"[Ss]uccess"
-             :transition :post-status}]
+             :transition :post-status
+             :update-fn
+             (fn [v _m]
+               (-> v
+                   (dissoc :code-block-start)
+                   (dissoc :current-status)
+                   (update-if (constantly (contains? (:current-status v) :err))
+                              :errors #(conj % {:line (:code-block-start v)
+                                                :explanation (:err (:current-status v))}))))}]
    :post-status [{:pattern #"```"
                   :transition :init
                   :update-fn (fn [v _m]
