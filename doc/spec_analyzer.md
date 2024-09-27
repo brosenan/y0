@@ -320,11 +320,14 @@ another code block with the `status` "language", containing a single line
 with a single word: `Success`. The expectation is that code in the code block
 will be loaded successfully.
 ```clojure
+(defn my-parse [name path text])
 (fact
- (let [langmap {"y4" {:resolve #(ok (str "/path/to/" %))
-                      :read #(str "contents of " %)
-                      :parse (fn [_name _path _text]
-                               (ok [[] []]))}}]
+ (let [langmap {"y4" {:resolve #(throw
+                                 (Exception. (str "resolve should not have been called: " %)))
+                      :read #(throw
+                              (Exception. (str "read should not have been called: " %)))
+                      :parse (fn [name path text]
+                               (my-parse name path text))}}]
    (process-lang-spec {:state :init
                        :lang "y4"
                        :langmap langmap}
@@ -339,17 +342,21 @@ will be loaded successfully.
        :line 7
        :lang "y4"
        :langmap langmap
-       :code-examples 1}))
+       :code-examples 1}
+   (provided
+    (my-parse "example" "example" "void main() {\n}") => (ok [[] []]))))
 
 ```
 In case of an error, the explanation, along with the line-number of the block
 header are added to the `:errors` vector.
 ```clojure
 (fact
- (let [langmap {"y4" {:resolve #(ok (str "/path/to/" %))
-                      :read #(str "contents of " %)
-                      :parse (fn [_name _path _text]
-                               (ok [[`(this-is-not-supported)] []]))}}]
+ (let [langmap {"y4" {:resolve #(throw
+                                 (Exception. (str "resolve should not have been called: " %)))
+                      :read #(throw
+                              (Exception. (str "read should not have been called: " %)))
+                      :parse (fn [name path text]
+                               (my-parse name path text))}}]
    (process-lang-spec {:state :init
                        :langmap langmap}
                       ["Language: `y4`"
@@ -368,6 +375,9 @@ header are added to the `:errors` vector.
        :errors [{:explanation ["No rules are defined to translate statement"
                                `(this-is-not-supported)
                                "and therefore it does not have any meaning"]
-                 :line 2}]}))
+                 :line 2}]}
+   (provided
+    (my-parse "example" "example" "void main() {\n}") =>
+    (ok [[`(this-is-not-supported)] []]))))
 ```
 

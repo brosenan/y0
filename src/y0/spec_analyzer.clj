@@ -2,7 +2,8 @@
   (:require [y0.polyglot-loader :refer [load-with-deps eval-mstore]]
             [y0.status :refer [ok let-s ->s]]
             [y0.rules :refer [apply-statements]]
-            [y0.builtins :refer [add-builtins]]))
+            [y0.builtins :refer [add-builtins]]
+            [clojure.string :refer [join]]))
 
 (defn find-transition [transes line]
   (loop [transes transes]
@@ -78,7 +79,9 @@
      :update-fn
      (fn [v _m]
        (let [status (let-s [mstore (load-with-deps [{:lang (:lang v)
-                                                     :name "example"}]
+                                                     :name "example"
+                                                     :path "example"
+                                                     :text (join "\n" (:current-block v))}]
                                                    (:langmap v))
                             ps (ok (add-builtins {}))]
                            (eval-mstore mstore #(apply-statements %2 %1 {}) ps))]
