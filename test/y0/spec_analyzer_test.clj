@@ -1,6 +1,7 @@
 (ns y0.spec-analyzer-test
   (:require [midje.sweet :refer [fact => throws provided anything]]
-            [y0.spec-analyzer :refer :all]))
+            [y0.spec-analyzer :refer :all]
+            [y0.status :refer [ok]]))
 
 ;; # Analyzing Language Specs
 
@@ -255,3 +256,72 @@
                      "Another unrelated line"])
  => {:state :init
      :line 3})
+
+;; ### Example Code
+
+;; A language spec contains example code blocks. Any code block that is not a
+;; [dependency module](#dependency-modules) is considered by the analyzer as an
+;; example code block.
+
+;; Example code blocks require that the initial state contains `:langmap`, a
+;; [language-map](polyglot_loader.md#module-and-language-representation), and
+;; `:lang`, which references a key in the language-map.
+
+;; There are two types of example code blocks: _positive_ and _negative_.
+;; Positive examples contain code that should be valid, while negative examples
+;; contain code that should be invalid. The latter also contains the error
+;; message that should be produced by the language definition.
+
+;; #### Positive Code Examples
+
+;; A positive code example consists of a code block followed immediately by
+;; another code block with the `status` "language", containing a single line
+;; with a single word: `Success`. The expectation is that code in the code block
+;; will be loaded successfully.
+(fact
+ (let [langmap {"y4" {:resolve #(ok (str "/path/to/" %))
+                      :read #(str "contents of " %)
+                      :parse (fn [_name _path _text]
+                               (ok [[] []]))}}]
+   (process-lang-spec {:state :init
+                       :lang "y4"
+                       :langmap langmap}
+                      ["```c++"
+                       "void main() {"
+                       "}"
+                       "```"
+                       "```status"
+                       "Success"
+                       "```"])
+   => {:state :init
+       :line 7
+       :lang "y4"
+       :langmap langmap
+       :code-examples 1}))
+
+;; In case of an error, the explanation, along with the line-number of the block
+;; header are added to the `:errors` vector.
+(fact
+ (let [langmap {"y4" {:resolve #(ok (str "/path/to/" %))
+                      :read #(str "contents of " %)
+                      :parse (fn [_name _path _text]
+                               (ok [[`(this-is-not-supported)] []]))}}]
+   (process-lang-spec {:state :init
+                       :langmap langmap}
+                      ["Language: `y4`"
+                       "```c++"
+                       "void main() {"
+                       "}"
+                       "```"
+                       "```status"
+                       "Success"
+                       "```"])
+   => {:state :init
+       :line 8
+       :lang "y4"
+       :langmap langmap
+       :code-examples 1
+       :errors [{:explanation ["No rules are defined to translate statement"
+                               `(this-is-not-supported)
+                               "and therefore it does not have any meaning"]
+                 :line 2}]}))

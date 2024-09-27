@@ -1,4 +1,8 @@
-(ns y0.spec-analyzer)
+(ns y0.spec-analyzer
+  (:require [y0.polyglot-loader :refer [load-with-deps eval-mstore]]
+            [y0.status :refer [ok let-s ->s]]
+            [y0.rules :refer [apply-statements]]
+            [y0.builtins :refer [add-builtins]]))
 
 (defn find-transition [transes line]
   (loop [transes transes]
@@ -57,7 +61,40 @@
           {:pattern #".*`(.*)`:"
            :transition :maybe-module
            :update-fn (fn [v [_line module-name]]
-                        (assoc v :module-name module-name))}]
+                        (assoc v :module-name module-name))}
+          {:pattern #"```.*"
+           :transition :code
+           :update-fn (fn [v _m]
+                        (-> v
+                            (assoc :code-block-start (:line v))))}]
+   :code [{:pattern #"```"
+           :transition :maybe-status}
+          {:update-fn (fn [v [line]]
+                        (-> v
+                            (update :current-block (fnil #(conj % line) []))))}]
+   :maybe-status
+   [{:pattern #"```status"
+     :transition :status
+     :update-fn
+     (fn [v _m]
+       (let [status (let-s [mstore (load-with-deps [{:lang (:lang v)
+                                                     :name "example"}]
+                                                   (:langmap v))
+                            ps (ok (add-builtins {}))]
+                           (eval-mstore mstore #(apply-statements %2 %1 {}) ps))]
+         (-> v
+             (dissoc :current-block)
+             (dissoc :code-block-start)
+             (update-if (constantly (contains? status :err))
+                        :errors #(conj % {:line (:code-block-start v)
+                                          :explanation (:err status)})))))}]
+   :status [{:pattern #"[Ss]uccess"
+             :transition :post-status}]
+   :post-status [{:pattern #"```"
+                  :transition :init
+                  :update-fn (fn [v _m]
+                               (-> v
+                                   (update :code-examples (fnil inc 0))))}]
    :maybe-module [{:pattern #"```.*"
                    :transition :module}
                   {:transition :init
@@ -68,7 +105,7 @@
              :transition :init
              :update-fn (fn [v _matches]
                           (-> v
-                              (update :modules 
+                              (update :modules
                                       (fnil #(assoc % (:module-name v)
                                                     (:module-lines v))
                                             {}))
