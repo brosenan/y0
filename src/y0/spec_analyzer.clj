@@ -44,16 +44,25 @@
            v (apply-line sm v line)]
        (recur sm v lines)))))
 
-(defn- update-if [m pred key f]
-  (if (pred m)
+(defn- update-if [m cond key f]
+  (if cond
     (update m key f)
     m))
+
+(defn- eval-code [{:keys [lang langmap current-block]}]
+  (let-s [mstore (load-with-deps [{:lang lang
+                                   :name "example"
+                                   :path "example"
+                                   :text (join "\n" current-block)}]
+                                 langmap)
+          ps (ok (add-builtins {}))]
+         (eval-mstore mstore #(apply-statements %2 %1 {}) ps)))
 
 (def lang-spec-sm
   {:any [{:update-fn (fn [v [line]]
                        (-> v
                            (update :line (fnil inc 0))
-                           (update-if :generate
+                           (update-if (:generate v)
                                       :generated (fnil #(conj % line) []))))}]
    :init [{:pattern #"[Ll]anguage: +`(.*)`"
            :update-fn (fn [v [_line lang]]
@@ -76,18 +85,10 @@
    :maybe-status
    [{:pattern #"```status"
      :transition :status
-     :update-fn
-     (fn [v _m]
-       (let [status (let-s [mstore (load-with-deps [{:lang (:lang v)
-                                                     :name "example"
-                                                     :path "example"
-                                                     :text (join "\n" (:current-block v))}]
-                                                   (:langmap v))
-                            ps (ok (add-builtins {}))]
-                           (eval-mstore mstore #(apply-statements %2 %1 {}) ps))]
-         (-> v
-             (dissoc :current-block)
-             (assoc :current-status status))))}
+     :update-fn (fn [v _m]
+                  (-> v
+                      (dissoc :current-block)
+                      (assoc :current-status (eval-code v))))}
     {:transition :init
      :update-fn (fn [v _m]
                   (-> v
@@ -100,7 +101,7 @@
                (-> v
                    (dissoc :code-block-start)
                    (dissoc :current-status)
-                   (update-if (constantly (contains? (:current-status v) :err))
+                   (update-if (contains? (:current-status v) :err)
                               :errors #(conj % {:line (:code-block-start v)
                                                 :explanation (:err (:current-status v))}))))}]
    :post-status [{:pattern #"```"
