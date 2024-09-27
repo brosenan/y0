@@ -4,6 +4,8 @@
     * [Stepwise Activation](#stepwise-activation)
     * [Processing a Complete File](#processing-a-complete-file)
   * [Language Spec Analysis](#language-spec-analysis)
+    * [Global Behavior](#global-behavior)
+    * [Header](#header)
 ```clojure
 (ns y0.spec-analyzer-test
   (:require [midje.sweet :refer [fact => throws provided anything]]
@@ -195,6 +197,45 @@ Markdown files that represent language sepcs.
 The function `process-lang-spec` takes an initial state value and a sequence
 of lines, and returns the state after processing these lines.
 
+### Global Behavior
+
+There is some functionality that the analyzer has, that is agnostic of
+context in the Markdown document.
+
+First, it counds lines, so that update functions have access to the current
+line number.
+```clojure
+(fact
+ (process-lang-spec {:state :init}
+                    ["Line number 1"
+                     "Line number 2"
+                     "Line number 3"
+                     "Line number 4"])
+ => {:state :init :line 4})
+
+```
+The analyzer can be activated in generation mode. In this mode it will
+generate an updated version of itself, i.e., with correct error messages. To
+activate this mode, the initial state has to have `:generate true`. If this
+is the case, a `:generated` vector will accumulate the entire file.
+```clojure
+(fact
+ (process-lang-spec {:state :init
+                     :generate true}
+                    ["Line number 1"
+                     "Line number 2"
+                     "Line number 3"
+                     "Line number 4"])
+ => {:state :init :line 4
+     :generate true
+     :generated ["Line number 1"
+                 "Line number 2"
+                 "Line number 3"
+                 "Line number 4"]})
+
+```
+### Header
+
 A language spec Markdown file must specify the language it is specifying.
 This language must have an entry in the
 [language config](config.md#language-configuration).
@@ -211,6 +252,8 @@ Language: `my-language-name`
                     ["Some unrelated line"
                      "Language: `y18`"
                      "some other unrelated line..."])
- => {:lang "y18" :state :init})
+ => {:state :init
+     :lang "y18"
+     :line 3})
 ```
 

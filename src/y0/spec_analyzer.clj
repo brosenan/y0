@@ -39,8 +39,18 @@
            v (apply-line sm v line)]
        (recur sm v lines)))))
 
+(defn- update-if [m pred key f]
+  (if (pred m)
+    (update m key f)
+    m))
+
 (def lang-spec-sm
-  {:init [{:pattern #"[Ll]anguage: +`(.*)`"
+  {:any [{:update-fn (fn [v [line]]
+                       (-> v
+                           (update :line (fnil inc 0))
+                           (update-if :generate
+                                      :generated (fnil #(conj % line) []))))}]
+   :init [{:pattern #"[Ll]anguage: +`(.*)`"
            :update-fn (fn [v [_line lang]]
                         (-> v
                             (assoc :lang lang)))}]})
