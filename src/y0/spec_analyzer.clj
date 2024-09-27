@@ -87,7 +87,12 @@
                            (eval-mstore mstore #(apply-statements %2 %1 {}) ps))]
          (-> v
              (dissoc :current-block)
-             (assoc :current-status status))))}]
+             (assoc :current-status status))))}
+    {:transition :init
+     :update-fn (fn [v _m]
+                  (-> v
+                      (dissoc :current-block)
+                      (dissoc :code-block-start)))}]
    :status [{:pattern #"[Ss]uccess"
              :transition :post-status
              :update-fn

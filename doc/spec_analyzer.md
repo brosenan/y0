@@ -308,6 +308,24 @@ Example code blocks require that the initial state contains `:langmap`, a
 [language-map](polyglot_loader.md#module-and-language-representation), and
 `:lang`, which references a key in the language-map.
 
+An example code-block consists of two code blocks: The first, containing the
+code example, and the second, under the (Markdown-unsupported) `status`
+"language", containing the expected result.
+
+Code blocks without a subsequent `status` block are ignored.
+```clojure
+(fact
+ (process-lang-spec {:state :init}
+                    ["Some unrelated line"
+                     "```c++"
+                     "void main() {}"
+                     "}"
+                     "```"
+                     "Another unrelated line"])
+ => {:state :init
+     :line 6})
+
+```
 There are two types of example code blocks: _positive_ and _negative_.
 Positive examples contain code that should be valid, while negative examples
 contain code that should be invalid. The latter also contains the error
