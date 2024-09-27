@@ -53,7 +53,31 @@
    :init [{:pattern #"[Ll]anguage: +`(.*)`"
            :update-fn (fn [v [_line lang]]
                         (-> v
-                            (assoc :lang lang)))}]})
+                            (assoc :lang lang)))}
+          {:pattern #".*`(.*)`:"
+           :transition :maybe-module
+           :update-fn (fn [v [_line module-name]]
+                        (assoc v :module-name module-name))}]
+   :maybe-module [{:pattern #"```.*"
+                   :transition :module}
+                  {:transition :init
+                   :update-fn (fn [v _m]
+                                (-> v
+                                    (dissoc :module-name)))}]
+   :module [{:pattern #"```"
+             :transition :init
+             :update-fn (fn [v _matches]
+                          (-> v
+                              (update :modules 
+                                      (fnil #(assoc % (:module-name v)
+                                                    (:module-lines v))
+                                            {}))
+                              (dissoc :module-name)
+                              (dissoc :module-lines)))}
+            {:update-fn (fn [v [line]]
+                          (-> v
+                              (update :module-lines
+                                      (fnil #(conj % line) []))))}]})
 
 (defn process-lang-spec [v lines]
   (process-lines lang-spec-sm v lines))

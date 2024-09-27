@@ -222,3 +222,36 @@
  => {:state :init
      :lang "y18"
      :line 3})
+
+;; ### Dependency Modules
+
+;; In order to specify imports and relationships between modules, it is
+;; necessary to enable the spec to provide modules that will later be imported
+;; by example code.
+
+;; To specify a module, end a line with the module name in backticks followed by
+;; a colon, and begin the next line with a code block. This code-block will be
+;; stored under the `:modules` key, keyed by the module name.
+(fact
+ (process-lang-spec {:state :init}
+                    ["Some unrelated line"
+                     "This can be seen in the module `foo.bar`:"
+                     "```python"
+                      "def foo(x):"
+                      "  return x+2"
+                      "```"
+                     "Another unrelated line"])
+ => {:state :init
+     :modules {"foo.bar" ["def foo(x):"
+                          "  return x+2"]}
+     :line 7})
+
+;; If the line ending in a backticked name and a colon is not followed by a code
+;; block, the line is ignored.
+(fact
+ (process-lang-spec {:state :init}
+                    ["Some unrelated line"
+                     "Some unrelated text to `foo.bar`:"
+                     "Another unrelated line"])
+ => {:state :init
+     :line 3})
