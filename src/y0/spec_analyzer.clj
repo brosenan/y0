@@ -3,6 +3,7 @@
             [y0.status :refer [ok let-s ->s]]
             [y0.rules :refer [apply-statements]]
             [y0.builtins :refer [add-builtins]]
+            [y0.explanation :refer [explanation-to-str]]
             [clojure.string :refer [join]]))
 
 (defn find-transition [transes line]
@@ -99,16 +100,37 @@
              :update-fn
              (fn [v _m]
                (-> v
-                   (dissoc :code-block-start)
-                   (dissoc :current-status)
                    (update-if (contains? (:current-status v) :err)
                               :errors #(conj % {:line (:code-block-start v)
-                                                :explanation (:err (:current-status v))}))))}]
+                                                :explanation (:err (:current-status v))}))
+                   (update-if (contains? (:current-status v) :ok)
+                              :success (fnil inc 0))))}
+            {:pattern #"ERROR: (.*)"
+             :transition :post-status
+             :update-fn
+             (fn [v [_line expected]]
+               (let [actual (if (contains? (:current-status v) :err)
+                              (explanation-to-str (:err (:current-status v)))
+                              "")]
+                 (-> v
+                     (update-if (and (contains? (:current-status v) :err)
+                                     (= actual expected))
+                                :success (fnil inc 0))
+                     (update-if (and (contains? (:current-status v) :err)
+                                     (not= actual expected))
+                                :errors #(conj % {:line (:code-block-start v)
+                                                  :explanation ["The example failed, providing the wrong explanation:"
+                                                                actual]}))
+                     (update-if (contains? (:current-status v) :ok)
+                                :errors #(conj % {:line (:code-block-start v)
+                                                  :explanation ["The example should have produced an error, but did not"]})))))}]
    :post-status [{:pattern #"```"
                   :transition :init
-                  :update-fn (fn [v _m]
-                               (-> v
-                                   (update :code-examples (fnil inc 0))))}]
+                  :update-fn
+                  (fn [v [_line expected]]
+                    (-> v
+                        (dissoc :code-block-start)
+                        (dissoc :current-status)))}]
    :maybe-module [{:pattern #"```.*"
                    :transition :module}
                   {:transition :init

@@ -9,6 +9,7 @@
     * [Dependency Modules](#dependency-modules)
     * [Example Code](#example-code)
       * [Positive Code Examples](#positive-code-examples)
+      * [Negative Code Examples](#negative-code-examples)
 ```clojure
 (ns y0.spec-analyzer-test
   (:require [midje.sweet :refer [fact => throws provided anything]]
@@ -333,19 +334,19 @@ message that should be produced by the language definition.
 
 #### Positive Code Examples
 
-A positive code example consists of a code block followed immediately by
-another code block with the `status` "language", containing a single line
-with a single word: `Success`. The expectation is that code in the code block
-will be loaded successfully.
+A positive code example is a code example which `status` block contains a
+single word: `Success`. The expectation is that code in the code block will
+be evaluated successfully. On a successful run, the :success counter in the
+state is incremented.
 ```clojure
-(defn my-parse [name path text])
+(defn mock-parse [name path text])
 (fact
  (let [langmap {"y4" {:resolve #(throw
                                  (Exception. (str "resolve should not have been called: " %)))
                       :read #(throw
                               (Exception. (str "read should not have been called: " %)))
                       :parse (fn [name path text]
-                               (my-parse name path text))}}]
+                               (mock-parse name path text))}}]
    (process-lang-spec {:state :init
                        :lang "y4"
                        :langmap langmap}
@@ -360,21 +361,20 @@ will be loaded successfully.
        :line 7
        :lang "y4"
        :langmap langmap
-       :code-examples 1}
+       :success 1}
    (provided
-    (my-parse "example" "example" "void main() {\n}") => (ok [[] []]))))
+    (mock-parse "example" "example" "void main() {\n}") => (ok [[] []]))))
 
 ```
 In case of an error, the explanation, along with the line-number of the block
-header are added to the `:errors` vector.
+header are added to the `:errors` vector. The :success counter is not
+incremented.
 ```clojure
 (fact
- (let [langmap {"y4" {:resolve #(throw
-                                 (Exception. (str "resolve should not have been called: " %)))
-                      :read #(throw
-                              (Exception. (str "read should not have been called: " %)))
+ (let [langmap {"y4" {;; :resolve and :read are not used and can therefore be
+                      ;; omitted here
                       :parse (fn [name path text]
-                               (my-parse name path text))}}]
+                               (mock-parse name path text))}}]
    (process-lang-spec {:state :init
                        :langmap langmap}
                       ["Language: `y4`"
@@ -389,13 +389,97 @@ header are added to the `:errors` vector.
        :line 8
        :lang "y4"
        :langmap langmap
-       :code-examples 1
        :errors [{:explanation ["No rules are defined to translate statement"
                                `(this-is-not-supported)
                                "and therefore it does not have any meaning"]
                  :line 2}]}
    (provided
-    (my-parse "example" "example" "void main() {\n}") =>
+    (mock-parse "example" "example" "void main() {\n}") =>
     (ok [[`(this-is-not-supported)] []]))))
+
+```
+#### Negative Code Examples
+
+A negative example block is an example which status contains the string
+`ERROR: `, followed by the expected error text.
+
+If the code block fails to evaluate, producing the expected text, the test
+succeeds.
+```clojure
+(fact
+ (let [langmap {"y4" {:parse (fn [name path text]
+                               (mock-parse name path text))}}]
+   (process-lang-spec {:state :init
+                       :langmap langmap}
+                      ["Language: `y4`"
+                       "```c++"
+                       "void main() {"
+                       "}"
+                       "```"
+                       "```status"
+                       "ERROR: No rules are defined to translate statement (this-is-not-supported) and therefore it does not have any meaning"
+                       "```"])
+   => {:state :init
+       :line 8
+       :lang "y4"
+       :langmap langmap
+       :success 1}
+   (provided
+    (mock-parse "example" "example" "void main() {\n}") =>
+    (ok [[`(this-is-not-supported)] []]))))
+
+```
+If the evaluation succeeds, the test fails.
+```clojure
+(fact
+ (let [langmap {"y4" {:parse (fn [name path text]
+                               (mock-parse name path text))}}]
+   (process-lang-spec {:state :init
+                       :langmap langmap}
+                      ["Language: `y4`"
+                       "```c++"
+                       "void main() {"
+                       "}"
+                       "```"
+                       "```status"
+                       "ERROR: No rules are defined to translate statement (this-is-not-supported) and therefore it does not have any meaning"
+                       "```"])
+   => {:state :init
+       :line 8
+       :lang "y4"
+       :langmap langmap
+       :errors [{:explanation ["The example should have produced an error, but did not"]
+                 :line 2}]}
+   (provided
+    (mock-parse "example" "example" "void main() {\n}") =>
+    (ok [[] []]))))
+
+```
+If the evaluation fails, but provides a different explanation (error
+message), the test fails.
+```clojure
+(fact
+ (let [langmap {"y4" {:parse (fn [name path text]
+                               (mock-parse name path text))}}]
+   (process-lang-spec {:state :init
+                       :langmap langmap}
+                      ["Language: `y4`"
+                       "```c++"
+                       "void main() {"
+                       "}"
+                       "```"
+                       "```status"
+                       "ERROR: No rules are defined to translate statement (this-is-not-supported) and therefore it does not have any meaning"
+                       "```"])
+   => {:state :init
+       :line 8
+       :lang "y4"
+       :langmap langmap
+       :errors [{:explanation ["The example failed, providing the wrong explanation:"
+                               "No rules are defined to translate statement (this-is-unexpected) and therefore it does not have any meaning"]
+                 :line 2}]}
+   (provided
+    (mock-parse "example" "example" "void main() {\n}") =>
+    (ok [[`(this-is-unexpected)] []]))))
 ```
 
