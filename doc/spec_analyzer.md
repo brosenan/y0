@@ -10,6 +10,7 @@
     * [Example Code](#example-code)
       * [Positive Code Examples](#positive-code-examples)
       * [Negative Code Examples](#negative-code-examples)
+    * [Updating the Spec](#updating-the-spec)
 ```clojure
 (ns y0.spec-analyzer-test
   (:require [midje.sweet :refer [fact => throws provided anything]]
@@ -19,10 +20,23 @@
 ```
 # Analyzing Language Specs
 
-A language sepc is a Markdown file (`.md`), that contains some positive and
-some negative examples of code in the language being specified. Negative
-examples are followed by the text of the "why not" explanation (error
-message) to be produced by the language's semantic definition.
+Language specs are a way to develop well tested $y_0$ language definitions,
+while creating a human-readable definition of the language, a Markdown file
+(`.md`), that contains positive and some negative examples of code in the
+language being defined.
+
+The analyzer described here supports these specs by testing them, making sure
+that everything that all positive examples succeed and all negative examples
+fail for the right reason.
+
+We recommend growing the spec and the definition together, following a
+test-drive approach (write something in the spec, expect it to fail, update
+the definition, expect the spec to pass).
+
+
+In this document we build the spec analyzer step-by-step. If you are
+interested in the final result (how to write a spec), feel free to jump to
+[this section](#language-spec-analysis).
 
 ## Line-Based Processing
 
@@ -517,5 +531,88 @@ message), the test fails.
    (provided
     (mock-parse "example" "example" "void main() {\n}") =>
     (ok [[`(this-is-unexpected)] []]))))
+
+```
+### Updating the Spec
+
+It is mostly recommended to write the spec first, and then update the
+language $y_0$ definition to meed the spec. However, it sometimes happens
+that this is not an easy thing to do.
+
+One common example is when the text of an explanation (error message) is
+changed. If this explanation repeats in many parts of the spec, it may be
+hard to track it down in all its occurrences and update the spec. It should
+be easier for the analyzer to simply update the `status` blocks in the spec
+to match the up-to-date status.
+
+This feature should be handled with care, since in case of a bug in the
+definition, the spec could be updated to reflect the buggy behavior. Careful
+review of the diff of the spec after an update is therefore recommended.
+
+To trigger an update, set `:generate` to `true` in the analyzer state. This
+will cause the `:generated` key to contain the entire file, with the `status`
+blocks updated. Other behavior does not change, so that `:errors` and
+`:success` are still accumulated.
+```clojure
+(fact
+ (let [langmap {"y4" {;; :resolve and :read are not used and can therefore be
+                      ;; omitted here
+                      :parse (fn [name path text]
+                               (mock-parse name path text))}}]
+   (process-lang-spec {:state :init
+                       :langmap langmap
+                       :generate true}
+                      ["Language: `y4`"
+                       "```c++"
+                       "void main() {"
+                       "  something_wrong;"
+                       "}"
+                       "```"
+                       "```status"
+                       "Success"
+                       "```"
+                       ""
+                       "```c++"
+                       "void main() {"
+                       "  something_correct;"
+                       "}"
+                       "```"
+                       "```status"
+                       "ERROR: Some error"
+                       "```"])
+   => {:state :init
+       :line 18
+       :lang "y4"
+       :langmap langmap
+       :errors [{:explanation ["The example should have produced an error, but did not"]
+                 :line 11}
+                {:explanation ["No rules are defined to translate statement"
+                               `(this-is-not-supported)
+                               "and therefore it does not have any meaning"]
+                 :line 2}]
+       :generate true
+       :generated ["Language: `y4`"
+                   "```c++"
+                   "void main() {"
+                   "  something_wrong;"
+                   "}"
+                   "```"
+                   "```status"
+                   "ERROR: No rules are defined to translate statement (this-is-not-supported) and therefore it does not have any meaning"
+                   "```"
+                   ""
+                   "```c++"
+                   "void main() {"
+                   "  something_correct;"
+                   "}"
+                   "```"
+                   "```status"
+                   "Success"
+                   "```"]}
+   (provided
+    (mock-parse "example" "example" "void main() {\n  something_wrong;\n}") =>
+    (ok [[`(this-is-not-supported)] []])
+    (mock-parse "example" "example" "void main() {\n  something_correct;\n}") =>
+    (ok [[] []]))))
 ```
 

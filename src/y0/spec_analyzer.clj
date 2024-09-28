@@ -63,7 +63,8 @@
   {:any [{:update-fn (fn [v [line]]
                        (-> v
                            (update :line (fnil inc 0))
-                           (update-if (:generate v)
+                           (update-if (and (:generate v)
+                                           (not= (:state v) :status))
                                       :generated (fnil #(conj % line) []))))}]
    :init [{:pattern #"[Ll]anguage: +`(.*)`"
            :update-fn (fn [v [_line lang]]
@@ -87,9 +88,16 @@
    [{:pattern #"```status"
      :transition :status
      :update-fn (fn [v _m]
-                  (-> v
-                      (dissoc :current-block)
-                      (assoc :current-status (eval-code v))))}
+                  (let [status (eval-code v)
+                        status-text (if (contains? status :err)
+                                      (str "ERROR: "
+                                           (explanation-to-str (:err status)))
+                                      "Success")]
+                    (-> v
+                        (dissoc :current-block)
+                        (assoc :current-status status)
+                        (update-if (:generate v)
+                                   :generated #(conj % status-text)))))}
     {:transition :init
      :update-fn (fn [v _m]
                   (-> v
