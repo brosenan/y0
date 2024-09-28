@@ -1,10 +1,12 @@
 (ns y0.spec-analyzer
-  (:require [y0.polyglot-loader :refer [load-with-deps eval-mstore]]
-            [y0.status :refer [ok let-s ->s]]
-            [y0.rules :refer [apply-statements]]
+  (:require [clojure.string :refer [join]]
             [y0.builtins :refer [add-builtins]]
             [y0.explanation :refer [explanation-to-str]]
-            [clojure.string :refer [join]]))
+            [y0.polyglot-loader :refer [eval-mstore load-with-deps]]
+            [y0.rules :refer [apply-statements]]
+            [y0.status :refer [let-s ok]]
+            [y0.term-utils :refer [postwalk-meta]]
+            [y0.unify :refer [reify-term]]))
 
 (defn find-transition [transes line]
   (loop [transes transes]
@@ -58,6 +60,17 @@
                                  langmap)
           ps (ok (add-builtins {}))]
          (eval-mstore mstore #(apply-statements %2 %1 {}) ps)))
+
+(defn convert-error-locations [err path]
+  (let [{:keys [line explanation]} err]
+    (->> explanation
+         reify-term
+         (postwalk-meta (fn [{:keys [start end] :as m}]
+                          (if start
+                            {:start (+ start (* line 1000000))
+                             :end (+ end (* line 1000000))
+                             :path path}
+                            m))))))
 
 (def lang-spec-sm
   {:any [{:update-fn (fn [v [line]]

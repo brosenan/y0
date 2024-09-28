@@ -12,8 +12,9 @@
             [y0.polyglot-loader :refer [eval-mstore load-with-deps]]
             [y0.resolvers :refer [y0-resolver]]
             [y0.rules :refer [apply-statements]]
-            [y0.status :refer [let-s ok]]
-            [y0.spec-analyzer :refer [process-lang-spec]])
+            [y0.spec-analyzer :refer [convert-error-locations
+                                      process-lang-spec]]
+            [y0.status :refer [let-s ok]])
   (:gen-class))
 
 (def cli-options
@@ -72,7 +73,7 @@
                                :generate update?}]
                     (process-lang-spec state lines)))]
       (doseq [err (:errors state)]
-        (print-error {:err (:explanation err)}))
+        (print-error {:err (convert-error-locations err file)}))
       (println "Number of successes: " (:success state))
       (when update?
         (with-open [w (io/writer file)]

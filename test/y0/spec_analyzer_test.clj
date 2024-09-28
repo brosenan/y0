@@ -175,6 +175,42 @@
     :languages ["java" "c++"]
     :state :init}))
 
+;; ## Converting Code Locations
+
+;; When an error is reported for a code-example in a spec, the code locations
+;; within the errors message (explanation) refer to the example itself.
+
+;; In order for these locations to be useful, we need to convert them into
+;; "global" locations, i.e., locations in the `.md` file itself.
+
+;; `convert-error-locations` takes an error map, which consists of a `:line` and
+;; an `:explanation` and the path of the `.md` file that reported it, and
+;; returns the explanation with its code locations (stored as meta) converted
+;; to locations in the `.md` file.
+(fact
+ (let [err {:line 3
+            :explanation ["Some text" (with-meta `foo {:path "example"
+                                                       :start 1000003
+                                                       :end 1000005})]}
+       converted (convert-error-locations err "path/to/my.md")]
+   converted => ["Some text" `foo]
+   (-> converted second meta) => {:path "path/to/my.md"
+                                  :start 4000003
+                                  :end 4000005}))
+
+;; If the explanation contains bound variables, they should be replaced with
+;; their corresponding values.
+(fact
+ (let [err {:line 3
+            :explanation ["Some text" (atom (with-meta `foo {:path "example"
+                                                             :start 1000003
+                                                             :end 1000005}))]}
+       converted (convert-error-locations err "path/to/my.md")]
+   converted => ["Some text" `foo]
+   (-> converted second meta) => {:path "path/to/my.md"
+                                  :start 4000003
+                                  :end 4000005}))
+
 ;; ## Language Spec Analysis
 
 ;; After having built the necessary building blocks, we are ready to process
