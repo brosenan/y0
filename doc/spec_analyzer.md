@@ -525,8 +525,9 @@ message), the test fails.
        :line 8
        :lang "y4"
        :langmap langmap
-       :errors [{:explanation ["The example failed, providing the wrong explanation:"
-                               "No rules are defined to translate statement (this-is-unexpected) and therefore it does not have any meaning"]
+       :errors [{:explanation ["No rules are defined to translate statement"
+                               `(this-is-unexpected)
+                               "and therefore it does not have any meaning"]
                  :line 2}]}
    (provided
     (mock-parse "example" "example" "void main() {\n}") =>

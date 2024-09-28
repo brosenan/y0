@@ -127,8 +127,8 @@
                      (update-if (and (contains? (:current-status v) :err)
                                      (not= actual expected))
                                 :errors #(conj % {:line (:code-block-start v)
-                                                  :explanation ["The example failed, providing the wrong explanation:"
-                                                                actual]}))
+                                                  :explanation (concat ["The wrong error was reported:"]
+                                                                       (:err (:current-status v)))}))
                      (update-if (contains? (:current-status v) :ok)
                                 :errors #(conj % {:line (:code-block-start v)
                                                   :explanation ["The example should have produced an error, but did not"]})))))}
@@ -140,7 +140,7 @@
    :post-status [{:pattern #"```"
                   :transition :init
                   :update-fn
-                  (fn [v [_line expected]]
+                  (fn [v _m]
                     (-> v
                         (dissoc :code-block-start)
                         (dissoc :current-status)))}
