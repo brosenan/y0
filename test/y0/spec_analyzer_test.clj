@@ -288,6 +288,38 @@
 ;; contain code that should be invalid. The latter also contains the error
 ;; message that should be produced by the language definition.
 
+;; The status block should only contain a single line, requiring either success
+;; or an error, as explained in the following subsections. If a different line
+;; is present, and exception is raised.
+(fact
+ (process-lang-spec {:state :init}
+                    ["Some unrelated line"
+                     "```c++"
+                     "void main() {}"
+                     "}"
+                     "```"
+                     "```status"
+                     "This is an invalid status line"
+                     "```"
+                     "Another unrelated line"])
+ => (throws "A status block should contain either 'Success' or 'ERROR: ...', but 'This is an invalid status line' was found"))
+
+;; Similarly, if an extra line is added after a (valid) first line, an exception
+;; is thrown.
+(fact
+ (process-lang-spec {:state :init}
+                    ["Some unrelated line"
+                     "```c++"
+                     "void main() {}"
+                     "}"
+                     "```"
+                     "```status"
+                     "Success"
+                     "This is an extra line"
+                     "```"
+                     "Another unrelated line"])
+ => (throws "A status block should only contain a single line, but 'This is an extra line' was found"))
+
 ;; #### Positive Code Examples
 
 ;; A positive code example is a code example which `status` block contains a

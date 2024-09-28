@@ -123,14 +123,24 @@
                                                                 actual]}))
                      (update-if (contains? (:current-status v) :ok)
                                 :errors #(conj % {:line (:code-block-start v)
-                                                  :explanation ["The example should have produced an error, but did not"]})))))}]
+                                                  :explanation ["The example should have produced an error, but did not"]})))))}
+            {:update-fn (fn [_v [line]]
+                          (throw 
+                           (Exception. (str "A status block should contain either 'Success' or 'ERROR: ...', but '"
+                                            line
+                                            "' was found"))))}]
    :post-status [{:pattern #"```"
                   :transition :init
                   :update-fn
                   (fn [v [_line expected]]
                     (-> v
                         (dissoc :code-block-start)
-                        (dissoc :current-status)))}]
+                        (dissoc :current-status)))}
+                 {:update-fn (fn [_v [line]]
+                               (throw
+                                (Exception. (str "A status block should only contain a single line, but '"
+                                                 line
+                                                 "' was found"))))}]
    :maybe-module [{:pattern #"```.*"
                    :transition :module}
                   {:transition :init
