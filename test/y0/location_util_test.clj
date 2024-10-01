@@ -47,3 +47,16 @@
  (-> (encode-file-pos 12 34)
      (pos-offset (encode-file-pos 2 3))
      decode-file-pos) => [14 34])
+
+;; `pos-span` takes two positions and computes the size of the span between
+;; them. If they are on the same row, the span is the difference in column
+;; number.
+(fact
+ (-> (pos-span (encode-file-pos 12 34) (encode-file-pos 12 37))
+     decode-file-pos) => [0 3])
+
+;; If they are not on the same row, the span contains the row difference
+;; between them and the end column.
+(fact
+ (-> (pos-span (encode-file-pos 12 34) (encode-file-pos 14 37))
+     decode-file-pos) => [2 37])
