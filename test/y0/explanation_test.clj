@@ -95,6 +95,11 @@
                                   :end (encode-file-pos 5 5)})]
      (expr-to-str expr) => "56789 - 3 ... 1234")))
 
+;; If `expr-to-str` is given an expression without a location, it stringifies
+;; the given object using `explanation-expr-to-str`.
+(fact
+ (expr-to-str "foo") => "\"foo\"")
+
 ;; ### Stringifying Explanations
 
 ;; The `explanation-to-str` function takes an explanation and returns a string representing

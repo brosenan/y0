@@ -78,8 +78,10 @@
     (join " " lines)))
 
 (defn expr-to-str [expr]
-  (let [loc (meta expr)]
-    (with-open [r (io/reader (:path loc))]
-      (-> (line-seq r)
-          (extract-location loc)
-          stringify-lines))))
+  (if (has-location? expr)
+    (let [loc (meta expr)]
+      (with-open [r (io/reader (:path loc))]
+        (-> (line-seq r)
+            (extract-location loc)
+            stringify-lines)))
+    (explanation-expr-to-str expr 3)))
