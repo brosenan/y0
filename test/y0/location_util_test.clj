@@ -97,4 +97,25 @@
              "123456789 - 6"] (encode-file-pos 3 5)) =>
  ["123456789 - 1"
   "123456789 - 2"
+  "123456789 - 3"
   "1234"])
+
+;; ## Extracting based on Code Location
+
+;; Given a source file represented as a sequence of lines and a code location,
+;; `extract-location` returns a sequence of lines between `:start` and `:end`.
+
+;; This is useful for extracting the text underlying a parse-tree node.
+(fact
+ (extract-location ["123456789 - 1"
+                    "123456789 - 2"
+                    "123456789 - 3"
+                    "123456789 - 4"
+                    "123456789 - 5"
+                    "123456789 - 6"]
+                   {:start (encode-file-pos 3 5)
+                    :end (encode-file-pos 5 2)
+                    :path "foo/bar"}) =>
+ ["56789 - 3"
+  "123456789 - 4"
+  "1"])

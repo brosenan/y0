@@ -2,6 +2,7 @@
   * [Encoding and Decoding File Positions](#encoding-and-decoding-file-positions)
   * [File Position Arithmetic](#file-position-arithmetic)
   * [Taking and Dropping up to a Code Position](#taking-and-dropping-up-to a code position)
+  * [Extracting based on Code Location](#extracting-based-on-code-location)
 ```clojure
 (ns y0.location-util-test
   (:require [midje.sweet :refer [fact => throws provided]]
@@ -120,6 +121,29 @@ the contents of the lines up to the size of the span.
              "123456789 - 6"] (encode-file-pos 3 5)) =>
  ["123456789 - 1"
   "123456789 - 2"
+  "123456789 - 3"
   "1234"])
+
+```
+## Extracting based on Code Location
+
+Given a source file represented as a sequence of lines and a code location,
+`extract-location` returns a sequence of lines between `:start` and `:end`.
+
+This is useful for extracting the text underlying a parse-tree node.
+```clojure
+(fact
+ (extract-location ["123456789 - 1"
+                    "123456789 - 2"
+                    "123456789 - 3"
+                    "123456789 - 4"
+                    "123456789 - 5"
+                    "123456789 - 6"]
+                   {:start (encode-file-pos 3 5)
+                    :end (encode-file-pos 5 2)
+                    :path "foo/bar"}) =>
+ ["56789 - 3"
+  "123456789 - 4"
+  "1"])
 ```
 

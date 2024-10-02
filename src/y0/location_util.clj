@@ -34,8 +34,14 @@
 
 (defn take-span [lines span]
   (let [[row col] (decode-file-pos span)
-        lines (take row lines)
+        lines (take (inc row) lines)
         line (last lines)
-        lines (take (dec row) lines)
+        lines (take row lines)
         line (take (dec col) line)]
     (concat lines [(apply str line)])))
+
+(defn extract-location [lines {:keys [start end]}]
+  (let [span (pos-span start end)]
+    (-> lines
+        (drop-up-to start)
+        (take-span span))))
