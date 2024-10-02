@@ -60,3 +60,11 @@
 (fact
  (-> (pos-span (encode-file-pos 12 34) (encode-file-pos 14 37))
      decode-file-pos) => [2 37])
+
+;; `pos-span` can take a code location as input, providing the span of the code
+;; segment.
+(fact
+ (-> (pos-span {:start (encode-file-pos 12 34)
+                :end (encode-file-pos 14 37)
+                :path "foo/bar"})
+     decode-file-pos) => [2 37])

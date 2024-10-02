@@ -15,9 +15,12 @@
       (encode-file-pos row (+ col col-offs))
       (encode-file-pos (+ row row-offs) col))))
 
-(defn pos-span [start end]
-  (let [[start-row start-col] (decode-file-pos start)
-        [end-row end-col] (decode-file-pos end)]
-    (if (= start-row end-row)
-      (encode-file-pos 0 (- end-col start-col))
-      (encode-file-pos (- end-row start-row) end-col))))
+(defn pos-span
+  ([start end]
+   (let [[start-row start-col] (decode-file-pos start)
+         [end-row end-col] (decode-file-pos end)]
+     (if (= start-row end-row)
+       (encode-file-pos 0 (- end-col start-col))
+       (encode-file-pos (- end-row start-row) end-col))))
+  ([{:keys [start end]}]
+   (pos-span start end)))
