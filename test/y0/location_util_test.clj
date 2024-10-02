@@ -68,3 +68,33 @@
                 :end (encode-file-pos 14 37)
                 :path "foo/bar"})
      decode-file-pos) => [2 37])
+
+;; ## Taking and Dropping up to a Code Position
+
+;; Given a source file represented as a sequence of lines and a source position,
+;; `drop-up-to` will return the original sequence of lines with everything up to
+;; the given position removed.
+(fact
+ (drop-up-to ["123456789 - 1"
+              "123456789 - 2"
+              "123456789 - 3"
+              "123456789 - 4"
+              "123456789 - 5"
+              "123456789 - 6"] (encode-file-pos 3 5)) =>
+ ["56789 - 3"
+  "123456789 - 4"
+  "123456789 - 5"
+  "123456789 - 6"])
+
+;; To complement this, given a sequence of lines and a span, `take-span` returns
+;; the contents of the lines up to the size of the span.
+(fact
+ (take-span ["123456789 - 1"
+             "123456789 - 2"
+             "123456789 - 3"
+             "123456789 - 4"
+             "123456789 - 5"
+             "123456789 - 6"] (encode-file-pos 3 5)) =>
+ ["123456789 - 1"
+  "123456789 - 2"
+  "1234"])

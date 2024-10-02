@@ -24,3 +24,18 @@
        (encode-file-pos (- end-row start-row) end-col))))
   ([{:keys [start end]}]
    (pos-span start end)))
+
+(defn drop-up-to [lines pos]
+  (let [[row col] (decode-file-pos pos)
+        lines (drop (dec row) lines)
+        [line & lines] lines
+        line (drop (dec col) line)]
+    (cons (apply str line) lines)))
+
+(defn take-span [lines span]
+  (let [[row col] (decode-file-pos span)
+        lines (take row lines)
+        line (last lines)
+        lines (take (dec row) lines)
+        line (take (dec col) line)]
+    (concat lines [(apply str line)])))
