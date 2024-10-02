@@ -1,12 +1,18 @@
   * [Pretty-printing-an-Explanation](#pretty-printing-an-explanation)
     * [Stringifying S-Expressions](#stringifying-s-expressions)
+    * [Extracting Text](#extracting-text)
     * [Stringifying Explanations](#stringifying-explanations)
   * [Code Location](#code-location)
   * [Extracting Terms](#extracting-terms)
 ```clojure
 (ns y0.explanation-test
   (:require [midje.sweet :refer [fact =>]]
-            [y0.explanation :refer [explanation-to-str explanation-expr-to-str code-location all-unique-locations]]))
+            [y0.explanation :refer [explanation-to-str explanation-expr-to-str
+                                    code-location all-unique-locations
+                                    expr-to-str]]
+            [y0.location-util :refer [encode-file-pos]]
+            [clojure.java.io :as io]
+            [clojure.string :as str]))
 
 ```
 "Why not" explanations are an important aspect of $y_0$ and are here we describe the
@@ -75,6 +81,48 @@ Unbound variables are printed as `_`.
 Lists are constructed where necessary.
 ```clojure
 (fact (explanation-expr-to-str `(foo/bar 1 y0.core/& (2 3)) 5) => "(bar 1 2 3)")
+
+```
+### Extracting Text
+
+In languages which syntax is not not based on s-expressions, displaying the
+parse-tree to the user is often not helpful. Instead, we would like to show
+the relevant code.
+
+`expr-to-str` takes a expression (parse-tree node) with location meta and
+returns a string that represents the original code.
+
+To do this, it first fetches the meta. Then, assuming there is a location,
+it opens the file based on the `:path` and
+[exctracts the span](location_util.md#extracting-based-on-code-location)
+defined by `:start` and `:end`.
+```clojure
+(fact
+ (let [f (java.io.File/createTempFile "test" ".txt")]
+   ;; Write some contents to a temp-file.
+   (.deleteOnExit f)
+   (spit f (str/join (System/lineSeparator) ["123456789 - 1"
+                                             "123456789 - 2"
+                                             "123456789 - 3"
+                                             "123456789 - 4"
+                                             "123456789 - 5"
+                                             "123456789 - 6"]))
+   (let [expr (with-meta [1 2 3] {:path (str f)
+                                  :start (encode-file-pos 3 5)
+                                  :end (encode-file-pos 3 8)})]
+     (expr-to-str expr) => "567")
+
+   ;; If the expression spans two lines, they are joined with a space.
+   (let [expr (with-meta [1 2 3] {:path (str f)
+                                  :start (encode-file-pos 3 5)
+                                  :end (encode-file-pos 4 3)})]
+     (expr-to-str expr) => "56789 - 3 12")
+   ;; If the expression spans more than two lines, the first and last are
+   ;; returned, separated by ...
+   (let [expr (with-meta [1 2 3] {:path (str f)
+                                  :start (encode-file-pos 3 5)
+                                  :end (encode-file-pos 5 5)})]
+     (expr-to-str expr) => "56789 - 3 ... 1234")))
 
 ```
 ### Stringifying Explanations

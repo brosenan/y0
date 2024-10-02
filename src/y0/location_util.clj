@@ -20,7 +20,7 @@
    (let [[start-row start-col] (decode-file-pos start)
          [end-row end-col] (decode-file-pos end)]
      (if (= start-row end-row)
-       (encode-file-pos 0 (- end-col start-col))
+       (encode-file-pos 0 (- end-col start-col -1))
        (encode-file-pos (- end-row start-row) end-col))))
   ([{:keys [start end]}]
    (pos-span start end)))

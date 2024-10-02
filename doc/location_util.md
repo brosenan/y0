@@ -65,11 +65,11 @@ of the number of columns in the offset.
 ```
 `pos-span` takes two positions and computes the size of the span between
 them. If they are on the same row, the span is the difference in column
-number.
+number minus one (because it is exlusive).
 ```clojure
 (fact
  (-> (pos-span (encode-file-pos 12 34) (encode-file-pos 12 37))
-     decode-file-pos) => [0 3])
+     decode-file-pos) => [0 4])
 
 ```
 If they are not on the same row, the span contains the row difference

@@ -1,6 +1,8 @@
 (ns y0.explanation
   (:require [clojure.string :refer [join]]
-            [y0.unify :refer [reify-term]]))
+            [clojure.java.io :as io]
+            [y0.unify :refer [reify-term]]
+            [y0.location-util :refer [extract-location]]))
 
 (declare explanation-expr-to-str)
 
@@ -69,3 +71,15 @@
        (map (fn [term] [term (code-location term)]))
        (filter #(-> % second nil? not))
        unique-location))
+
+(defn stringify-lines [lines]
+  (if (> (count lines) 2)
+    (str (first lines) " ... " (last lines))
+    (join " " lines)))
+
+(defn expr-to-str [expr]
+  (let [loc (meta expr)]
+    (with-open [r (io/reader (:path loc))]
+      (-> (line-seq r)
+          (extract-location loc)
+          stringify-lines))))
