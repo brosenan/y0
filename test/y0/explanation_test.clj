@@ -2,7 +2,7 @@
   (:require [midje.sweet :refer [fact =>]]
             [y0.explanation :refer [explanation-to-str explanation-expr-to-str
                                     code-location all-unique-locations
-                                    expr-to-str]]
+                                    expr-to-str *stringify-expr*]]
             [y0.location-util :refer [encode-file-pos]]
             [clojure.java.io :as io]
             [clojure.string :as str]))
@@ -109,9 +109,18 @@
 (fact
  (explanation-to-str ["foo" "bar"]) => "foo bar")
 
-;; Non-strings are treated as s-expressions and are stringified with budget 3.
+;; By default, non-strings are treated as s-expressions and are stringified
+;; using `explanation-expr-to-str` with budget 3.
 (fact
  (explanation-to-str ["foo" 3 '(x/bar 1 2 3)]) => "foo 3 (bar 1 2 ...)")
+
+;; The `*stringify-expr*` dynamic variable controls the stringification, so
+;; other strategies can be bound.
+(fact
+ (binding [*stringify-expr* pr-str]
+   (explanation-to-str ["foo" 3 '(x/bar 1 2 3)]) => "foo 3 (x/bar 1 2 3)"))
+
+;; This can be used to bind `expr-to-str`, which we will not demonstrate here.
 
 ;; ## Code Location
 

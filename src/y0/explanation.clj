@@ -6,6 +6,8 @@
 
 (declare explanation-expr-to-str)
 
+(def ^:dynamic *stringify-expr* #(explanation-expr-to-str % 3))
+
 (defn- sequential-to-str [budget expr opener closer]
   (str opener
        (->> expr
@@ -32,7 +34,7 @@
   (->> why-not
        (map #(if (string? %)
                %
-               (explanation-expr-to-str % 3)))
+               (*stringify-expr* %)))
        (join " ")))
 
 (defn- has-location? [term]
