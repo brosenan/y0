@@ -1,8 +1,9 @@
 (ns y0.config
   (:require [y0.edn-parser :refer [edn-parser root-module-symbols]]
+            [y0.explanation :refer [explanation-expr-to-str extract-expr-text]]
+            [y0.instaparser :refer [instaparser]]
             [y0.resolvers :refer [path-prefixes-from-env prefix-list-resolver
-                                  qname-to-rel-path-resolver]]
-            [y0.instaparser :refer [instaparser]]))
+                                  qname-to-rel-path-resolver]]))
 
 (defn- get-or-throw
   ([m key name optional? optional-ret]
@@ -42,12 +43,17 @@
    :relative-path-resolution {:dots {:func qname-to-rel-path-resolver
                                      :args [:file-ext]}}
    :path-prefixes {:from-env {:func path-prefixes-from-env
-                              :args [:path-prefixes-env]}}})
+                              :args [:path-prefixes-env]}}
+   :expr-stringifier {:default {:func (constantly #(explanation-expr-to-str % 3))
+                                :args []}
+                      :extract-text {:func (constantly extract-expr-text)
+                                     :args []}}})
 
 (defn language-map-from-config [config]
   (->> (for [[lang conf] config]
          (let [conf (assoc conf :lang lang)]
            [lang {:parse (resolve-config-val lang-config-spec conf :parser)
                   :read (resolve-config-val lang-config-spec conf :reader)
-                  :resolve (resolve-config-val lang-config-spec conf :resolver)}]))
+                  :resolve (resolve-config-val lang-config-spec conf :resolver)
+                  :stringify-expr (resolve-config-val lang-config-spec conf :expr-stringifier)}]))
        (into {})))

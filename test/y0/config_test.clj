@@ -2,7 +2,9 @@
   (:require [midje.sweet :refer [fact => throws provided anything]]
             [y0.config :refer :all]
             [y0.resolvers :refer [exists? getenv]]
-            [clojure.java.io :as io]))
+            [y0.location-util :refer [encode-file-pos]]
+            [clojure.java.io :as io]
+            [clojure.string :as str]))
 
 ;; # Language Configuration
 
@@ -192,3 +194,62 @@
            [:statement [:assign my.module/b [:expr [:float 2.3]]]]]
           [{:lang "c0" :name "foo"}
            {:lang "y0" :name "c0"}]]}))
+
+;; ### Controlling Explanation Output
+
+;; When translating a why-not explanation to a string, there is more than one
+;; way to stringify the parse-tree nodes referenced in the explanation.
+
+;; The `:stringify-expr` key can control this. If not specified, a
+;; [stringifier intended for EDN-based languages](explanation.md#stringifying-s-expressions)
+;; is used.
+(fact
+ (let [config {"y3" {;; Same as y1 above.
+                     :parser :edn
+                     :root-refer-map :root-symbols
+                     :root-symbols '[defn deftype declfn defclass definstance]
+                     :root-namespace "y1.core"
+                     :resolver :prefix-list
+                     :relative-path-resolution :dots
+                     :file-ext "y1"
+                     :extra-modules [{:lang "y0" :name "y1"}]
+                     :path-prefixes :from-env
+                     :path-prefixes-env "Y1-PATH"
+                     :reader :slurp}}
+       langmap (language-map-from-config config)
+       stringify-expr (-> langmap (get "y3") :stringify-expr)]
+   (stringify-expr '(x/foo 1 2 3)) => "(foo 1 2 ...)"))
+
+;; However, for languages based on a context-free parser, it is better to show
+;; the text underlying the parse-tree node. Setting `:expr-stringifier` to
+;; `:extract-text` has this effect.
+(fact
+ (let [f (java.io.File/createTempFile "test" ".txt")]
+    ;; Write some contents to a temp-file.
+   (.deleteOnExit f)
+   (spit f (str/join (System/lineSeparator) ["123456789 - 1"
+                                             "123456789 - 2"
+                                             "123456789 - 3"
+                                             "123456789 - 4"
+                                             "123456789 - 5"
+                                             "123456789 - 6"]))
+   (let [config {"y3" {;; Same as y1 above.
+                       :parser :edn
+                       :root-refer-map :root-symbols
+                       :root-symbols '[defn deftype declfn defclass definstance]
+                       :root-namespace "y1.core"
+                       :resolver :prefix-list
+                       :relative-path-resolution :dots
+                       :file-ext "y1"
+                       :extra-modules [{:lang "y0" :name "y1"}]
+                       :path-prefixes :from-env
+                       :path-prefixes-env "Y1-PATH"
+                       :reader :slurp
+                       ;; Stringify by extracting text from the source file
+                       :expr-stringifier :extract-text}}
+         langmap (language-map-from-config config)
+         expr (with-meta [1 2 3] {:path (str f)
+                                  :start (encode-file-pos 3 5)
+                                  :end (encode-file-pos 3 8)})
+         stringify-expr (-> langmap (get "y3") :stringify-expr)]
+     (stringify-expr expr) => "567")))
