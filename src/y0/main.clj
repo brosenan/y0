@@ -76,8 +76,8 @@
         (print-error {:err (convert-error-locations err file)}))
       (cond
         (:errors state) (println (-> state :errors count) (red "Failed") 
-                                 (if (:succeeded state)
-                                   (str " but " (:succeeded state) "succeeded")
+                                 (if (:success state)
+                                   (str "but " (:success state) " succeeded")
                                    ""))
         (:success state) (println (:success state) (green "Succeeded"))
         :else (println (blue "No tests ran")))
