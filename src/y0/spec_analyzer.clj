@@ -132,8 +132,7 @@
              (fn [v _m]
                (-> v
                    (update-if (contains? (:current-status v) :err)
-                              :errors #(conj % {:line (:code-block-start v)
-                                                :explanation (:err (:current-status v))}))
+                              :errors #(conj % (:err (:current-status v))))
                    (update-if (contains? (:current-status v) :ok)
                               :success (fnil inc 0))))}
             {:pattern #"ERROR: (.*)"
@@ -149,12 +148,10 @@
                                 :success (fnil inc 0))
                      (update-if (and (contains? (:current-status v) :err)
                                      (not= actual expected))
-                                :errors #(conj % {:line (:code-block-start v)
-                                                  :explanation (concat ["The wrong error was reported:"]
-                                                                       (:err (:current-status v)))}))
+                                :errors #(conj % (concat ["The wrong error was reported:"]
+                                                         (:err (:current-status v)))))
                      (update-if (contains? (:current-status v) :ok)
-                                :errors #(conj % {:line (:code-block-start v)
-                                                  :explanation ["The example should have produced an error, but did not"]})))))}
+                                :errors #(conj % ["The example should have produced an error, but did not"])))))}
             {:update-fn (fn [_v [line]]
                           (throw 
                            (Exception. (str "A status block should contain either 'Success' or 'ERROR: ...', but '"

@@ -483,10 +483,9 @@ incremented.
        :lang "y4"
        :langmap langmap
        :path "path/to/spec.md"
-       :errors [{:explanation ["No rules are defined to translate statement"
-                               `(this-is-not-supported)
-                               "and therefore it does not have any meaning"]
-                 :line 2}]}
+       :errors [["No rules are defined to translate statement"
+                 `(this-is-not-supported)
+                 "and therefore it does not have any meaning"]]}
    (provided
     (mock-parse "example" "example" "void main() {\n}") =>
     (ok [[`(this-is-not-supported)] []]))))
@@ -546,8 +545,7 @@ If the evaluation succeeds, the test fails.
        :lang "y4"
        :langmap langmap
        :path "path/to/spec.md"
-       :errors [{:explanation ["The example should have produced an error, but did not"]
-                 :line 2}]}
+       :errors [["The example should have produced an error, but did not"]]}
    (provided
     (mock-parse "example" "example" "void main() {\n}") =>
     (ok [[] []]))))
@@ -575,11 +573,10 @@ message), the test fails.
        :lang "y4"
        :langmap langmap
        :path "path/to/spec.md"
-       :errors [{:explanation ["The wrong error was reported:"
-                               "No rules are defined to translate statement"
-                               `(this-is-unexpected)
-                               "and therefore it does not have any meaning"]
-                 :line 2}]}
+       :errors [["The wrong error was reported:"
+                 "No rules are defined to translate statement"
+                 `(this-is-unexpected)
+                 "and therefore it does not have any meaning"]]}
    (provided
     (mock-parse "example" "example" "void main() {\n}") =>
     (ok [[`(this-is-unexpected)] []])))
@@ -611,11 +608,10 @@ spec (`.md` file) with the correct line number.
                                               :start 1000005
                                               :end 1000007})] []]))
   (-> pos-example-err-status :errors) =>
-  [{:explanation ["No rules are defined to translate statement"
-                  `(this-is-not-supported)
-                  "and therefore it does not have any meaning"]
-    :line 2}]
-  (-> pos-example-err-status :errors first :explanation second meta) =>
+  [["No rules are defined to translate statement"
+    `(this-is-not-supported)
+    "and therefore it does not have any meaning"]]
+  (-> pos-example-err-status :errors first second meta) =>
   {:path "path/to/spec.md"
    :start 3000005
    :end 3000007}))
@@ -674,12 +670,10 @@ blocks updated. Other behavior does not change, so that `:errors` and
        :lang "y4"
        :langmap langmap
        :path "path/to/spec.md"
-       :errors [{:explanation ["The example should have produced an error, but did not"]
-                 :line 11}
-                {:explanation ["No rules are defined to translate statement"
-                               `(this-is-not-supported)
-                               "and therefore it does not have any meaning"]
-                 :line 2}]
+       :errors [["The example should have produced an error, but did not"]
+                ["No rules are defined to translate statement"
+                 `(this-is-not-supported)
+                 "and therefore it does not have any meaning"]]
        :generate true
        :generated ["Language: `y4`"
                    "```c++"
