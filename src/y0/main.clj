@@ -74,7 +74,13 @@
                     (process-lang-spec state lines)))]
       (doseq [err (:errors state)]
         (print-error {:err (convert-error-locations err file)}))
-      (println "Number of successes: " (:success state))
+      (cond
+        (:errors state) (println (-> state :errors count) (red "Failed") 
+                                 (if (:succeeded state)
+                                   (str " but " (:succeeded state) "succeeded")
+                                   ""))
+        (:success state) (println (:success state) (green "Succeeded"))
+        :else (println (blue "No tests ran")))
       (when update?
         (with-open [w (io/writer file)]
           (doseq [line (:generated state)]

@@ -2,6 +2,8 @@
 
 This is a language spec for the $c_0$ example language.
 
+Language: `c0`
+
 ## Variables
 
 $c_0$ supports variable definitions.
