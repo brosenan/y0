@@ -2,7 +2,7 @@
   (:require [midje.sweet :refer [fact =>]]
             [y0.explanation :refer [explanation-to-str explanation-expr-to-str
                                     code-location all-unique-locations
-                                    expr-to-str *stringify-expr*]]
+                                    extract-expr-text *stringify-expr*]]
             [y0.location-util :refer [encode-file-pos]]
             [clojure.java.io :as io]
             [clojure.string :as str]))
@@ -61,7 +61,7 @@
 ;; parse-tree to the user is often not helpful. Instead, we would like to show
 ;; the relevant code.
 
-;; `expr-to-str` takes a expression (parse-tree node) with location meta and
+;; `extract-expr-text` takes a expression (parse-tree node) with location meta and
 ;; returns a string that represents the original code.
 
 ;; To do this, it first fetches the meta. Then, assuming there is a location,
@@ -81,24 +81,24 @@
    (let [expr (with-meta [1 2 3] {:path (str f)
                                   :start (encode-file-pos 3 5)
                                   :end (encode-file-pos 3 8)})]
-     (expr-to-str expr) => "567")
+     (extract-expr-text expr) => "567")
 
    ;; If the expression spans two lines, they are joined with a space.
    (let [expr (with-meta [1 2 3] {:path (str f)
                                   :start (encode-file-pos 3 5)
                                   :end (encode-file-pos 4 3)})]
-     (expr-to-str expr) => "56789 - 3 12")
+     (extract-expr-text expr) => "56789 - 3 12")
    ;; If the expression spans more than two lines, the first and last are
    ;; returned, separated by ...
    (let [expr (with-meta [1 2 3] {:path (str f)
                                   :start (encode-file-pos 3 5)
                                   :end (encode-file-pos 5 5)})]
-     (expr-to-str expr) => "56789 - 3 ... 1234")))
+     (extract-expr-text expr) => "56789 - 3 ... 1234")))
 
-;; If `expr-to-str` is given an expression without a location, it stringifies
+;; If `extract-expr-text` is given an expression without a location, it stringifies
 ;; the given object using `explanation-expr-to-str`.
 (fact
- (expr-to-str "foo") => "\"foo\"")
+ (extract-expr-text "foo") => "\"foo\"")
 
 ;; ### Stringifying Explanations
 
@@ -120,7 +120,7 @@
  (binding [*stringify-expr* pr-str]
    (explanation-to-str ["foo" 3 '(x/bar 1 2 3)]) => "foo 3 (x/bar 1 2 3)"))
 
-;; This can be used to bind `expr-to-str`, which we will not demonstrate here.
+;; This can be used to bind `extract-expr-text`, which we will not demonstrate here.
 
 ;; ## Code Location
 

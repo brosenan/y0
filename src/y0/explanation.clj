@@ -79,7 +79,7 @@
     (str (first lines) " ... " (last lines))
     (join " " lines)))
 
-(defn expr-to-str [expr]
+(defn extract-expr-text [expr]
   (if (has-location? expr)
     (let [loc (meta expr)]
       (with-open [r (io/reader (:path loc))]
