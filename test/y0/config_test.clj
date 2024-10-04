@@ -87,6 +87,18 @@
    (resolve-config-val spec config :foo)) =>
  (throws "Key :quux is not found in the spec for :foo"))
 
+;; ### Default Behavior
+
+;; If the spec for a given attribute contains the `:default` key, it provides
+;; the default behavior in case the key is not present in the config.
+(fact
+ (let [spec {:foo {:bar {:func (constantly "you chose bar") :args []}
+                   :baz {:func (constantly "you chose baz") :args []}
+                   :default {:func (constantly "you did not choose anything")
+                             :args []}}}
+       config {}]
+   (resolve-config-val spec config :foo)) => "you did not choose anything")
+
 ;; ## Generating a Language Map from Config
 
 ;; The function `language-map-from-config` takes a _language config_, a map

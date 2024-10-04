@@ -4,16 +4,23 @@
                                   qname-to-rel-path-resolver]]
             [y0.instaparser :refer [instaparser]]))
 
-(defn- get-or-throw [m key name]
-  (if (contains? m key)
-    (get m key)
-    (throw (Exception. (str "Key " key " is not found in " name)))))
+(defn- get-or-throw
+  ([m key name optional? optional-ret]
+   (if (contains? m key)
+     (get m key)
+     (if optional?
+       optional-ret
+       (throw (Exception. (str "Key " key " is not found in " name))))))
+  ([m key name]
+   (get-or-throw m key name false nil)))
 
 (defn resolve-config-val [spec config key]
   (if (contains? spec key)
     (let [keyspec (get spec key)
-          option-key (get-or-throw config key "the config")
-          {:keys [func args]} (get-or-throw keyspec option-key (str "the spec for " key))
+          option-key (get-or-throw config key "the config"
+                                   (:default keyspec) :default)
+          {:keys [func args]} (get-or-throw keyspec option-key
+                                            (str "the spec for " key))
           arg-vals (for [arg args]
                      (resolve-config-val spec config arg))]
       (apply func arg-vals))
