@@ -61,16 +61,24 @@
           ps (ok (add-builtins {}))]
          (eval-mstore mstore #(apply-statements %2 %1 {}) ps)))
 
-(defn convert-error-locations [err path]
-  (let [{:keys [line explanation]} err]
-    (->> explanation
-         reify-term
-         (postwalk-meta (fn [{:keys [start end] :as m}]
-                          (if start
-                            {:start (+ start (* line 1000000))
-                             :end (+ end (* line 1000000))
-                             :path path}
-                            m))))))
+(defn convert-error-locations
+  ([explanation path line]
+   (->> explanation
+        reify-term
+        (postwalk-meta (fn [{:keys [start end] :as m}]
+                         (if start
+                           {:start (+ start (* line 1000000))
+                            :end (+ end (* line 1000000))
+                            :path path}
+                           m)))))
+  ([err path]
+   (let [{:keys [line explanation]} err]
+     (convert-error-locations explanation path line))))
+
+(defn- update-status-location [status path line]
+  (if (:err status)
+    {:err (convert-error-locations (:err status) path line)}
+    status))
 
 (def lang-spec-sm
   {:any [{:update-fn (fn [v [line]]
@@ -101,7 +109,9 @@
    [{:pattern #"```status"
      :transition :status
      :update-fn (fn [v _m]
-                  (let [status (eval-code v)
+                  (let [status (-> (eval-code v)
+                                   (update-status-location (:path v)
+                                                           (:code-block-start v)))
                         status-text (if (contains? status :err)
                                       (str "ERROR: "
                                            (explanation-to-str (:err status)))

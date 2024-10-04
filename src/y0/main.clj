@@ -70,10 +70,12 @@
                         state {:state :init
                                :lang lang
                                :langmap lang-map
+                               :path file
                                :generate update?}]
+                    (println (-> state :lagmap (get "c0")))
                     (process-lang-spec state lines)))]
       (doseq [err (:errors state)]
-        (print-error {:err (convert-error-locations err file)}))
+        (print-error {:err (:explanation err)}))
       (cond
         (:errors state) (println (-> state :errors count) (red "Failed") 
                                  (if (:success state)

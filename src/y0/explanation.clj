@@ -45,7 +45,7 @@
 
 (declare code-location)
 
-(defn- code-location' [term]
+(defn code-location [term]
   (cond
     (has-location? term) (meta term)
     (sequential? term) (->> term
@@ -54,9 +54,6 @@
                             first)
     (instance? clojure.lang.Atom term) (code-location @term)
     :else nil))
-
-(defn code-location [term]
-  (code-location' term))
 
 (defn- loc-contained? [[_ a] [_ b]]
   (and (= (:path a) (:path b))

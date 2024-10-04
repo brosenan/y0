@@ -11,6 +11,7 @@
     * [Example Code](#example-code)
       * [Positive Code Examples](#positive-code-examples)
       * [Negative Code Examples](#negative-code-examples)
+    * [Code Location in Errors](#code-location-in-errors)
     * [Updating the Spec](#updating-the-spec)
 ```clojure
 (ns y0.spec-analyzer-test
@@ -217,17 +218,15 @@ within the errors message (explanation) refer to the example itself.
 In order for these locations to be useful, we need to convert them into
 "global" locations, i.e., locations in the `.md` file itself.
 
-`convert-error-locations` takes an error map, which consists of a `:line` and
-an `:explanation` and the path of the `.md` file that reported it, and
-returns the explanation with its code locations (stored as meta) converted
-to locations in the `.md` file.
+`convert-error-locations` takes an explanation, a path and a base-line number
+and returns the same explanation with the code locations updated to point to
+the correct position in the `.md` file.
 ```clojure
 (fact
- (let [err {:line 3
-            :explanation ["Some text" (with-meta `foo {:path "example"
-                                                       :start 1000003
-                                                       :end 1000005})]}
-       converted (convert-error-locations err "path/to/my.md")]
+ (let [explanation ["Some text" (with-meta `foo {:path "example"
+                                                 :start 1000003
+                                                 :end 1000005})]
+       converted (convert-error-locations explanation "path/to/my.md" 3)]
    converted => ["Some text" `foo]
    (-> converted second meta) => {:path "path/to/my.md"
                                   :start 4000003
@@ -238,11 +237,10 @@ If the explanation contains bound variables, they should be replaced with
 their corresponding values.
 ```clojure
 (fact
- (let [err {:line 3
-            :explanation ["Some text" (atom (with-meta `foo {:path "example"
-                                                             :start 1000003
-                                                             :end 1000005}))]}
-       converted (convert-error-locations err "path/to/my.md")]
+ (let [explanation ["Some text" (atom (with-meta `foo {:path "example"
+                                                       :start 1000003
+                                                       :end 1000005}))]
+       converted (convert-error-locations explanation "path/to/my.md" 3)]
    converted => ["Some text" `foo]
    (-> converted second meta) => {:path "path/to/my.md"
                                   :start 4000003
@@ -361,8 +359,9 @@ A language spec contains example code blocks. Any code block that is not a
 example code block.
 
 Example code blocks require that the initial state contains `:langmap`, a
-[language-map](polyglot_loader.md#module-and-language-representation), and
-`:lang`, which references a key in the language-map.
+[language-map](polyglot_loader.md#module-and-language-representation),
+`:lang`, which references a key in the language-map and `:path`, a path to
+the spec file needed to correctly assign code-locations.
 
 An example code-block consists of two code blocks: The first, containing the
 code example, and the second, under the (Markdown-unsupported) `status`
@@ -440,7 +439,8 @@ state is incremented.
                                (mock-parse name path text))}}]
    (process-lang-spec {:state :init
                        :lang "y4"
-                       :langmap langmap}
+                       :langmap langmap
+                       :path "path/to/spec.md"}
                       ["```c++"
                        "void main() {"
                        "}"
@@ -452,6 +452,7 @@ state is incremented.
        :line 7
        :lang "y4"
        :langmap langmap
+       :path "path/to/spec.md"
        :success 1}
    (provided
     (mock-parse "example" "example" "void main() {\n}") => (ok [[] []]))))
@@ -467,7 +468,8 @@ incremented.
                       :parse (fn [name path text]
                                (mock-parse name path text))}}]
    (process-lang-spec {:state :init
-                       :langmap langmap}
+                       :langmap langmap
+                       :path "path/to/spec.md"}
                       ["Language: `y4`"
                        "```c++"
                        "void main() {"
@@ -480,6 +482,7 @@ incremented.
        :line 8
        :lang "y4"
        :langmap langmap
+       :path "path/to/spec.md"
        :errors [{:explanation ["No rules are defined to translate statement"
                                `(this-is-not-supported)
                                "and therefore it does not have any meaning"]
@@ -501,7 +504,8 @@ succeeds.
  (let [langmap {"y4" {:parse (fn [name path text]
                                (mock-parse name path text))}}]
    (process-lang-spec {:state :init
-                       :langmap langmap}
+                       :langmap langmap
+                       :path "path/to/spec.md"}
                       ["Language: `y4`"
                        "```c++"
                        "void main() {"
@@ -514,6 +518,7 @@ succeeds.
        :line 8
        :lang "y4"
        :langmap langmap
+       :path "path/to/spec.md"
        :success 1}
    (provided
     (mock-parse "example" "example" "void main() {\n}") =>
@@ -526,7 +531,8 @@ If the evaluation succeeds, the test fails.
  (let [langmap {"y4" {:parse (fn [name path text]
                                (mock-parse name path text))}}]
    (process-lang-spec {:state :init
-                       :langmap langmap}
+                       :langmap langmap
+                       :path "path/to/spec.md"}
                       ["Language: `y4`"
                        "```c++"
                        "void main() {"
@@ -539,6 +545,7 @@ If the evaluation succeeds, the test fails.
        :line 8
        :lang "y4"
        :langmap langmap
+       :path "path/to/spec.md"
        :errors [{:explanation ["The example should have produced an error, but did not"]
                  :line 2}]}
    (provided
@@ -553,7 +560,8 @@ message), the test fails.
  (let [langmap {"y4" {:parse (fn [name path text]
                                (mock-parse name path text))}}]
    (process-lang-spec {:state :init
-                       :langmap langmap}
+                       :langmap langmap
+                       :path "path/to/spec.md"}
                       ["Language: `y4`"
                        "```c++"
                        "void main() {"
@@ -566,6 +574,7 @@ message), the test fails.
        :line 8
        :lang "y4"
        :langmap langmap
+       :path "path/to/spec.md"
        :errors [{:explanation ["The wrong error was reported:"
                                "No rules are defined to translate statement"
                                `(this-is-unexpected)
@@ -573,7 +582,43 @@ message), the test fails.
                  :line 2}]}
    (provided
     (mock-parse "example" "example" "void main() {\n}") =>
-    (ok [[`(this-is-unexpected)] []]))))
+    (ok [[`(this-is-unexpected)] []])))
+
+```
+### Code Location in Errors
+
+The errors produced by code examples have code-locations that point to the
+spec (`.md` file) with the correct line number.
+```clojure
+ (fact
+  (let [langmap {"y4" {:parse (fn [name path text]
+                                (mock-parse name path text))}}]
+    (def pos-example-err-status (process-lang-spec {:state :init
+                                                    :langmap langmap
+                                                    :path "path/to/spec.md"}
+                                                   ["Language: `y4`"
+                                                    "```c++"
+                                                    "void main() {"
+                                                    "}"
+                                                    "```"
+                                                    "```status"
+                                                    "Success"
+                                                    "```"]))) =>
+  #'pos-example-err-status
+  (provided
+   (mock-parse "example" "example" "void main() {\n}") =>
+   (ok [[(with-meta `(this-is-not-supported) {:path "foo"
+                                              :start 1000005
+                                              :end 1000007})] []]))
+  (-> pos-example-err-status :errors) =>
+  [{:explanation ["No rules are defined to translate statement"
+                  `(this-is-not-supported)
+                  "and therefore it does not have any meaning"]
+    :line 2}]
+  (-> pos-example-err-status :errors first :explanation second meta) =>
+  {:path "path/to/spec.md"
+   :start 3000005
+   :end 3000007}))
 
 ```
 ### Updating the Spec
@@ -604,6 +649,7 @@ blocks updated. Other behavior does not change, so that `:errors` and
                                (mock-parse name path text))}}]
    (process-lang-spec {:state :init
                        :langmap langmap
+                       :path "path/to/spec.md"
                        :generate true}
                       ["Language: `y4`"
                        "```c++"
@@ -627,6 +673,7 @@ blocks updated. Other behavior does not change, so that `:errors` and
        :line 18
        :lang "y4"
        :langmap langmap
+       :path "path/to/spec.md"
        :errors [{:explanation ["The example should have produced an error, but did not"]
                  :line 11}
                 {:explanation ["No rules are defined to translate statement"
@@ -656,6 +703,6 @@ blocks updated. Other behavior does not change, so that `:errors` and
     (mock-parse "example" "example" "void main() {\n  something_wrong;\n}") =>
     (ok [[`(this-is-not-supported)] []])
     (mock-parse "example" "example" "void main() {\n  something_correct;\n}") =>
-    (ok [[] []]))))
+    (ok [[] []]))))  
 ```
 
