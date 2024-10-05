@@ -24,5 +24,5 @@ int foo() {
 }
 ```
 ```status
-ERROR: Type mismatch. Variable  a was given type int but was assign value of type float in int foo() { ... }
+ERROR: Type mismatch. Variable a was given type int but was assign value of type float in int foo() { ... }
 ```

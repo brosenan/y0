@@ -95,6 +95,55 @@
                                   :end (encode-file-pos 5 5)})]
      (extract-expr-text expr) => "56789 - 3 ... 1234")))
 
+;; If the lines being shown contain spaces beyond a single space, they are
+;; reduced to a single space.
+(fact
+ (let [f (java.io.File/createTempFile "test" ".txt")]
+   ;; Write some contents to a temp-file.
+   (.deleteOnExit f)
+   (spit f (str/join (System/lineSeparator) ["123456789 - 1"
+                                             "123456789 - 2"
+                                             "123456789 \t - 3"
+                                             "123456789 - 4"
+                                             " \t 456789 - 5"
+                                             "123456789 - 6"]))
+   (let [expr (with-meta [1 2 3] {:path (str f)
+                                  :start (encode-file-pos 3 5)
+                                  :end (encode-file-pos 5 5)})]
+     (extract-expr-text expr) => "56789 - 3 ... 4")))
+
+;; Whitespace is removed from the beginning and end of the string.
+(fact
+ (let [f (java.io.File/createTempFile "test" ".txt")]
+   ;; Write some contents to a temp-file.
+   (.deleteOnExit f)
+   (spit f (str/join (System/lineSeparator) ["123456789 - 1"
+                                             "123456789 - 2"
+                                             "1234  789 \t - 3"
+                                             "123456789 - 4"
+                                             "1   56789 - 5"
+                                             "123456789 - 6"]))
+   (let [expr (with-meta [1 2 3] {:path (str f)
+                                  :start (encode-file-pos 3 5)
+                                  :end (encode-file-pos 5 5)})]
+     (extract-expr-text expr) => "789 - 3 ... 1")))
+
+;; Empty lines / lines with only whitespace are ignored on both ends.
+(fact
+ (let [f (java.io.File/createTempFile "test" ".txt")]
+   ;; Write some contents to a temp-file.
+   (.deleteOnExit f)
+   (spit f (str/join (System/lineSeparator) ["123456789 - 1"
+                                             "  \t  "
+                                             "123456789 \t - 3"
+                                             "123456789 - 4"
+                                             " \t   "
+                                             "123456789 - 6"]))
+   (let [expr (with-meta [1 2 3] {:path (str f)
+                                  :start (encode-file-pos 2 1)
+                                  :end (encode-file-pos 6 5)})]
+     (extract-expr-text expr) => "123456789 - 3 ... 1234")))
+
 ;; If `extract-expr-text` is given an expression without a location, it stringifies
 ;; the given object using `explanation-expr-to-str`.
 (fact

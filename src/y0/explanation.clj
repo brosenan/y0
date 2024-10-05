@@ -1,5 +1,5 @@
 (ns y0.explanation
-  (:require [clojure.string :refer [join]]
+  (:require [clojure.string :refer [join replace]]
             [clojure.java.io :as io]
             [y0.unify :refer [reify-term]]
             [y0.location-util :refer [extract-location]]))
@@ -72,9 +72,12 @@
        unique-location))
 
 (defn stringify-lines [lines]
-  (if (> (count lines) 2)
-    (str (first lines) " ... " (last lines))
-    (join " " lines)))
+  (let [lines (filter #(not (re-matches #"\s*" %)) lines)]
+    (-> (if (> (count lines) 2)
+          (str (first lines) " ... " (last lines))
+          (join " " lines))
+        (replace #"\s+" " ")
+        (replace #"\s*(.*\S)\s*" "$1"))))
 
 (defn extract-expr-text [expr]
   (if (has-location? expr)
