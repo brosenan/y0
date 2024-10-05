@@ -1,7 +1,7 @@
 (ns y0.spec-analyzer
   (:require [clojure.string :refer [join]]
             [y0.builtins :refer [add-builtins]]
-            [y0.explanation :refer [explanation-to-str]]
+            [y0.explanation :refer [explanation-to-str *stringify-expr*]]
             [y0.polyglot-loader :refer [eval-mstore load-with-deps]]
             [y0.rules :refer [apply-statements]]
             [y0.status :refer [let-s ok]]
@@ -80,6 +80,11 @@
     {:err (convert-error-locations (:err status) path line)}
     status))
 
+(defn- expr-stringifier [v]
+  (-> (:langmap v)
+      (get (:lang v))
+      (get :stringify-expr *stringify-expr*)))
+
 (def lang-spec-sm
   {:any [{:update-fn (fn [v [line]]
                        (-> v
@@ -114,7 +119,8 @@
                                                            (:code-block-start v)))
                         status-text (if (contains? status :err)
                                       (str "ERROR: "
-                                           (explanation-to-str (:err status)))
+                                           (binding [*stringify-expr* (expr-stringifier v)]
+                                             (explanation-to-str (:err status))))
                                       "Success")]
                     (-> v
                         (dissoc :current-block)
@@ -140,7 +146,8 @@
              :update-fn
              (fn [v [_line expected]]
                (let [actual (if (contains? (:current-status v) :err)
-                              (explanation-to-str (:err (:current-status v)))
+                              (binding [*stringify-expr* (expr-stringifier v)]
+                                (explanation-to-str (:err (:current-status v))))
                               "")]
                  (-> v
                      (update-if (and (contains? (:current-status v) :err)

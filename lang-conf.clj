@@ -87,4 +87,6 @@
        ;; ...named C0-PATH
        :path-prefixes-env "C0-PATH"
        ;; Read files using Clojure's slurp function.
-       :reader :slurp}}
+       :reader :slurp
+       ;; Stringify by extracting text from the source file
+       :expr-stringifier :extract-text}}

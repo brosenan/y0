@@ -75,7 +75,7 @@
                     (println (-> state :lagmap (get "c0")))
                     (process-lang-spec state lines)))]
       (doseq [err (:errors state)]
-        (print-error {:err (:explanation err)}))
+        (print-error {:err err}))
       (cond
         (:errors state) (println (-> state :errors count) (red "Failed") 
                                  (if (:success state)

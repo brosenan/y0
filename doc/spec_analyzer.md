@@ -501,7 +501,8 @@ succeeds.
 ```clojure
 (fact
  (let [langmap {"y4" {:parse (fn [name path text]
-                               (mock-parse name path text))}}]
+                               (mock-parse name path text))
+                      }}]
    (process-lang-spec {:state :init
                        :langmap langmap
                        :path "path/to/spec.md"}
