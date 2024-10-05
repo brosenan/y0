@@ -2,3 +2,6 @@
 
 ;; # $c_0$ is not C
 
+;; ## Function Definition
+(all [t name args stmts]
+     [:func_def t name args & stmts] =>)

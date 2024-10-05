@@ -36,8 +36,12 @@
                  arg_defs = ((arg_def <','>)* arg_def)?
                  arg_def = type identifier
 
-                 <type> = pointer_type | 'int' | 'float' | 'string'
+                 <type> = pointer_type | int_type | float_type | void_type
                  pointer_type = type <'ptr'>
+                 int_type ='int'
+                 float_type ='float'
+                 void_type ='void'
+                 
 
                  <statement> = vardef | assign
 
