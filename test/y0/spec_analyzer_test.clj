@@ -338,8 +338,12 @@
 ;; The status block should only contain a single line, requiring either success
 ;; or an error, as explained in the following subsections. If a different line
 ;; is present, and exception is raised.
+(defn mock-parse [name path text])
 (fact
- (process-lang-spec {:state :init}
+ (process-lang-spec {:state :init
+                     :langmap {"y4" {:parse (fn [name path text]
+                                              (mock-parse name path text))}}
+                     :lang "y4"}
                     ["Some unrelated line"
                      "```c++"
                      "void main() {}"
@@ -354,7 +358,10 @@
 ;; Similarly, if an extra line is added after a (valid) first line, an exception
 ;; is thrown.
 (fact
- (process-lang-spec {:state :init}
+ (process-lang-spec {:state :init
+                     :langmap {"y4" {:parse (fn [name path text]
+                                              (mock-parse name path text))}}
+                     :lang "y4"}
                     ["Some unrelated line"
                      "```c++"
                      "void main() {}"
@@ -373,7 +380,6 @@
 ;; single word: `Success`. The expectation is that code in the code block will
 ;; be evaluated successfully. On a successful run, the :success counter in the
 ;; state is incremented.
-(defn mock-parse [name path text])
 (fact
  (let [langmap {"y4" {:resolve #(throw
                                  (Exception. (str "resolve should not have been called: " %)))
@@ -517,6 +523,45 @@
    (provided
     (mock-parse "example" "example" "void main() {\n}") =>
     (ok [[`(this-is-unexpected)] []])))
+
+;; ### Referencing Modules
+
+;; As stated [above](#dependency-modules), modules can be defined in specs and
+;; can later be referenced from example blocks.
+
+;; In the following example the spec defines a module and then references it
+;; from a positive example. The `:parse` function is called twice, first for the
+;; example and then for the module.
+(fact
+ (let [langmap {"y4" {:parse (fn [name path text]
+                               (mock-parse name path text))}}]
+   (process-lang-spec {:state :init
+                       :lang "y4"
+                       :langmap langmap
+                       :path "path/to/spec.md"}
+                      ["The following is module `foo`:"
+                       "```c++"
+                       "struct Foo {};"
+                       "```"
+                       "```c++"
+                       "#include \"foo.h\""
+                       "void main() {"
+                       "}"
+                       "```"
+                       "```status"
+                       "Success"
+                       "```"])
+   => {:state :init
+       :line 12
+       :lang "y4"
+       :langmap langmap
+       :path "path/to/spec.md"
+       :modules {"foo" ["struct Foo {};"]}
+       :success 1}
+   (provided
+    (mock-parse "example" "example" "#include \"foo.h\"\nvoid main() {\n}") =>
+    (ok [[] [{:lang "y4" :name "foo"}]])
+    (mock-parse "foo" "foo" ["struct Foo {};"]) => (ok [[] []]))))
 
 ;; ### Code Location in Errors
 

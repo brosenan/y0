@@ -12,7 +12,9 @@
             {:keys [parse read resolve]} lang-def]
         (cond
           (contains? module :statements) (ok module)
-          (contains? module :text) (let-s [[statements deps] (parse (:name module) (:path module) (:text module))]
+          (contains? module :text) (let-s [[statements deps] (parse (:name module)
+                                                                    (:path module)
+                                                                    (:text module))]
                                           (ok (-> module
                                                   (assoc :statements statements)
                                                   (assoc :deps deps))))

@@ -52,14 +52,20 @@
     (update m key f)
     m))
 
-(defn- eval-code [{:keys [lang langmap current-block]}]
-  (let-s [mstore (load-with-deps [{:lang lang
-                                   :name "example"
-                                   :path "example"
-                                   :text (join "\n" current-block)}]
-                                 langmap)
-          ps (ok (add-builtins {}))]
-         (eval-mstore mstore #(apply-statements %2 %1 {}) ps)))
+(defn- eval-code [{:keys [lang langmap current-block modules]}]
+  (let [langmap (update langmap lang #(-> %
+                                          (assoc :resolve 
+                                                 (fn [name] (ok name)))
+                                          (assoc :read 
+                                                 (fn [name]
+                                                   (get modules name)))))]
+    (let-s [mstore (load-with-deps [{:lang lang
+                                     :name "example"
+                                     :path "example"
+                                     :text (join "\n" current-block)}]
+                                   langmap)
+            ps (ok (add-builtins {}))]
+           (eval-mstore mstore #(apply-statements %2 %1 {}) ps))))
 
 (defn convert-error-locations
   ([explanation path line]
