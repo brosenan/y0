@@ -1,5 +1,6 @@
 (ns y0.builtins 
-  (:require [y0.rules :refer [new-vars]]
+  (:require [clojure.string :as str]
+            [y0.rules :refer [new-vars]]
             [y0.term-utils :refer [replace-vars]]
             [y0.unify :refer [reify-term unify]]))
 
@@ -45,6 +46,19 @@
           term (reify-term term)]
       (unify-or-err (ctor term) var why-not))))
 
+(defn symbolize [goal why-not _ps]
+  (let [[_symbolize base values newsym] goal
+        base (reify-term base)
+        values (reify-term values)
+        name-prefix (if (symbol? base)
+                      [(name base)]
+                      [])
+        newname (str/join "-" (concat name-prefix (map str values)))
+        ns (if (symbol? base)
+             (namespace base)
+             (str base))]
+    (unify-or-err newsym (symbol ns newname) why-not)))
+
 (defn add-builtin [ps name arity func]
   (assoc ps {:name (str "y0.core/" name) :arity arity} {{} func}))
 
@@ -54,4 +68,5 @@
       (add-builtin "inspect" 2 inspect)
       (add-builtin "replace-meta" 3 replace-meta)
       (add-builtin "to-list" 2 (gen-to-x seq))
-      (add-builtin "to-vec" 2 (gen-to-x vec))))
+      (add-builtin "to-vec" 2 (gen-to-x vec))
+      (add-builtin "symbolize" 3 symbolize)))

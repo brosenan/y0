@@ -2,6 +2,7 @@
   * [`=`](#`=`)
   * [`inspect`](#`inspect`)
   * [Conversion Predicates](#conversion-predicates)
+  * [Symbols](#symbols)
 ```clojure
 (ns builtins)
 
@@ -92,5 +93,24 @@ Similarly, `to-vec` converts to a vector.
 (assert
  (to-vec (1 2 3) [1 2 3])
  (to-vec [1 2 3] [1 2 3]))
+
+```
+## Symbols
+
+The predicate `symbolize` takes a base-symbol and a vector of values. It
+returns a symbol on the same namespace as the base symbol, with the name
+being a concatenation of the base name and the values in the vector, as
+strings.
+```clojure
+(assert
+ (symbolize foo ["bar"] foo-bar)
+ (symbolize foo ["bar" :baz] foo-bar-:baz))
+
+```
+If given a string as its first argument, it is taken as the namespace, and
+the values in the vector as the name of the new symbol.
+```clojure
+(assert
+ (symbolize "builtins" ["bar" "baz"] bar-baz))
 ```
 
