@@ -34,7 +34,31 @@ introduce _variable definitions_, of the form `type name = value;`
 
 ```c
 void foo() {
-    int a = 2;
+    int32 a = 2;
+}
+```
+```status
+Success
+```
+
+## Numeric Types and Expressions
+
+$C_0$ supports the following numeric types:
+
+```c
+void foo() {
+    int8 a = 2;
+    int16 b = 2;
+    int32 c = 2;
+    int64 d = 2;
+    
+    uint8 e = 2;
+    uint16 f = 2;
+    uint32 g = 2;
+    uint64 h = 2;
+
+    float32 i = 2;
+    float64 j = 2;
 }
 ```
 ```status

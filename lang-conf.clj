@@ -36,10 +36,22 @@
                  arg_defs = ((arg_def <','>)* arg_def)?
                  arg_def = type identifier
 
-                 <type> = pointer_type | int_type | float_type | void_type
+                 <type> = pointer_type
+                          | int8_type | int16_type | int32_type | int64_type
+                          | uint8_type | uint16_type | uint32_type | uint64_type
+                          | float32_type | float64_type
+                          | void_type
                  pointer_type = type <'ptr'>
-                 int_type ='int'
-                 float_type ='float'
+                 int8_type ='int8'
+                 int16_type ='int16'
+                 int32_type ='int32'
+                 int64_type ='int64'
+                 uint8_type ='uint8'
+                 uint16_type ='uint16'
+                 uint32_type ='uint32'
+                 uint64_type ='uint64'
+                 float32_type ='float32'
+                 float64_type ='float64'
                  void_type ='void'
                  
 
