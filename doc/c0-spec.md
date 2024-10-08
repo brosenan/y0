@@ -41,6 +41,28 @@ void foo() {
 Success
 ```
 
+A variable that is defined can be used as value in subsequent definitions.
+
+```c
+void foo() {
+    int32 a = 2;
+    int32 b = a;
+}
+```
+```status
+Success
+```
+
+This example would not have been valid without the definition of `a`.
+```c
+void foo() {
+    int32 b = a;
+}
+```
+```status
+ERROR: Invalid expression a in void foo() { ... }
+```
+
 ## Numeric Types and Expressions
 
 $C_0$ supports the following numeric types:
@@ -82,10 +104,10 @@ Integer types cannot.
 
 ```c
 void foo() {
-    int32 a = 0.12345;
+    float32 a = 0.12345; 
+    int32 b = 0.12345;
 }
 ```
 ```status
 ERROR: int32 is not a floating-point type when assigning floating point literal 0.12345 in void foo() { ... }
 ```
-
