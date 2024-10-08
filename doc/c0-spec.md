@@ -53,9 +53,11 @@ void foo() {
 Success
 ```
 
-This example would not have been valid without the definition of `a`.
+The example above would not have been valid in reverse.
+
 ```c
 void foo() {
+    int32 b = a;
     int32 b = a;
 }
 ```
@@ -110,4 +112,71 @@ void foo() {
 ```
 ```status
 ERROR: int32 is not a floating-point type when assigning floating point literal 0.12345 in void foo() { ... }
+```
+
+### Assignability
+
+A variable of one type can be assigned to a variable of another type if this
+assignment cannot result in overflow. This means that for integer types,
+assignment is possible from a type of a given width to the same or larger width.
+
+```c
+void foo() {
+    int8 a = 100;
+    int8 a1 = a;
+    int16 b = a;
+    int16 b1 = b;
+    int32 c = b;
+    int32 c1 = c;
+    int64 d = c;
+    int64 d1 = d;
+}
+
+void bar() {
+    uint8 a = 100;
+    uint8 a1 = a;
+    uint16 b = a;
+    uint16 b1 = b;
+    uint32 c = b;
+    uint32 c1 = c;
+    uint64 d = c;
+    uint64 d1 = d;
+}
+```
+```status
+Success
+```
+
+In contrast, assigning a wide-integer to a narrow one can cause overflow and is
+therefore not allowed.
+
+```c
+void foo() {
+    int16 a = 100;
+    int8 b = a;
+}
+```
+```status
+ERROR: Type int16 cannot be used in this context trying to treat expression a as type int8 in void foo() { ... }
+```
+
+When mixing signed and unsigned values, assignment is only allowed from strictly
+narrower values.
+```c
+void foo() {
+    int8 a = 100;
+    uint16 b = a;
+    int32 c = b;
+    uint64 d = c;
+}
+
+void bar() {
+    uint8 a = 100;
+    int16 b = a;
+    uint32 c = b;
+    int64 d = c;
+}
+```
+```status
+Success
 ```
