@@ -32,7 +32,8 @@
      (expr-of-type x t) <-
      (exist [t']
             (typeof x t')
-            (assignable t t' ! "trying to treat expression" x "as type" t)))
+            (assignable t t' ! "Type mismatch. Expression" x "is of type" t'
+                        "but type" t "was expected")))
 
 (all [x y]
      (typeof x t ! "Invalid expression" x))
@@ -47,6 +48,16 @@
 
 (all [n t]
      (expr-of-type [:int n] t))
+
+(all [t]
+     (expr-of-type [:null] t) <-
+     (exist [t']
+            (= t [:pointer_type t']
+               ! ? "can only be assigned to a pointer type. Given " t "instead")))
+
+(all [x t]
+     (typeof [:addressof x] [:pointer_type t]) <-
+     (typeof x t))
 
 ;; ## Types
 (all [t]
@@ -75,7 +86,7 @@
              (symbolize assignable-to [t-kw] assignable-to-t)))
      (all [t']
           (assignable-to-t t' 
-                           ! "Type" t' "cannot be used in this context"))
+                           ! "Type" t' "cannot be used in this context:"))
      (all []
           (assignable-to-t t))
      (def-assignable' assignable-to-t src-ts))

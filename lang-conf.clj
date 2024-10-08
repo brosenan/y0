@@ -41,7 +41,7 @@
                           | uint8_type | uint16_type | uint32_type | uint64_type
                           | float32_type | float64_type
                           | void_type
-                 pointer_type = type <'ptr'>
+                 pointer_type = <'*'> type
                  int8_type    = <'int8'>
                  int16_type   = <'int16'>
                  int32_type   = <'int32'>
@@ -64,7 +64,7 @@
                  <sum_expr> = mult_expr | add | sub
                  <mult_expr> = unary_expr | mult | div | mod
                  <unary_expr> = atomic_expr | addressof | deref | minus
-                 <atomic_expr> = literal | identifier | <'('> expr <')'>
+                 <atomic_expr> = literal | identifier | null | <'('> expr <')'>
                  <literal> = (int / float) | string
 
                  addressof = <'&'> unary_expr
@@ -75,8 +75,11 @@
                  div = mult_expr <'/'> unary_expr
                  mod = mult_expr <'%'> unary_expr
                  minus = <'-'> unary_expr
+                 null = <'null'>
                  
-                 keyword = 'int' | 'string' | 'float' | 'ptr'
+                 keyword = 'int8' | 'int16' | 'int32' | 'int64'
+                           | 'uint8' | 'uint16' | 'uint32' | 'uint64'
+                           | 'float32' | 'float64' | 'void' | 'null'
                  identifier = !keyword #'[a-zA-Z_][a-zA-Z_0-9]*'
                  int = #'0|(-?[1-9][0-9]*)'
                  float = #'-?(0|(-?[1-9][0-9]*))([.][0-9]+)?([eE][+\\-][0-9]+)?'

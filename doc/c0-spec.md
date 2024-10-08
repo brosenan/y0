@@ -157,7 +157,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: Type int16 cannot be used in this context trying to treat expression a as type int8 in void foo() { ... }
+ERROR: Type int16 cannot be used in this context: Type mismatch. Expression a is of type int16 but type int8 was expected in void foo() { ... }
 ```
 
 When mixing signed and unsigned values, assignment is only allowed from strictly
@@ -215,4 +215,56 @@ void bar() {
 ```
 ```status
 Success
+```
+
+### Pointers and Addresses
+
+$C_0$ supports pointer types. To simplify parsing, $C_0$ takes its syntax for
+pointer types from [Go](https://go.dev/tour/moretypes/1), placing the `*`
+_before_ and not _after_ the pointee-type.
+
+A pointer can be initialized to `null`.
+
+```c
+void foo() {
+    *int32 p = null;
+}
+```
+```status
+Success
+```
+
+`null` can only be assigned to a pointer type.
+
+```c
+void foo() {
+    int32 n = null;
+}
+```
+```status
+ERROR: null can only be assigned to a pointer type. Given  int32 instead in void foo() { ... }
+```
+
+A pointer can be assigned the _address_ (`&`) of a variable of the pointee type.
+
+```c
+void foo() {
+    int32 a = 42;
+    *int32 p = &a;
+}
+```
+```status
+Success
+```
+
+Assigning the address of a different type will result in an error.
+
+```c
+void foo() {
+    int16 a = 42;
+    *int32 p = &a;
+}
+```
+```status
+ERROR: Type mismatch. Expression &a is of type  but type *int32 was expected in void foo() { ... }
 ```
