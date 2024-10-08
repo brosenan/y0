@@ -180,3 +180,39 @@ void bar() {
 ```status
 Success
 ```
+
+Floating point types are assignable from strictly narrower numeric types (signed
+or unsigned integers, floating point), and from themeselves.
+
+```c
+void foo() {
+    int8 a = 100;
+    float32 a1 = a;
+    float64 a2 = a;
+
+    int16 b = 200;
+    float32 b1 = b;
+    float64 b2 = b;
+
+    int32 c = 300;
+    float64 c2 = c;
+
+    float64 d = b1;
+}
+
+void bar() {
+    uint8 a = 100;
+    float32 a1 = a;
+    float64 a2 = a;
+
+    uint16 b = 200;
+    float32 b1 = b;
+    float64 b2 = b;
+
+    uint32 c = 300;
+    float64 c2 = c;
+}
+```
+```status
+Success
+```
