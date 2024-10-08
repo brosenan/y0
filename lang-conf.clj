@@ -42,16 +42,16 @@
                           | float32_type | float64_type
                           | void_type
                  pointer_type = type <'ptr'>
-                 int8_type ='int8'
-                 int16_type ='int16'
-                 int32_type ='int32'
-                 int64_type ='int64'
-                 uint8_type ='uint8'
-                 uint16_type ='uint16'
-                 uint32_type ='uint32'
-                 uint64_type ='uint64'
-                 float32_type ='float32'
-                 float64_type ='float64'
+                 int8_type    = <'int8'>
+                 int16_type   = <'int16'>
+                 int32_type   = <'int32'>
+                 int64_type   = <'int64'>
+                 uint8_type   = <'uint8'>
+                 uint16_type  = <'uint16'>
+                 uint32_type  = <'uint32'>
+                 uint64_type  = <'uint64'>
+                 float32_type = <'float32'>
+                 float64_type = <'float64'>
                  void_type ='void'
                  
 
@@ -78,8 +78,8 @@
                  
                  keyword = 'int' | 'string' | 'float' | 'ptr'
                  identifier = !keyword #'[a-zA-Z_][a-zA-Z_0-9]*'
-                 int = #'-?[1-9][0-9]*'
-                 float = #'-?[1-9][0-9]*([.][0-9]+)?([eE][+\\-][0-9]+)?'
+                 int = #'0|(-?[1-9][0-9]*)'
+                 float = #'-?(0|(-?[1-9][0-9]*))([.][0-9]+)?([eE][+\\-][0-9]+)?'
                  string = #'\"([^\"\\\\]|\\\\.)*\"'
                  --layout--
                  layout = #'\\s'+"

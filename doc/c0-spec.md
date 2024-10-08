@@ -47,20 +47,45 @@ $C_0$ supports the following numeric types:
 
 ```c
 void foo() {
-    int8 a = 2;
-    int16 b = 2;
-    int32 c = 2;
-    int64 d = 2;
+    int8 a = 0;
+    int16 b = 0;
+    int32 c = 0;
+    int64 d = 0;
     
-    uint8 e = 2;
-    uint16 f = 2;
-    uint32 g = 2;
-    uint64 h = 2;
+    uint8 e = 0;
+    uint16 f = 0;
+    uint32 g = 0;
+    uint64 h = 0;
 
-    float32 i = 2;
-    float64 j = 2;
+    float32 i = 0;
+    float64 j = 0;
 }
 ```
 ```status
 Success
 ```
+
+As shown above, all numeric types can receive integer literals. However, only
+`floatX` types can receive float literals.
+
+```c
+void foo() {
+    float32 i = 0.12345;
+    float64 j = 1.2345e+6;
+}
+```
+```status
+Success
+```
+
+Integer types cannot.
+
+```c
+void foo() {
+    int32 a = 0.12345;
+}
+```
+```status
+ERROR: int32 is not a floating-point type when assigning floating point literal 0.12345 in void foo() { ... }
+```
+
