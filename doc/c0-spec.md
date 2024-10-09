@@ -439,7 +439,6 @@ void foo() {
 ERROR: *int64 is not a numeric type in expression -&a in void foo() { ... }
 ```
 
-
 ## Pointers and Addresses
 
 $C_0$ supports pointer types. To simplify parsing, $C_0$ takes its syntax for
