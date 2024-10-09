@@ -78,7 +78,8 @@
      (all [t a b]
           (expr-of-type [op a b] t) <-
           (expr-of-type a t)
-          (expr-of-type b t))
+          (expr-of-type b t)
+          (numeric-type t ! "in expression" ?))
      (all [t a b]
           (typeof [op a b] t) <-
           (exist [t']
@@ -86,15 +87,18 @@
                  (typeof b t')
                  (= t t'
                     ! "The two operands of" ? "do not agree on types."
-                    a "has type" t "while" b "has type" t'))))
+                    a "has type" t "while" b "has type" t')
+                 (numeric-type t ! "in expression" ?))))
 (all [op]
      (arith-uniop op) =>
      (all [t a]
           (expr-of-type [op a] t) <-
-          (expr-of-type a t))
+          (expr-of-type a t)
+          (numeric-type t ! "in expression" ?))
      (all [t a]
           (typeof [op a] t) <-
-          (typeof a t)))
+          (typeof a t)
+          (numeric-type t ! "in expression" ?)))
 
 (arith-binop :add)
 (arith-binop :sub)
@@ -115,6 +119,20 @@
 
 (all [] (float-type [:float32_type]))
 (all [] (float-type [:float64_type]))
+
+;; ### Numeric Types
+(all [t]
+     (numeric-type t ! t "is not a numeric type"))
+
+(all [t ts]
+     (def-numeric-types [t & ts]) =>
+     (all []
+          (numeric-type t))
+     (def-numeric-types ts))
+
+(def-numeric-types [[:int8_type] [:int16_type] [:int32_type] [:int64_type]
+                    [:uint8_type] [:uint16_type] [:uint32_type] [:uint64_type]
+                    [:float32_type] [:float64_type]])
 
 ;; ### Type Assignability
 (all [t1 t2]

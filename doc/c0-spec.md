@@ -351,6 +351,95 @@ void foo() {
 Success
 ```
 
+Arithmetic expressions support all numeric types.
+
+```c
+void foo() {
+    int8 a = 1;
+    var ar = a+a;
+    int16 b = 2;
+    var br = b-b;
+    int32 c = 3;
+    var cr = c*c;
+    int64 d = 4;
+    var dr = d/d;
+}
+
+void bar() {
+    uint8 a = 1;
+    var ar = a+a;
+    uint16 b = 2;
+    var br = b-b;
+    uint32 c = 3;
+    var cr = c*c;
+    uint64 d = 4;
+    var dr = d/d;
+}
+
+void baz() {
+    float32 a = 1.1;
+    var ar = a+a;
+    float64 b = 2.2;
+    var br = b-b;
+}
+```
+```status
+Success
+```
+
+Non-numeric types (e.g., pointers) are not supported.
+
+```c
+void foo() {
+    int64 a = 1;
+    int64 b = 2;
+
+    var res = &a+&b;
+}
+```
+```status
+ERROR: [:pointer_type t] is not a numeric type in expression &a+&b in void foo() { ... }
+```
+
+This is even the case if we provide the target type explicitly.
+
+```c
+void foo() {
+    int64 a = 1;
+    int64 b = 2;
+
+    *int64 res = &a+&b;
+}
+```
+```status
+ERROR: *int64 is not a numeric type in expression &a+&b in void foo() { ... }
+```
+
+What's true for binary operators is also true for the unary `-` operator.
+
+```c
+void foo() {
+    int64 a = 1;
+
+    var res = -&a;
+}
+```
+```status
+ERROR: [:pointer_type t] is not a numeric type in expression -&a in void foo() { ... }
+```
+
+```c
+void foo() {
+    int64 a = 1;
+
+    *int64 res = -&a;
+}
+```
+```status
+ERROR: *int64 is not a numeric type in expression -&a in void foo() { ... }
+```
+
+
 ## Pointers and Addresses
 
 $C_0$ supports pointer types. To simplify parsing, $C_0$ takes its syntax for
