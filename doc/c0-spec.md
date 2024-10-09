@@ -301,6 +301,56 @@ void foo() {
 ERROR: Type int64 cannot be used in this context: Type mismatch. Expression d is of type int64 but type int32 was expected in void foo() { ... }
 ```
 
+If the target type is not known, an arithmetic expression is only valid if all
+operands have the same type.
+
+```c
+void foo() {
+    int64 a = 1;
+    int64 b = 2;
+    int64 c = 3;
+    int64 d = 4;
+
+    var res = -a+b-c*d/a%b;
+}
+```
+```status
+Success
+```
+
+If one of the operands has a different type, the expression does not compile.
+
+```c
+void foo() {
+    int64 a = 1;
+    int8 b = 2;
+    int64 c = 3;
+    int64 d = 4;
+
+    var res = -a+b-c*d/a%b;
+}
+```
+```status
+ERROR: The two operands of -a+b do not agree on types. -a has type int64 while b has type int8 in void foo() { ... }
+```
+
+Note that the same expression would have compiled if only the `var` keyword
+would have been replaced with a concrete, appropriate type.
+
+```c
+void foo() {
+    int64 a = 1;
+    int8 b = 2;
+    int64 c = 3;
+    int64 d = 4;
+
+    int64 res = -a+b-c*d/a%b;
+}
+```
+```status
+Success
+```
+
 ## Pointers and Addresses
 
 $C_0$ supports pointer types. To simplify parsing, $C_0$ takes its syntax for

@@ -78,12 +78,23 @@
      (all [t a b]
           (expr-of-type [op a b] t) <-
           (expr-of-type a t)
-          (expr-of-type b t)))
+          (expr-of-type b t))
+     (all [t a b]
+          (typeof [op a b] t) <-
+          (exist [t']
+                 (typeof a t)
+                 (typeof b t')
+                 (= t t'
+                    ! "The two operands of" ? "do not agree on types."
+                    a "has type" t "while" b "has type" t'))))
 (all [op]
      (arith-uniop op) =>
      (all [t a]
           (expr-of-type [op a] t) <-
-          (expr-of-type a t)))
+          (expr-of-type a t))
+     (all [t a]
+          (typeof [op a] t) <-
+          (typeof a t)))
 
 (arith-binop :add)
 (arith-binop :sub)
