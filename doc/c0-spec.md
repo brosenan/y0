@@ -262,6 +262,44 @@ void foo() {
 ERROR: Type [:float64_type] cannot be used in this context: Type mismatch. Expression x is of type [:float64_type] but type float32 was expected in void foo() { ... }
 ```
 
+### Arithmetic Operators
+
+$C_0$ supports the following arithmetic operators: `+`, `-` (binary and unary),
+`*`, `/` and `%`, with semantic similar to that in C.
+
+An expression comprising of arithmetic operator is assignable to a given numeric
+type if and only if all of the values participating in the expression are
+assignable to that type.
+
+```c
+void foo() {
+    int8 a = 1;
+    int16 b = 2;
+    int32 c = 3;
+    int64 d = 4;
+
+    int64 res = -a+b-c*d/a%b;
+}
+```
+```status
+Success
+```
+
+If the target type would be narrower, this would not have been valid.
+
+```c
+void foo() {
+    int8 a = 1;
+    int16 b = 2;
+    int32 c = 3;
+    int64 d = 4;
+
+    int32 res = -a+b-c*d/a%b;
+}
+```
+```status
+ERROR: Type int64 cannot be used in this context: Type mismatch. Expression d is of type int64 but type int32 was expected in void foo() { ... }
+```
 
 ## Pointers and Addresses
 

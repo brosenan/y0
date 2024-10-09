@@ -72,6 +72,28 @@
             (= t [:pointer_type t']
                ! ? "can only be assigned to a pointer type. Given " t "instead")))
 
+;; ### Arithmetic Operators
+(all [op]
+     (arith-binop op) =>
+     (all [t a b]
+          (expr-of-type [op a b] t) <-
+          (expr-of-type a t)
+          (expr-of-type b t)))
+(all [op]
+     (arith-uniop op) =>
+     (all [t a]
+          (expr-of-type [op a] t) <-
+          (expr-of-type a t)))
+
+(arith-binop :add)
+(arith-binop :sub)
+(arith-binop :mult)
+(arith-binop :div)
+(arith-binop :mod)
+
+(arith-uniop :minus)
+
+;; ### Pointers
 (all [x t]
      (typeof [:addressof x] [:pointer_type t]) <-
      (typeof x t))
