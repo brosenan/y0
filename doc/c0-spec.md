@@ -247,7 +247,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: Type  cannot be used in this context: Type mismatch. Expression x is of type  but type int32 was expected in void foo() { ... }
+ERROR: Type [:int64_type] cannot be used in this context: Type mismatch. Expression x is of type [:int64_type] but type int32 was expected in void foo() { ... }
 ```
 
 ## Pointers and Addresses
@@ -299,5 +299,5 @@ void foo() {
 }
 ```
 ```status
-ERROR: Type mismatch. Expression &a is of type  but type *int32 was expected in void foo() { ... }
+ERROR: Type mismatch. Expression &a is of type [:pointer_type t] but type *int32 was expected in void foo() { ... }
 ```

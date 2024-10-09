@@ -248,6 +248,21 @@ their corresponding values.
                                   :end 4000005}))
 
 ```
+Code examples always use the string `"example"` as the `:path` in their code
+locations. If a code location contains any other string as its `:path`,
+`convert-error-locations` does not convert it.
+```clojure
+(fact
+ (let [explanation ["Some text" (with-meta `foo {:path "some/other/path"
+                                                 :start 1000003
+                                                 :end 1000005})]
+       converted (convert-error-locations explanation "path/to/my.md" 3)]
+   converted => ["Some text" `foo]
+   (-> converted second meta) => {:path "some/other/path"
+                                  :start 1000003
+                                  :end 1000005}))
+
+```
 ## Language Spec Analysis
 
 After having built the necessary building blocks, we are ready to process
@@ -653,7 +668,7 @@ spec (`.md` file) with the correct line number.
   #'pos-example-err-status
   (provided
    (mock-parse "example" "example" "void main() {\n}") =>
-   (ok [[(with-meta `(this-is-not-supported) {:path "foo"
+   (ok [[(with-meta `(this-is-not-supported) {:path "example"
                                               :start 1000005
                                               :end 1000007})] []]))
   (-> pos-example-err-status :errors) =>

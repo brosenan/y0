@@ -68,14 +68,14 @@
            (eval-mstore mstore #(apply-statements %2 %1 {}) ps))))
 
 (defn convert-error-locations
-  ([explanation path line]
+  ([explanation spec-path line]
    (->> explanation
         reify-term
-        (postwalk-meta (fn [{:keys [start end] :as m}]
-                         (if start
+        (postwalk-meta (fn [{:keys [path start end] :as m}]
+                         (if (= path "example")
                            {:start (+ start (* line 1000000))
                             :end (+ end (* line 1000000))
-                            :path path}
+                            :path spec-path}
                            m)))))
   ([err path]
    (let [{:keys [line explanation]} err]
