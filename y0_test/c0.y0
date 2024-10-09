@@ -63,6 +63,9 @@
 (all [n t]
      (typeof [:int n] [:int64_type]))
 
+(all [n t]
+     (typeof [:float n] [:float64_type]))
+
 (all [t]
      (expr-of-type [:null] t) <-
      (exist [t']

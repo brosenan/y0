@@ -250,6 +250,19 @@ void foo() {
 ERROR: Type [:int64_type] cannot be used in this context: Type mismatch. Expression x is of type [:int64_type] but type int32 was expected in void foo() { ... }
 ```
 
+Floating-point literals are inferred as `float64`.
+
+```c
+void foo() {
+    var x = 3.14;
+    float32 a = x;
+}
+```
+```status
+ERROR: Type [:float64_type] cannot be used in this context: Type mismatch. Expression x is of type [:float64_type] but type float32 was expected in void foo() { ... }
+```
+
+
 ## Pointers and Addresses
 
 $C_0$ supports pointer types. To simplify parsing, $C_0$ takes its syntax for
