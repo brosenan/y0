@@ -55,9 +55,10 @@
                  void_type ='void'
                  
 
-                 <statement> = vardef | assign
+                 <statement> = vardef | implicit_vardef | assign
 
                  vardef = type identifier <'='> expr <';'>
+                 implicit_vardef = <'var'> identifier <'='> expr <';'>
                  assign = expr <'='> expr <';'>
 
                  expr = sum_expr
@@ -79,7 +80,7 @@
                  
                  keyword = 'int8' | 'int16' | 'int32' | 'int64'
                            | 'uint8' | 'uint16' | 'uint32' | 'uint64'
-                           | 'float32' | 'float64' | 'void' | 'null'
+                           | 'float32' | 'float64' | 'void' | 'null' | 'var'
                  identifier = !keyword #'[a-zA-Z_][a-zA-Z_0-9]*'
                  int = #'0|(-?[1-9][0-9]*)'
                  float = #'-?(0|(-?[1-9][0-9]*))([.][0-9]+)?([eE][+\\-][0-9]+)?'

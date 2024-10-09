@@ -65,6 +65,20 @@ void foo() {
 ERROR: Invalid expression a in void foo() { ... }
 ```
 
+#### Implicit Variable Definitions
+
+If we replace the type in a variable definition with the keyword `var`, the type
+of the new variable is determined by inferring the type of the expression.
+
+```c
+void foo() {
+    var a = 2;
+}
+```
+```status
+Success
+```
+
 ## Numeric Types and Expressions
 
 $C_0$ supports the following numeric types:
@@ -217,7 +231,26 @@ void bar() {
 Success
 ```
 
-### Pointers and Addresses
+### Inferring Numeric Types
+
+Despite the fact that numeric literals can be assigned to many numeric types,
+when inferring their type (e.g., using the `var` keyword), they evaluate to
+specific types.
+
+Integer literals are inferred to be of type `int64`, as can be seen from the
+error message in the following example.
+
+```c
+void foo() {
+    var x = 2;
+    int32 a = x;
+}
+```
+```status
+ERROR: Type  cannot be used in this context: Type mismatch. Expression x is of type  but type int32 was expected in void foo() { ... }
+```
+
+## Pointers and Addresses
 
 $C_0$ supports pointer types. To simplify parsing, $C_0$ takes its syntax for
 pointer types from [Go](https://go.dev/tour/moretypes/1), placing the `*`
