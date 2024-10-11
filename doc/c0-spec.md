@@ -262,6 +262,44 @@ void foo() {
 ERROR: Type [:float64_type] cannot be used in this context: Type mismatch. Expression x is of type [:float64_type] but type float32 was expected in void foo() { ... }
 ```
 
+### Explicit Type Conversion
+
+While implicit type conversion is allowed only in cases where overflow is not
+possible, explicit conversion is allowed between any two numeric types.
+
+Explicit conversion uses the _initializer list_ (`{}`), where for numeric values
+a list of length 1 is expected.
+
+```c
+void foo() {
+    int32 a = {3.14};
+}
+```
+```status
+Success
+```
+
+```c
+void foo() {
+    int32 a = {3.14, 1.44};
+}
+```
+```status
+ERROR: An initializer list for a numeric type must have exactly one element. [[:expr ...] [:expr ...]] is given in void foo() { ... }
+```
+
+The single value in the initializer list must be a numeric expression.
+```c
+void foo() {
+    int32 a = 2;
+    int32 b = {&a};
+}
+```
+```status
+ERROR: [:pointer_type t] is not a numeric type in assignment to numeric type [:int32_type] in void foo() { ... }
+```
+
+
 ### Arithmetic Operators
 
 $C_0$ supports the following arithmetic operators: `+`, `-` (binary and unary),

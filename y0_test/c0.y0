@@ -72,6 +72,14 @@
             (= t [:pointer_type t']
                ! ? "can only be assigned to a pointer type. Given " t "instead")))
 
+(all [xs t]
+     (expr-of-type [:initializer_list & xs] t) <-
+     (initialization t xs))
+
+;; ### Initializers
+(all [t xs]
+     (initialization t xs ! "Cannot use an initializer list for type" t))
+
 ;; ### Arithmetic Operators
 (all [op]
      (arith-binop op) =>
@@ -128,6 +136,15 @@
      (def-numeric-types [t & ts]) =>
      (all []
           (numeric-type t))
+     (all [xs]
+          (initialization t xs) <-
+          (exist [x]
+                 (= xs [x]
+                    ! "An initializer list for a numeric type must have exactly one element."
+                    xs "is given")
+                 (exist [t']
+                        (typeof x t')
+                        (numeric-type t' ! "in assignment to numeric type" t))))
      (def-numeric-types ts))
 
 (def-numeric-types [[:int8_type] [:int16_type] [:int32_type] [:int64_type]

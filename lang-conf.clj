@@ -65,7 +65,8 @@
                  <sum_expr> = mult_expr | add | sub
                  <mult_expr> = unary_expr | mult | div | mod
                  <unary_expr> = atomic_expr | addressof | deref | minus
-                 <atomic_expr> = literal | identifier | null | <'('> expr <')'>
+                 <atomic_expr> = literal | identifier | null | initializer_list
+                               | <'('> expr <')'>
                  <literal> = (int / float) | string
 
                  addressof = <'&'> unary_expr
@@ -77,6 +78,7 @@
                  mod = mult_expr <'%'> unary_expr
                  minus = <'-'> unary_expr
                  null = <'null'>
+                 initializer_list = <'{'> (expr (<','> expr)* )? <'}'>
                  
                  keyword = 'int8' | 'int16' | 'int32' | 'int64'
                            | 'uint8' | 'uint16' | 'uint32' | 'uint64'
