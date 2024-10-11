@@ -80,10 +80,13 @@
         (replace #"\s*(.*\S)\s*" "$1"))))
 
 (defn extract-expr-text [expr]
-  (if (has-location? expr)
-    (let [loc (meta expr)]
-      (with-open [r (io/reader (:path loc))]
-        (-> (line-seq r)
-            (extract-location loc)
-            stringify-lines)))
-    (explanation-expr-to-str expr 3)))
+  (cond
+    (has-location? expr) (let [loc (meta expr)]
+                           (with-open [r (io/reader (:path loc))]
+                             (-> (line-seq r)
+                                 (extract-location loc)
+                                 stringify-lines)))
+    (sequential? expr) (->> expr
+                            (map extract-expr-text)
+                            (join ", "))
+    :else (explanation-expr-to-str expr 3)))

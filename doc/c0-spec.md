@@ -285,7 +285,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: An initializer list for a numeric type must have exactly one element. [[:expr ...] [:expr ...]] is given in void foo() { ... }
+ERROR: An initializer list for a numeric type must have exactly one element. 3.14, 1.44 is given in void foo() { ... }
 ```
 
 The single value in the initializer list must be a numeric expression.
@@ -298,7 +298,6 @@ void foo() {
 ```status
 ERROR: [:pointer_type t] is not a numeric type in assignment to numeric type [:int32_type] in void foo() { ... }
 ```
-
 
 ### Arithmetic Operators
 
