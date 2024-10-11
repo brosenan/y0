@@ -75,6 +75,9 @@
 (all [xs t]
      (expr-of-type [:initializer_list & xs] t) <-
      (initialization t xs))
+(all [xs t]
+     (typeof [:initializer_list & xs] t
+             ! "Cannot infer the type of initializer list" ?))
 
 ;; ### Initializers
 (all [t xs]

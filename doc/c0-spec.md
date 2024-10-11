@@ -299,6 +299,18 @@ void foo() {
 ERROR: [:pointer_type t] is not a numeric type in assignment to numeric type [:int32_type] in void foo() { ... }
 ```
 
+Because initializer lists can convert from any numeric type to any other numeric
+type, it is not possible to infer their type.
+
+```c
+void foo() {
+    var a = {2};
+}
+```
+```status
+ERROR: Cannot infer the type of initializer list {2} in void foo() { ... }
+```
+
 ### Arithmetic Operators
 
 $C_0$ supports the following arithmetic operators: `+`, `-` (binary and unary),
