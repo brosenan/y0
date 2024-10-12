@@ -630,6 +630,36 @@ void foo() {
 ERROR: int64 is not a floating-point type when assigning floating point literal 3.14 in long a = 3.14;
 ```
 
+Assignability rules apply to type aliases the same way they apply to the
+underlying types, for both the source and target types. The following is valid:
+
+```c
+type long = int64;
+type short = int16;
+
+void foo() {
+    short a = 12;
+    long b = a;
+}
+```
+```status
+Success
+```
+While the following is not:
+
+```c
+type long = int64;
+type short = int16;
+
+void foo() {
+    long a = 12;
+    short b = a;
+}
+```
+```status
+ERROR: Type int64 cannot be used in this context: Type mismatch. Expression a is of type long but type short was expected in short b = a;
+```
+
 Initializer lists apply to type aliases as if they were their respective
 underlying types. The following is valid:
 

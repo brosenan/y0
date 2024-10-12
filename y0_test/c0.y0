@@ -43,10 +43,15 @@
 ;; ## Expressions
 (all [x t]
      (expr-of-type x t) <-
-     (exist [t']
-            (typeof x t')
-            (assignable t t' ! "Type mismatch. Expression" x "is of type" t'
-                        "but type" t "was expected")))
+     (exist [t-unaliased]
+            (unalias t t-unaliased)
+            (exist [t']
+                   (typeof x t')
+                   (exist [t'-unaliased]
+                          (unalias t' t'-unaliased)
+                          (assignable t-unaliased t'-unaliased
+                                      ! "Type mismatch. Expression" x "is of type" t'
+                                      "but type" t "was expected")))))
 
 (all [x t]
      (expr-of-type [:expr x] t) <-
@@ -191,6 +196,15 @@
 (def-numeric-types [[:int8_type] [:int16_type] [:int32_type] [:int64_type]
                     [:uint8_type] [:uint16_type] [:uint32_type] [:uint64_type]
                     [:float32_type] [:float64_type]])
+
+(all [t]
+     (unalias t t))
+
+(all [alias t]
+     (unalias [:type_alias alias] t) <-
+     (exist [t']
+            (type-alias alias t')
+            (unalias t' t)))
 
 ;; ### Type Assignability
 (all [t1 t2]
