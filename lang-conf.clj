@@ -29,7 +29,7 @@
                  import = <'import'> dep <';'>
                  dep = #'[a-z_0-9.]+'
                  
-                 <definition> = func_decl | func_def
+                 <definition> = func_decl | func_def | type_alias_def
                  func_decl = type identifier <'('> arg_defs <')'> <';'>
                  func_def = type identifier <'('> arg_defs <')'> <'{'> statement* <'}'>
                  
@@ -40,7 +40,7 @@
                           | int8_type | int16_type | int32_type | int64_type
                           | uint8_type | uint16_type | uint32_type | uint64_type
                           | float32_type | float64_type
-                          | void_type
+                          | void_type | type_alias
                  pointer_type = <'*'> type
                  int8_type    = <'int8'>
                  int16_type   = <'int16'>
@@ -53,13 +53,16 @@
                  float32_type = <'float32'>
                  float64_type = <'float64'>
                  void_type ='void'
+                 type_alias = identifier
                  
 
                  <statement> = vardef | implicit_vardef | assign
+                             | type_alias_def
 
                  vardef = type identifier <'='> expr <';'>
                  implicit_vardef = <'var'> identifier <'='> expr <';'>
                  assign = expr <'='> expr <';'>
+                 type_alias_def = <'type'> identifier <'='> type <';'>
 
                  expr = sum_expr
                  <sum_expr> = mult_expr | add | sub
@@ -84,6 +87,7 @@
                  keyword = 'int8' | 'int16' | 'int32' | 'int64'
                            | 'uint8' | 'uint16' | 'uint32' | 'uint64'
                            | 'float32' | 'float64' | 'void' | 'null' | 'var'
+                           | 'type'
                  identifier = !keyword #'[a-zA-Z_][a-zA-Z_0-9]*'
                  int = #'0|(-?[1-9][0-9]*)'
                  float = #'-?(0|(-?[1-9][0-9]*))([.][0-9]+)?([eE][+\\-][0-9]+)?'

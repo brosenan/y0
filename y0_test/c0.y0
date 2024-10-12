@@ -22,6 +22,7 @@
 (all [t v x]
      [:vardef t v x] =>
      (assert
+      (type t)
       (expr-of-type x t))
      (all [] (typeof v t)))
 
@@ -31,6 +32,13 @@
      (assert
       (typeof x t))
      (all [] (typeof v t)))
+
+(all [alias t]
+     [:type_alias_def alias t] =>
+     (assert
+      (type t))
+     (all []
+          (type-alias alias t)))
 
 ;; ## Expressions
 (all [x t]
@@ -84,6 +92,12 @@
 (all [t xs]
      (initialization t xs ! "Cannot use an initializer list for type" t))
 
+(all [alias xs]
+     (initialization [:type_alias alias] xs) <-
+     (exist [t]
+            (type-alias alias t)
+            (initialization t xs)))
+
 ;; ### Arithmetic Operators
 (all [op]
      (arith-binop op) =>
@@ -127,10 +141,31 @@
 
 ;; ## Types
 (all [t]
+     (type t ! t "is not a type"))
+
+(all [t]
+     (type [:pointer_type t]) <-
+     (type t))
+
+(all [alias]
+     (type [:type_alias alias]) <-
+     (exist [t]
+            (type-alias alias t)))
+
+(all [t]
      (float-type t ! t "is not a floating-point type"))
 
 (all [] (float-type [:float32_type]))
 (all [] (float-type [:float64_type]))
+
+(all [alias t]
+     (type-alias alias t ! alias "is not a type alias"))
+
+(all [alias]
+     (float-type [:type_alias alias]) <-
+     (exist [t]
+            (type-alias alias t)
+            (float-type t)))
 
 ;; ### Numeric Types
 (all [t]
@@ -138,6 +173,8 @@
 
 (all [t ts]
      (def-numeric-types [t & ts]) =>
+     (all []
+          (type t))
      (all []
           (numeric-type t))
      (all [xs]

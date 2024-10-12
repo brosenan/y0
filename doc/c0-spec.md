@@ -565,3 +565,95 @@ void foo() {
 ```status
 ERROR: Type mismatch. Expression &a is of type [:pointer_type t] but type *int32 was expected in *int32 p = &a;
 ```
+
+## Type Aliases
+
+Type aliases allow types to be given names. In the following example we define a
+type alias named `large_num` which is an alias for `int64`. Then we define a
+variable of that type.
+
+```c
+void foo() {
+    type large_num = int64;
+    large_num a = 1000000000;
+}
+```
+```status
+Success
+```
+
+In contrast, it is an error to use a type without first defining it.
+
+```c
+void foo() {
+    large_num a = 1000000000;
+}
+```
+```status
+ERROR: large_num is not a type alias in large_num a = 1000000000;
+```
+
+Type aliases can only be given to valid types.
+
+```c
+void foo() {
+    type large_num = huge_num;
+}
+```
+```status
+ERROR: huge_num is not a type alias in type large_num = huge_num;
+```
+
+A type alias for floating point types can accept floating-point literals.
+
+```c
+type double = float64;
+
+void foo() {
+    double a = 3.14;
+}
+```
+```status
+Success
+```
+
+But not type aliases for non-float types.
+
+```c
+type long = int64;
+
+void foo() {
+    long a = 3.14;
+}
+```
+```status
+ERROR: int64 is not a floating-point type when assigning floating point literal 3.14 in long a = 3.14;
+```
+
+Initializer lists apply to type aliases as if they were their respective
+underlying types. The following is valid:
+
+```c
+type short = int16;
+
+void foo() {
+    short a = {3.14};
+}
+```
+```status
+Success
+```
+
+However, the following is not:
+
+```c
+type short = int16;
+
+void foo() {
+    short a = {3.14};
+    short b = {&a};
+}
+```
+```status
+ERROR: [:pointer_type t] is not a numeric type in assignment to numeric type [:int16_type] in short b = {&a};
+```
