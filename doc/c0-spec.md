@@ -62,7 +62,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: Invalid expression a in void foo() { ... }
+ERROR: Invalid expression a in int32 b = a;
 ```
 
 #### Implicit Variable Definitions
@@ -125,7 +125,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: int32 is not a floating-point type when assigning floating point literal 0.12345 in void foo() { ... }
+ERROR: int32 is not a floating-point type when assigning floating point literal 0.12345 in int32 b = 0.12345;
 ```
 
 ### Assignability
@@ -171,7 +171,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: Type int16 cannot be used in this context: Type mismatch. Expression a is of type int16 but type int8 was expected in void foo() { ... }
+ERROR: Type int16 cannot be used in this context: Type mismatch. Expression a is of type int16 but type int8 was expected in int8 b = a;
 ```
 
 When mixing signed and unsigned values, assignment is only allowed from strictly
@@ -247,7 +247,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: Type [:int64_type] cannot be used in this context: Type mismatch. Expression x is of type [:int64_type] but type int32 was expected in void foo() { ... }
+ERROR: Type [:int64_type] cannot be used in this context: Type mismatch. Expression x is of type [:int64_type] but type int32 was expected in int32 a = x;
 ```
 
 Floating-point literals are inferred as `float64`.
@@ -259,7 +259,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: Type [:float64_type] cannot be used in this context: Type mismatch. Expression x is of type [:float64_type] but type float32 was expected in void foo() { ... }
+ERROR: Type [:float64_type] cannot be used in this context: Type mismatch. Expression x is of type [:float64_type] but type float32 was expected in float32 a = x;
 ```
 
 ### Explicit Type Conversion
@@ -285,7 +285,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: An initializer list for a numeric type must have exactly one element. 3.14, 1.44 is given in void foo() { ... }
+ERROR: An initializer list for a numeric type must have exactly one element. 3.14, 1.44 is given in int32 a = {3.14, 1.44};
 ```
 
 The single value in the initializer list must be a numeric expression.
@@ -296,7 +296,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: [:pointer_type t] is not a numeric type in assignment to numeric type [:int32_type] in void foo() { ... }
+ERROR: [:pointer_type t] is not a numeric type in assignment to numeric type [:int32_type] in int32 b = {&a};
 ```
 
 Because initializer lists can convert from any numeric type to any other numeric
@@ -308,7 +308,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: Cannot infer the type of initializer list {2} in void foo() { ... }
+ERROR: Cannot infer the type of initializer list {2} in var a = {2};
 ```
 
 For inference to work, an explicit type must be provided to the initializer
@@ -334,7 +334,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: An initializer list for a numeric type must have exactly one element. 3.14, 1.44 is given in void foo() { ... }
+ERROR: An initializer list for a numeric type must have exactly one element. 3.14, 1.44 is given in var a = int32{3.14, 1.44};
 ```
 
 ### Arithmetic Operators
@@ -373,7 +373,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: Type int64 cannot be used in this context: Type mismatch. Expression d is of type int64 but type int32 was expected in void foo() { ... }
+ERROR: Type int64 cannot be used in this context: Type mismatch. Expression d is of type int64 but type int32 was expected in int32 res = -a+b-c*d/a%b;
 ```
 
 If the target type is not known, an arithmetic expression is only valid if all
@@ -406,7 +406,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: The two operands of -a+b do not agree on types. -a has type int64 while b has type int8 in void foo() { ... }
+ERROR: The two operands of -a+b do not agree on types. -a has type int64 while b has type int8 in var res = -a+b-c*d/a%b;
 ```
 
 Note that the same expression would have compiled if only the `var` keyword
@@ -473,7 +473,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: [:pointer_type t] is not a numeric type in expression &a+&b in void foo() { ... }
+ERROR: [:pointer_type t] is not a numeric type in expression &a+&b in var res = &a+&b;
 ```
 
 This is even the case if we provide the target type explicitly.
@@ -487,7 +487,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: *int64 is not a numeric type in expression &a+&b in void foo() { ... }
+ERROR: *int64 is not a numeric type in expression &a+&b in *int64 res = &a+&b;
 ```
 
 What's true for binary operators is also true for the unary `-` operator.
@@ -500,7 +500,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: [:pointer_type t] is not a numeric type in expression -&a in void foo() { ... }
+ERROR: [:pointer_type t] is not a numeric type in expression -&a in var res = -&a;
 ```
 
 ```c
@@ -511,7 +511,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: *int64 is not a numeric type in expression -&a in void foo() { ... }
+ERROR: *int64 is not a numeric type in expression -&a in *int64 res = -&a;
 ```
 
 ## Pointers and Addresses
@@ -539,7 +539,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: null can only be assigned to a pointer type. Given  int32 instead in void foo() { ... }
+ERROR: null can only be assigned to a pointer type. Given  int32 instead in int32 n = null;
 ```
 
 A pointer can be assigned the _address_ (`&`) of a variable of the pointee type.
@@ -563,5 +563,5 @@ void foo() {
 }
 ```
 ```status
-ERROR: Type mismatch. Expression &a is of type [:pointer_type t] but type *int32 was expected in void foo() { ... }
+ERROR: Type mismatch. Expression &a is of type [:pointer_type t] but type *int32 was expected in *int32 p = &a;
 ```

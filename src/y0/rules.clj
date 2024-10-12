@@ -163,19 +163,22 @@
     (apply-statement statement ps vars)))
 
 (defn- apply-statement [statement ps vars]
-  (let [[form & _] statement]
-    (case form
-      y0.core/all (add-rule ps statement vars)
-      y0.core/assert (apply-assert-block ps statement vars)
-      y0.core/with-meta (apply-with-meta-block ps statement vars)
-      ;; Debugging utility. Keeping for the time being.
-      y0.core/? (let [[_? key] statement]
-                  (if (nil? key)
-                    (println "?" (keys ps))
-                    (let [pd (get ps key)]
-                      (println "?" pd)))
-                  {:ok ps})
-      (apply-normal-statement ps statement vars))))
+  (cond
+    (contains? vars statement) (recur @(get vars statement) ps vars)
+    (sequential? statement) (let [[form & _] statement]
+                              (case form
+                                y0.core/all (add-rule ps statement vars)
+                                y0.core/assert (apply-assert-block ps statement vars)
+                                y0.core/with-meta (apply-with-meta-block ps statement vars)
+                                ;; Debugging utility. Keeping for the time being.
+                                y0.core/? (let [[_? key] statement]
+                                            (if (nil? key)
+                                              (println "?" (keys ps))
+                                              (let [pd (get ps key)]
+                                                (println "?" pd)))
+                                            {:ok ps})
+                                (apply-normal-statement ps statement vars)))
+    :else {:err ["Invalid statement" statement]}))
 
 (defn apply-statements [statements ps vars]
   (loop [statements statements
