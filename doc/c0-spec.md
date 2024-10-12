@@ -311,6 +311,32 @@ void foo() {
 ERROR: Cannot infer the type of initializer list {2} in void foo() { ... }
 ```
 
+For inference to work, an explicit type must be provided to the initializer
+list.
+
+
+```c
+void foo() {
+    var a = uint16{2};
+}
+```
+```status
+Success
+```
+
+A typed initializer list requires that the initializer list is valid for the
+given type. For numeric types, this means that the list must contain exactly one
+element that must be numeric.
+
+```c
+void foo() {
+    var a = int32{3.14, 1.44};
+}
+```
+```status
+ERROR: An initializer list for a numeric type must have exactly one element. 3.14, 1.44 is given in void foo() { ... }
+```
+
 ### Arithmetic Operators
 
 $C_0$ supports the following arithmetic operators: `+`, `-` (binary and unary),

@@ -66,7 +66,7 @@
                  <mult_expr> = unary_expr | mult | div | mod
                  <unary_expr> = atomic_expr | addressof | deref | minus
                  <atomic_expr> = literal | identifier | null | initializer_list
-                               | <'('> expr <')'>
+                               | typed_initializer_list | <'('> expr <')'>
                  <literal> = (int / float) | string
 
                  addressof = <'&'> unary_expr
@@ -79,6 +79,7 @@
                  minus = <'-'> unary_expr
                  null = <'null'>
                  initializer_list = <'{'> (expr (<','> expr)* )? <'}'>
+                 typed_initializer_list = type <'{'> (expr (<','> expr)* )? <'}'>
                  
                  keyword = 'int8' | 'int16' | 'int32' | 'int64'
                            | 'uint8' | 'uint16' | 'uint32' | 'uint64'
