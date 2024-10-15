@@ -38,7 +38,10 @@
      (assert
       (type t))
      (all []
-          (type-alias alias t)))
+          (type-alias alias t))
+     (all []
+          (defmembers [:type_alias alias]) =>
+          (defmembers t)))
 
 ;; ## Expressions
 (all [x t]
@@ -93,6 +96,13 @@
      (typeof [:typed_initializer_list t & xs] t) <-
      (initialization t xs))
 
+(all [x m t]
+     (typeof [:qualified_expr x m] t) <-
+     (exist [tx]
+            (typeof x tx)
+            (given (defmembers tx)
+                   (typeof m t))))
+
 ;; ### Initializers
 (all [t xs]
      (initialization t xs ! "Cannot use an initializer list for type" t))
@@ -102,6 +112,10 @@
      (exist [t]
             (type-alias alias t)
             (initialization t xs)))
+
+(all [fds xs]
+     (initialization [:struct_type & fds] xs) <-
+     (member-initialization fds xs))
 
 ;; ### Arithmetic Operators
 (all [op]
@@ -156,6 +170,9 @@
      (type [:type_alias alias]) <-
      (exist [t]
             (type-alias alias t)))
+
+(all [fds]
+     (type [:struct_type & fds]))
 
 (all [t]
      (float-type t ! t "is not a floating-point type"))
@@ -258,3 +275,42 @@
 (def-assignable [:float64_type] [[:float32_type]
                                  [:uint8_type] [:uint16_type] [:uint32_type]
                                  [:int8_type] [:int16_type] [:int32_type]])
+
+;; ## Structs
+
+(all [fds]
+     (defmembers [:struct_type & fds]) =>
+     (defall fds))
+
+(all [d ds]
+     (defall [d & ds]) =>
+     d
+     (defall ds))
+
+(all [t v]
+     [:field_def t v] =>
+     (all []
+          (typeof v t)))
+
+(all [fds xs]
+     (member-initialization fds xs ! fds "is not a member definition list"))
+
+(all [fd fds xs]
+     (member-initialization [fd & fds] xs) <-
+     (exist [x xs']
+            (= xs [x & xs']
+               ! "Too few elements in initializer list." fd "does not have an initializer")
+            (exist [tf]
+                   (field-type fd tf)
+                   (expr-of-type x tf))
+            (member-initialization fds xs')))
+
+(all [xs]
+     (member-initialization [] xs) <-
+     (= xs [] ! "Too many elements in initializer list." xs "are extra"))
+
+(all [fd t]
+     (field-type fd t ! fd "is not a field"))
+
+(all [v t]
+     (field-type [:field_def t v] t))

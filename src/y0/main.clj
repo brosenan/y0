@@ -46,7 +46,7 @@
     (binding [*out* *err*]
       (println (str (render-location location) (red "Error") ":") message)
       (vec (for [[term loc] (all-unique-locations explanation)]
-             (println (str (render-location loc) (blue "Note") ":") (explanation-expr-to-str term 10)))))))
+             (println (str (render-location loc) (blue "Note") ":") (pr-str term)))))))
 
 (defn- eval-modules [modules language lang-map]
   (let [modules (for [module modules]

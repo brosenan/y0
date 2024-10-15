@@ -687,3 +687,107 @@ void foo() {
 ```status
 ERROR: [:pointer_type t] is not a numeric type in assignment to numeric type [:int16_type] in short b = {&a};
 ```
+
+## Structs
+
+A `struct` is a type that contains zero or more different, individually typed
+_fields_. A `struct` type is specified using the `struct` keyword, followed by a
+braced block (`{}`) consisting of field definitions.
+
+```c
+void foo() {
+    struct {
+        float64 real;
+        float64 imaginary;
+    } z = {1, 2};
+
+    float64 re = z.real;
+    float64 im = z.imaginary;
+}
+```
+```status
+Success
+```
+
+The example above defines variable `z` with a one-off `struct` type containing
+two `float64` fields, `real` and `imaginary`. It initializes them, assigning
+`real` to 1 and `imaginary` to 2. Then we assign these values into other
+`float64` variables, by using the `.` operator on `z`.
+
+This way of using `struct` types is not common. Insted, they are usually given
+aliases, as in the following example:
+
+
+```c
+type Complex64 = struct {
+    float64 real;
+    float64 imaginary;
+};
+
+void foo() {
+    Complex64 z = {1, 2};
+
+    float64 re = z.real;
+    float64 im = z.imaginary;
+}
+```
+```status
+Success
+```
+
+### Struct Initializer List
+
+The initializer list for a `struct` type must have one element for each field in
+the struct. In the following, we get an error for making the list too short.
+
+```c
+type Complex64 = struct {
+    float64 real;
+    float64 imaginary;
+};
+
+void foo() {
+    Complex64 z = {1};
+}
+```
+```status
+ERROR: Too few elements in initializer list. float64 imaginary; does not have an initializer in Complex64 z = {1};
+```
+
+Similarly, in the following example we get an error for making the list too
+long.
+
+```c
+type Complex64 = struct {
+    float64 real;
+    float64 imaginary;
+};
+
+void foo() {
+    Complex64 z = {1, 2, 3};
+}
+```
+```status
+ERROR: Too many elements in initializer list. 3 are extra in Complex64 z = {1, 2, 3};
+```
+
+The types of values in the initializer list must be appropriate initializers for
+the respective fields. In the following example we define a `Point` `struct`,
+with two `int16` coordinates, and try to initialize one of them with a
+floating-point literal. This of-course is not allowed.
+
+
+```c
+type Point = struct {
+    int16 x;
+    int16 y;
+};
+
+void foo() {
+    Point p = {100, 200.3};
+}
+```
+```status
+ERROR: int16 is not a floating-point type when assigning floating point literal 200.3 in Point p = {100, 200.3};
+```
+
