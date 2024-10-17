@@ -285,6 +285,10 @@
      (defmembers [:struct_type & fds]) =>
      (defall fds))
 
+(all [t]
+     (defmembers [:pointer_type t]) =>
+     (defmembers t))
+
 (all [d ds]
      (defall [d & ds]) =>
      d

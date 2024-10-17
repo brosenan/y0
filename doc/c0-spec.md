@@ -760,6 +760,27 @@ type Tree = struct {
 Success
 ```
 
+The `.` operator can be used for both `struct` types and pointers to `struct`s.
+In the following example we redefine the tree from the previous example and
+access a node in a fixed path along the tree.
+
+
+```c
+type Tree = struct {
+    int64 key;
+    *Tree left;
+    *Tree right;
+};
+
+void foo() {
+    Tree root = {42, null, null};
+    var some_node = root.left.left.right.left.right.right;
+}
+```
+```status
+Success
+```
+
 ### Struct Initializer List
 
 The initializer list for a `struct` type must have one element for each field in
