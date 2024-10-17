@@ -735,6 +735,31 @@ void foo() {
 Success
 ```
 
+A `struct` is only valid if the types inside it are valid.
+
+```c
+type Foo = struct {
+    Bar bar;
+};
+```
+```status
+ERROR: Bar is not a type alias in Bar bar;
+```
+
+With that said, recursive type definitions are allowed, that is, a type alias
+given to a `struct` is considered when type-checking the `struct` itself.
+
+```c
+type Tree = struct {
+    int64 key;
+    *Tree left;
+    *Tree right;
+};
+```
+```status
+Success
+```
+
 ### Struct Initializer List
 
 The initializer list for a `struct` type must have one element for each field in
