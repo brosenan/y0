@@ -54,7 +54,7 @@
                  float64_type = <'float64'>
                  void_type ='void'
                  type_alias = identifier
-                 struct_type = <'struct'> <'{'> field_def* <'}'>
+                 struct_type = <'struct'> <'{'> struct_member_def* <'}'>
                  
 
                  <statement> = vardef | implicit_vardef | assign
@@ -65,7 +65,10 @@
                  assign = expr <'='> expr <';'>
                  type_alias_def = <'type'> identifier <'='> type <';'>
                  
+                 <struct_member_def> = field_def | union_def
                  field_def = type identifier <';'>
+                 union_def = <'union'> identifier <'{'> option_def* <'}'>
+                 option_def = type identifier <';'>
 
                  expr = sum_expr
                  <sum_expr> = mult_expr | add | sub
@@ -94,7 +97,7 @@
                  keyword = 'int8' | 'int16' | 'int32' | 'int64'
                            | 'uint8' | 'uint16' | 'uint32' | 'uint64'
                            | 'float32' | 'float64' | 'void' | 'null' | 'var'
-                           | 'type' | 'struct'
+                           | 'type' | 'struct' | 'union'
                  identifier = !keyword #'[a-zA-Z_][a-zA-Z_0-9]*'
                  int = #'0|(-?[1-9][0-9]*)'
                  float = #'-?(0|(-?[1-9][0-9]*))([.][0-9]+)?([eE][+\\-][0-9]+)?'

@@ -323,3 +323,16 @@
 
 (all [v t]
      (field-type [:field_def t v] t))
+
+;; ### Unions
+
+(all [name opts]
+     [:union_def name & opts] =>
+     (assert
+      (given (defall opts))))
+
+(all [t v]
+     [:option_def t v] =>
+     (assert
+      (type t)))
+

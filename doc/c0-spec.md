@@ -837,3 +837,48 @@ void foo() {
 ERROR: int16 is not a floating-point type when assigning floating point literal 200.3 in Point p = {100, 200.3};
 ```
 
+### Unions
+
+Unions are sets of fields that occupy the same space, and therefore only one of
+them can be set at any given time. $C_0$ handles unions in a very different way
+than C's. The main problem with unions in C is that the union itself does not
+contain the information which field is actually set, and therefore does not
+allow for its own safe interpretation.
+
+In $C_0$, a `union` is always part of a `struct`, contributing two dinstinct
+parts to it: the union of types within the `union` and an enumeration,
+specifying which field (if any) is set.
+
+The following example shows `struct` containing a `union` of different integer
+values.
+
+```c
+type Int = struct {
+    union width {
+        int8 char_val;
+        int16 short_val;
+        int32 int_val;
+        int64 long_val;
+    }
+};
+```
+```status
+Success
+```
+
+The types used for the options need to be valid types.
+
+```c
+type Int = struct {
+    union width {
+        int8 char_val;
+        int14 shorter_val;
+        int32 int_val;
+        int64 long_val;
+    }
+};
+```
+```status
+ERROR: int14 is not a type alias in int14 shorter_val;
+```
+
