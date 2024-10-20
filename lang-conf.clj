@@ -88,7 +88,9 @@
                  mod = mult_expr <'%'> unary_expr
                  minus = <'-'> unary_expr
                  null = <'null'>
-                 initializer_list = <'{'> (expr (<','> expr)* )? <'}'>
+                 initializer_list = <'{'> (initializer (<','> initializer)* )? <'}'>
+                 <initializer> = expr | option_initializer
+                 option_initializer = identifier <'='> expr
                  typed_initializer_list = type <'{'> (expr (<','> expr)* )? <'}'>
                  qualified_expr = atomic_expr <'.'> member_expr
 

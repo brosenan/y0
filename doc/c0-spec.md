@@ -882,3 +882,68 @@ type Int = struct {
 ERROR: int14 is not a type alias in int14 shorter_val;
 ```
 
+#### Unions in Initializer Lists
+
+To initialize a union from within an intializer list we need to provide two
+pieces of information: (1) which of the option is being initialized and (2) the
+value for that option. This is done using the syntax `opt=val`, where `opt` is
+the name of the option and `val` is an expression to initialize it.
+
+```c
+type Int = struct {
+    union width {
+        int8 char_val;
+        int16 short_val;
+        int32 int_val;
+        int64 long_val;
+    }
+};
+
+void foo() {
+    Int n = {long_val=42};
+}
+```
+```status
+Success
+```
+
+It is an error to initialize a `union` with a normal expression.
+
+```c
+type Int = struct {
+    union width {
+        int8 char_val;
+        int16 short_val;
+        int32 int_val;
+        int64 long_val;
+    }
+};
+
+void foo() {
+    Int n = {42};
+}
+```
+```status
+ERROR: Initialization for union width needs to be done with an option initializer, but 42 was given in Int n = {42};
+```
+
+The `opt` must be one of the options in the union.
+
+```c
+type Int = struct {
+    union width {
+        int8 char_val;
+        int16 short_val;
+        int32 int_val;
+        int64 long_val;
+    }
+};
+
+void foo() {
+    Int n = {wrong_name=42};
+}
+```
+```status
+ERROR: wrong_name is not an option in union width in Int n = {wrong_name=42};
+```
+
