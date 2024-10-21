@@ -100,7 +100,7 @@
                            | 'uint8' | 'uint16' | 'uint32' | 'uint64'
                            | 'float32' | 'float64' | 'void' | 'null' | 'var'
                            | 'type' | 'struct' | 'union'
-                 identifier = !keyword #'[a-zA-Z_][a-zA-Z_0-9]*'
+                 identifier = !(keyword #'[^a-zA-Z_0-9]') #'[a-zA-Z_][a-zA-Z_0-9]*'
                  int = #'0|(-?[1-9][0-9]*)'
                  float = #'-?(0|(-?[1-9][0-9]*))([.][0-9]+)?([eE][+\\-][0-9]+)?'
                  string = #'\"([^\"\\\\]|\\\\.)*\"'

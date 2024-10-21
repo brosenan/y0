@@ -892,15 +892,15 @@ the name of the option and `val` is an expression to initialize it.
 ```c
 type Int = struct {
     union width {
-        int8 char_val;
-        int16 short_val;
-        int32 int_val;
-        int64 long_val;
+        int8 int8_val;
+        int16 int16_val;
+        int32 int32_val;
+        int64 int64_val;
     }
 };
 
 void foo() {
-    Int n = {long_val=42};
+    Int n = {int64_val=42};
 }
 ```
 ```status
@@ -912,10 +912,10 @@ It is an error to initialize a `union` with a normal expression.
 ```c
 type Int = struct {
     union width {
-        int8 char_val;
-        int16 short_val;
-        int32 int_val;
-        int64 long_val;
+        int8 int8_val;
+        int16 int16_val;
+        int32 int32_val;
+        int64 int64_val;
     }
 };
 
@@ -932,10 +932,10 @@ The `opt` must be one of the options in the union.
 ```c
 type Int = struct {
     union width {
-        int8 char_val;
-        int16 short_val;
-        int32 int_val;
-        int64 long_val;
+        int8 int8_val;
+        int16 int16_val;
+        int32 int32_val;
+        int64 int64_val;
     }
 };
 
