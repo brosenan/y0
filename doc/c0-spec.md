@@ -947,3 +947,22 @@ void foo() {
 ERROR: wrong_name is not an option in union width in Int n = {wrong_name=42};
 ```
 
+The value (`val`) must be an appropriate initializer for the option.
+
+```c
+type Int = struct {
+    union width {
+        int8 int8_val;
+        int16 int16_val;
+        int32 int32_val;
+        int64 int64_val;
+    }
+};
+
+void foo() {
+    Int n = {int8_val=int16{42}};
+}
+```
+```status
+ERROR: Type int16 cannot be used in this context: Type mismatch. Expression int16{42} is of type int16 but type int8 was expected for option int8_val in Int n = {int8_val=int16{42}};
+```
