@@ -966,3 +966,27 @@ void foo() {
 ```status
 ERROR: Type int16 cannot be used in this context: Type mismatch. Expression int16{42} is of type int16 but type int8 was expected for option int8_val in Int n = {int8_val=int16{42}};
 ```
+
+Obviously, `union`s can be combined with other `struct` members, and the
+initializer lists expect the option initializer to be in the `union`'s position
+in the list.
+
+```c
+type IntPlus = struct {
+    int64 something_before;
+    union width {
+        int8 int8_val;
+        int16 int16_val;
+        int32 int32_val;
+        int64 int64_val;
+    }
+    float64 something_after;
+};
+
+void foo() {
+    IntPlus n = {42, int64_val=42, 3.14};
+}
+```
+```status
+Success
+```
