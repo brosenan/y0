@@ -990,3 +990,26 @@ void foo() {
 ```status
 Success
 ```
+
+#### Accessing Union Fields and the `case` Expression
+
+Union fields cannot be accessed directly.
+
+```c
+type Int = struct {
+    union width {
+        int8 int8_val;
+        int16 int16_val;
+        int32 int32_val;
+        int64 int64_val;
+    }
+};
+
+void foo() {
+    Int n = {int64_val=42};
+    int64 val = n.int64_val;
+}
+```
+```status
+ERROR: Cannot access field int64_val of union width outside a case expression in int64 val = n.int64_val;
+```

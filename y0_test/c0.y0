@@ -328,7 +328,8 @@
 (all [name opts]
      [:union_def name & opts] =>
      (assert
-      (given (defall opts))))
+      (given (defall opts)))
+     (defoptions opts name))
 
 (all [t v]
      [:option_def t v] =>
@@ -336,6 +337,18 @@
       (type t))
      (all []
           (option v t)))
+
+(all [opt opts uname]
+     (defoptions [opt & opts] uname) =>
+     (defoption opt uname)
+     (defoptions opts uname))
+
+(all [t v uname]
+     (defoption [:option_def t v] uname) =>
+     (all [t']
+          (typeof v t'
+                  ! "Cannot access field" v "of union" uname
+                  "outside a case expression")))
 
 (all [n opt-defs x]
      (member-initialization [:union_def n & opt-defs] x) <-
