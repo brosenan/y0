@@ -1082,3 +1082,30 @@ void foo() {
 ```status
 ERROR: n.something_else has non-union type float64 given in a case expression in int16 as_int16 = case (x = n.something_else) { ... };
 ```
+
+The cases in the case expression must all be options in the `union`. The
+following example fails to compile due to a misspelled option.
+
+```c
+type Int = struct {
+    union width {
+        int8 int8_val;
+        int16 int16_val;
+        int32 int32_val;
+        int64 int64_val;
+    }
+};
+
+void foo() {
+    Int n = {int64_val=42};
+    int16 as_int16 = case (x = n.width) {
+        int8_val: x,
+        int17_val: x,
+        int32_val: {x},
+        int64_val: {x}
+    };
+}
+```
+```status
+ERROR: int17_val is not an option in n.width in int16 as_int16 = case (x = n.width) { ... };
+```

@@ -374,4 +374,27 @@
             (typeof x tu)
             (exist [opts]
                    (= tu (union-type opts)
-                      ! x "has non-union type" tu "given in a case expression"))))
+                      ! x "has non-union type" tu "given in a case expression")
+                   (given (defall opts)
+                          (all-options-are-uniquely-covered cases ! "in" x)))))
+
+(all [cases]
+     (all-options-are-uniquely-covered cases
+                                       ! cases "is not a vector of cases"))
+
+(all [case cases]
+     (all-options-are-uniquely-covered [case & cases]) <-
+     (this-and-other-options-are-uniquely-covered case cases))
+
+(all []
+     (all-options-are-uniquely-covered []))
+
+(all [case cases]
+     (this-and-other-options-are-uniquely-covered case cases
+                                                  ! case "is not a legal case"))
+
+(all [opt x cases]
+     (this-and-other-options-are-uniquely-covered [:case_option opt x] cases) <-
+     (exist [t]
+            (option opt t))
+     (all-options-are-uniquely-covered cases))
