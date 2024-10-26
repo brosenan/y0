@@ -1013,3 +1013,72 @@ void foo() {
 ```status
 ERROR: Cannot access field int64_val of union width outside a case expression in int64 val = n.int64_val;
 ```
+
+The reason for this is that there is no guarantee that at runtime the field
+being accessed will be the one that has been populated, and since `union` fields
+share the same memory space, accessing a field other than the one that has been
+populated may lead to bugs.
+
+To solve this, $C_0$ offers the `case` expression. This is an expression that
+allows programmers to provide different expressions for different `union`
+options.
+
+In the following example, we convert an `Int` into `int16`, applying (unsafe)
+type conversions where needed.
+
+```c
+type Int = struct {
+    union width {
+        int8 int8_val;
+        int16 int16_val;
+        int32 int32_val;
+        int64 int64_val;
+    }
+};
+
+void foo() {
+    Int n = {int64_val=42};
+    int16 as_int16 = case (x = n.width) {
+        int8_val: x,
+        int16_val: x,
+        int32_val: {x},
+        int64_val: {x}
+    };
+}
+```
+```status
+Success
+```
+
+As can be seen above, the `case` expression defines a variable (`x` in this
+example), with the value of the union. It then consists of cases for the
+different fields in the union. In each case, the variable (`x`) is assigned the
+value of the respective field and has that type.
+
+The expression to the right of the `=` must be a `union`. The following example
+fails to compile because it is not.
+
+```c
+type Int = struct {
+    union width {
+        int8 int8_val;
+        int16 int16_val;
+        int32 int32_val;
+        int64 int64_val;
+    }
+    float64 something_else;
+};
+
+void foo() {
+    Int n = {int64_val=42, 3.14};
+    int16 as_int16 = case (x = n.something_else) {
+        int8_val: x,
+        int16_val: x,
+        int32_val: {x},
+        int64_val: {x}
+    };
+}
+```
+```status
+ERROR: n.something_else has non-union type float64 given in a case expression in int16 as_int16 = case (x = n.something_else) { ... };
+```
