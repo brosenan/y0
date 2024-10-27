@@ -1134,3 +1134,56 @@ void foo() {
 ```status
 ERROR: Union option int64_val is not covered by case expression for n.width in int16 as_int16 = case (x = n.width) { ... };
 ```
+
+A `default` clause removes the need for full coverage, as it handles the options
+not covered by cases.
+
+```c
+type Int = struct {
+    union width {
+        int8 int8_val;
+        int16 int16_val;
+        int32 int32_val;
+        int64 int64_val;
+    }
+};
+
+void foo() {
+    Int n = {int64_val=42};
+    int16 as_int16 = case (x = n.width) {
+        int8_val: x,
+        int16_val: x,
+        int32_val: {x},
+        default: 0
+    };
+}
+```
+```status
+Success
+```
+
+The `default` case must appear last.
+
+```c
+type Int = struct {
+    union width {
+        int8 int8_val;
+        int16 int16_val;
+        int32 int32_val;
+        int64 int64_val;
+    }
+};
+
+void foo() {
+    Int n = {int64_val=42};
+    int16 as_int16 = case (x = n.width) {
+        int8_val: x,
+        int16_val: x,
+        default: 0,
+        int32_val: {x}
+    };
+}
+```
+```status
+ERROR: int32_val: {x} appear(s) after the default case for n.width in int16 as_int16 = case (x = n.width) { ... };
+```

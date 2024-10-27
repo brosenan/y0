@@ -94,15 +94,17 @@
                  typed_initializer_list = type <'{'> (expr (<','> expr)* )? <'}'>
                  qualified_expr = atomic_expr <'.'> member_expr
                  case_expr = <'case'> <'('> identifier <'='> expr <')'>
-                             <'{'> case_option (<','> case_option)* <'}'>
+                             <'{'> case_option_or_default (<','> case_option_or_default)* <'}'>
+                 <case_option_or_default> = case_option | default_case
                  case_option = identifier <':'> expr
+                 default_case = <'default'> <':'> expr
 
                  <member_expr> = identifier
 
                  keyword = 'int8' | 'int16' | 'int32' | 'int64'
                            | 'uint8' | 'uint16' | 'uint32' | 'uint64'
                            | 'float32' | 'float64' | 'void' | 'null' | 'var'
-                           | 'type' | 'struct' | 'union' | 'case'
+                           | 'type' | 'struct' | 'union' | 'case' | 'default'
                  identifier = !(keyword #'[^a-zA-Z_0-9]') #'[a-zA-Z_][a-zA-Z_0-9]*'
                  int = #'0|(-?[1-9][0-9]*)'
                  float = #'-?(0|(-?[1-9][0-9]*))([.][0-9]+)?([eE][+\\-][0-9]+)?'
