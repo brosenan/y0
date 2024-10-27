@@ -1107,5 +1107,30 @@ void foo() {
 }
 ```
 ```status
-ERROR: int17_val is not an option in n.width in int16 as_int16 = case (x = n.width) { ... };
+ERROR: int17_val is not an option for n.width in int16 as_int16 = case (x = n.width) { ... };
+```
+All cases must be covered. In the following example we get an error for not
+covering `int64_val`.
+
+```c
+type Int = struct {
+    union width {
+        int8 int8_val;
+        int16 int16_val;
+        int32 int32_val;
+        int64 int64_val;
+    }
+};
+
+void foo() {
+    Int n = {int64_val=42};
+    int16 as_int16 = case (x = n.width) {
+        int8_val: x,
+        int16_val: x,
+        int32_val: {x}
+    };
+}
+```
+```status
+ERROR: Union option int64_val is not covered by case expression for n.width in int16 as_int16 = case (x = n.width) { ... };
 ```

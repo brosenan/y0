@@ -376,25 +376,47 @@
                    (= tu (union-type opts)
                       ! x "has non-union type" tu "given in a case expression")
                    (given (defall opts)
-                          (all-options-are-uniquely-covered cases ! "in" x)))))
+                          (all-options-are-uniquely-covered cases opts
+                                                            ! "for" x)))))
 
-(all [cases]
-     (all-options-are-uniquely-covered cases
+(all [cases opts]
+     (all-options-are-uniquely-covered cases opts
                                        ! cases "is not a vector of cases"))
 
-(all [case cases]
-     (all-options-are-uniquely-covered [case & cases]) <-
-     (this-and-other-options-are-uniquely-covered case cases))
+(all [case cases opts]
+     (all-options-are-uniquely-covered [case & cases] opts) <-
+     (this-and-other-options-are-uniquely-covered case cases opts))
 
-(all []
-     (all-options-are-uniquely-covered []))
+(all [opts]
+     (all-options-are-uniquely-covered [] opts) <-
+     (all-options-are-covered opts))
 
-(all [case cases]
-     (this-and-other-options-are-uniquely-covered case cases
+(all [case cases opts]
+     (this-and-other-options-are-uniquely-covered case cases opts
                                                   ! case "is not a legal case"))
 
-(all [opt x cases]
-     (this-and-other-options-are-uniquely-covered [:case_option opt x] cases) <-
+(all [v x cases opts]
+     (this-and-other-options-are-uniquely-covered
+      [:case_option v x] cases opts) <-
      (exist [t]
-            (option opt t))
-     (all-options-are-uniquely-covered cases))
+            (option v t))
+     (given (all []
+                 (option-is-covered v))
+            (all-options-are-uniquely-covered cases opts)))
+
+(all [opt]
+     (option-is-covered opt
+                        ! "Union option" opt "is not covered by case expression"))
+
+(all [opts]
+     (all-options-are-covered opts ! opts "is not a vector of options"))
+
+(all [opt opts]
+     (all-options-are-covered [opt & opts]) <-
+     (exist [t v]
+            (= opt [:option_def t v] ! opt "is not an option definition")
+            (option-is-covered v))
+     (all-options-are-covered opts))
+
+(all []
+     (all-options-are-covered []))
