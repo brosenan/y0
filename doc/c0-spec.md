@@ -1083,6 +1083,35 @@ void foo() {
 ERROR: n.something_else has non-union type float64 given in a case expression in int16 as_int16 = case (x = n.something_else) { ... };
 ```
 
+Cases must be unique. The following example results in a compilation error due
+to a duplicate case for `int32_val`
+
+```c
+type Int = struct {
+    union width {
+        int8 int8_val;
+        int16 int16_val;
+        int32 int32_val;
+        int64 int64_val;
+    }
+};
+
+void foo() {
+    Int n = {int64_val=42};
+    int16 as_int16 = case (x = n.width) {
+        int8_val: x,
+        int16_val: x,
+        int32_val: {x},
+        int32_val: {x}
+    };
+}
+```
+```status
+ERROR: The rule for (option-is-covered v) conflicts with a previous rule defining (option-is-covered v) in predicate c0/option-is-covered with arity 1
+```
+
+**TODO**: Improve this error message.
+
 The cases in the case expression must all be options in the `union`. The
 following example fails to compile due to a misspelled option.
 
@@ -1109,6 +1138,7 @@ void foo() {
 ```status
 ERROR: int17_val is not an option for n.width in int16 as_int16 = case (x = n.width) { ... };
 ```
+
 All cases must be covered. In the following example we get an error for not
 covering `int64_val`.
 
