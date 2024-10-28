@@ -1248,3 +1248,57 @@ void foo() {
 ```status
 ERROR: Type int64 cannot be used in this context: Type mismatch. Expression x is of type int64 but type int16 was expected in int16 as_int16 = case (x = n.width) { ... };
 ```
+
+In a `default` case, the case variable (`x` in the previous examples) is not
+available.
+
+```c
+type Int = struct {
+    union width {
+        int8 int8_val;
+        int16 int16_val;
+        int32 int32_val;
+        int64 int64_val;
+    }
+};
+
+void foo() {
+    Int n = {int64_val=42};
+    int16 as_int16 = case (x = n.width) {
+        int8_val: x,
+        int16_val: x,
+        int32_val: {x},
+        default: x
+    };
+}
+```
+```status
+ERROR: Invalid expression x in default case in int16 as_int16 = case (x = n.width) { ... };
+```
+
+Like the other cases, the `default` case must evaluate to the case expression's
+target type.
+
+```c
+type Int = struct {
+    union width {
+        int8 int8_val;
+        int16 int16_val;
+        int32 int32_val;
+        int64 int64_val;
+    }
+};
+
+void foo() {
+    Int n = {int64_val=42};
+    int16 as_int16 = case (x = n.width) {
+        int8_val: x,
+        int16_val: x,
+        int32_val: {x},
+        default: 3.14
+    };
+}
+```
+```status
+ERROR: int16 is not a floating-point type when assigning floating point literal 3.14 in default case in int16 as_int16 = case (x = n.width) { ... };
+```
