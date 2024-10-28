@@ -1217,3 +1217,34 @@ void foo() {
 ```status
 ERROR: int32_val: {x} appear(s) after the default case for n.width in int16 as_int16 = case (x = n.width) { ... };
 ```
+
+In each case in a `case` expression (except `default`), the variable whose name
+was provided in the parentheses before the `=` is bound to the value (and thus,
+type) of the `union` field mentioned in the case.
+
+We demonstrate this in the following example when we try to implicitly convert
+`int64_val` to `int16`.
+
+```c
+type Int = struct {
+    union width {
+        int8 int8_val;
+        int16 int16_val;
+        int32 int32_val;
+        int64 int64_val;
+    }
+};
+
+void foo() {
+    Int n = {int64_val=42};
+    int16 as_int16 = case (x = n.width) {
+        int8_val: x,
+        int16_val: x,
+        int32_val: {x},
+        int64_val: x
+    };
+}
+```
+```status
+ERROR: Type int64 cannot be used in this context: Type mismatch. Expression x is of type int64 but type int16 was expected in int16 as_int16 = case (x = n.width) { ... };
+```

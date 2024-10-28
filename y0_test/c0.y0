@@ -245,7 +245,7 @@
              (= t [t-kw])
              (symbolize assignable-to [t-kw] assignable-to-t)))
      (all [t']
-          (assignable-to-t t' 
+          (assignable-to-t t'
                            ! "Type" t' "cannot be used in this context:"))
      (all []
           (assignable-to-t t))
@@ -355,7 +355,7 @@
 (all [n opt-defs x]
      (member-initialization [:union_def n & opt-defs] x) <-
      (exist [opt val]
-            (= x [:option_initializer opt val] 
+            (= x [:option_initializer opt val]
                ! "Initialization for union" n
                "needs to be done with an option initializer, but" x "was given")
             (given (defall opt-defs)
@@ -377,7 +377,8 @@
                       ! x "has non-union type" tu "given in a case expression")
                    (given (defall opts)
                           (all-options-are-uniquely-covered cases opts
-                                                            ! "for" x)))))
+                                                            ! "for" x)
+                          (all-cases-have-expressions-of-type cases v t)))))
 
 (all [cases opts]
      (all-options-are-uniquely-covered cases opts
@@ -425,3 +426,28 @@
 
 (all []
      (all-options-are-covered []))
+
+(all [cases v t]
+     (all-cases-have-expressions-of-type cases v t
+                                         ! cases "is not a vector of cases"))
+
+(all [case cases v t]
+     (all-cases-have-expressions-of-type [case & cases] v t) <-
+     (case-has-expression-of-type case v t)
+     (all-cases-have-expressions-of-type cases v t))
+
+(all [v t]
+     (all-cases-have-expressions-of-type [] v t))
+
+(all [case v t]
+     (case-has-expression-of-type case v t ! case "is not a valid case"))
+
+(all [fld x v t]
+     (case-has-expression-of-type [:case_option fld x] v t) <-
+     (exist [tfld]
+            (option fld tfld)
+            (given (all [] (typeof v tfld))
+                   (expr-of-type x t))))
+
+(all [x v t]
+     (case-has-expression-of-type [:default_case x] v t))
