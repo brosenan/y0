@@ -98,13 +98,6 @@
      (typeof [:typed_initializer_list t & xs] t) <-
      (initialization t xs))
 
-(all [x m t]
-     (typeof [:qualified_expr x m] t) <-
-     (exist [tx]
-            (typeof x tx)
-            (given (defmembers tx)
-                   (typeof m t))))
-
 ;; ### Initializers
 (all [t xs]
      (initialization t xs ! "Cannot use an initializer list for type" t))
@@ -280,6 +273,27 @@
                                  [:int8_type] [:int16_type] [:int32_type]])
 
 ;; ## Structs
+
+(all [x m t]
+     (typeof [:qualified_expr x m] t) <-
+     (exist [tx]
+            (typeof x tx)
+            (aggregate-type tx ! "when accessing a member of" x)
+            (given (defmembers tx)
+                   (typeof m t))))
+
+(all [t]
+     (aggregate-type t ! t "is not an aggergate type"))
+(all [fds]
+     (aggregate-type [:struct_type & fds]))
+(all [t]
+     (aggregate-type [:pointer_type t]) <-
+     (aggregate-type t))
+(all [a]
+     (aggregate-type [:type_alias a]) <-
+     (exist [t]
+            (type-alias a t)
+            (aggregate-type t)))
 
 (all [fds]
      (defmembers [:struct_type & fds]) =>

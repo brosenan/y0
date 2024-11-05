@@ -781,6 +781,44 @@ void foo() {
 Success
 ```
 
+It cannot, however, be used on non-aggregate types such as scalar types.
+
+```c
+void foo() {
+    int64 foo = 3;
+    var something = foo.bar;
+}
+```
+```status
+ERROR: int64 is not an aggergate type when accessing a member of foo in var something = foo.bar;
+```
+
+The same applies to pointer types of non-aggregate types.
+
+```c
+void foo() {
+    int64 foo = 3;
+    *int64 foo_p = &foo;
+    var something = foo_p.bar;
+}
+```
+```status
+ERROR: int64 is not an aggergate type when accessing a member of foo_p in var something = foo_p.bar;
+```
+
+The same applies to type aliases of non-aggregate types.
+
+```c
+type long = int64;
+void foo() {
+    long foo = 3;
+    var something = foo.bar;
+}
+```
+```status
+ERROR: int64 is not an aggergate type when accessing a member of foo in var something = foo.bar;
+```
+
 ### Struct Initializer List
 
 The initializer list for a `struct` type must have one element for each field in
