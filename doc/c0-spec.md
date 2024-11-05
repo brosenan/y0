@@ -1412,3 +1412,70 @@ void foo() {
 ```status
 ERROR: int64 is not a floating-point type when assigning floating point literal 2.0 in [4]int64 my_arr = {1, 2.0, 3, 4};
 ```
+
+### Element Access
+
+Accessing an element of an array is done using the `[]` operator.
+
+```c
+void foo() {
+    [4]int64 my_arr = {1, 2, 3, 4};
+    int64 elem = my_arr[2];
+}
+```
+```status
+Success
+```
+
+An element access expression is of the form `arr[idx]`, where `arr` is
+considered the _array expression_ and `idx` is the _index expression_.
+
+The array expression must evaluate to an indexable type (e.g., an array).
+
+```c
+void foo() {
+    float64 my_non_arr = 3.14;
+    int64 elem = my_non_arr[2];
+}
+```
+```status
+ERROR: float64 is not an indexable type trying to access element of my_non_arr in int64 elem = my_non_arr[2];
+```
+
+Array types can be type-aliased.
+
+```c
+type vec3 = [3]float64;
+void foo() {
+    vec3 my_vec = {1.0, 2.0, 3.0};
+    float64 y = my_vec[1];
+}
+```
+```status
+Success
+```
+
+... but only if the alias is to an indexable type.
+
+```c
+type scalar = float64;
+void foo() {
+    scalar my_scalar = {1.0};
+    float64 y = my_scalar[1];
+}
+```
+```status
+ERROR: float64 is not an indexable type trying to access element of my_scalar in float64 y = my_scalar[1];
+```
+
+The index expression must be assignable to `uint64`.
+
+```c
+void foo() {
+    [4]int64 my_arr = {1, 2, 3, 4};
+    int64 elem = my_arr[2.0];
+}
+```
+```status
+ERROR: [:uint64_type] is not a floating-point type when assigning floating point literal 2.0 in int64 elem = my_arr[2.0];
+```
