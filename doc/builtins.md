@@ -3,6 +3,7 @@
   * [`inspect`](#`inspect`)
   * [Conversion Predicates](#conversion-predicates)
   * [Symbols](#symbols)
+  * [Length of Vectors and Lists](#length-of-vectors-and-lists)
 ```clojure
 (ns builtins)
 
@@ -112,5 +113,19 @@ the values in the vector as the name of the new symbol.
 ```clojure
 (assert
  (symbolize "builtins" ["bar" "baz"] bar-baz))
+
+```
+## Length of Vectors and Lists
+
+The predicate `length` matches a vector or a list with its length, as an
+integer.
+
+```clojure
+(assert
+ (length [1 2 3] 3)
+ (length (1 2 3 4) 4)
+ (exist []
+        (length [1 2 3] 2 ! "nope")
+        ! "nope"))
 ```
 

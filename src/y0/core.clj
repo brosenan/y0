@@ -25,7 +25,8 @@
   replace-meta
   to-list
   to-vec
-  symbolize)
+  symbolize
+  length)
 
 (def y0-root-refer-map
   (->> (for [sym y0-symbols]

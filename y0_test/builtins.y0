@@ -86,3 +86,15 @@
 ;; the values in the vector as the name of the new symbol.
 (assert
  (symbolize "builtins" ["bar" "baz"] bar-baz))
+
+;; ## Length of Vectors and Lists
+
+;; The predicate `length` matches a vector or a list with its length, as an
+;; integer.
+
+(assert
+ (length [1 2 3] 3)
+ (length (1 2 3 4) 4)
+ (exist []
+        (length [1 2 3] 2 ! "nope")
+        ! "nope"))

@@ -59,6 +59,11 @@
              (str base))]
     (unify-or-err newsym (symbol ns newname) why-not)))
 
+(defn length [goal why-not _ps]
+  (let [[_length s n] goal
+        s (reify-term s)]
+    (unify-or-err (count s) n why-not)))
+
 (defn add-builtin [ps name arity func]
   (assoc ps {:name (str "y0.core/" name) :arity arity} {{} func}))
 
@@ -69,4 +74,5 @@
       (add-builtin "replace-meta" 3 replace-meta)
       (add-builtin "to-list" 2 (gen-to-x seq))
       (add-builtin "to-vec" 2 (gen-to-x vec))
-      (add-builtin "symbolize" 3 symbolize)))
+      (add-builtin "symbolize" 3 symbolize)
+      (add-builtin "length" 2 length)))
