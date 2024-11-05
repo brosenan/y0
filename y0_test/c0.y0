@@ -477,4 +477,29 @@
      (type t))
 
 (all [n t xs]
-     (initialization [:array_type n t] xs))
+     (initialization [:array_type n t] xs) <-
+     (exist [vn]
+            (static-eval-int n vn)
+            (exist [la]
+                   (length xs la)
+                   (= la vn
+                      ! "The length of the initializer list is of size" la
+                      "but the array is of size" vn)))
+     (all-are-exprs-of-type xs t))
+
+(all [x v]
+     (static-eval-int x v ! x "is not a static expression"))
+
+(all [n]
+     (static-eval-int [:int n] n))
+
+(all [xs t]
+     (all-are-exprs-of-type xs t ! xs "is not a vector of expressions"))
+
+(all [x xs t]
+     (all-are-exprs-of-type [x & xs] t) <-
+     (expr-of-type x t)
+     (all-are-exprs-of-type xs t))
+
+(all [t]
+     (all-are-exprs-of-type [] t))

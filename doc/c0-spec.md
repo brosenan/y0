@@ -1391,3 +1391,24 @@ ERROR: foo is not a type alias in [4]foo my_arr = {1, 2, 3, 4};
 ```
 
 The length of the initializer list must match the size of the array.
+
+```c
+void foo() {
+    [4]int64 my_arr = {1, 2, 3, 4, 5};
+}
+```
+```status
+ERROR: The length of the initializer list is of size 5 but the array is of size 4 in [4]int64 my_arr = {1, 2, 3, 4, 5};
+```
+
+Each element in the initializer list should be assignable to the array's element
+type.
+
+```c
+void foo() {
+    [4]int64 my_arr = {1, 2.0, 3, 4};
+}
+```
+```status
+ERROR: int64 is not a floating-point type when assigning floating point literal 2.0 in [4]int64 my_arr = {1, 2.0, 3, 4};
+```
