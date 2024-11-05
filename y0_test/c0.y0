@@ -280,7 +280,7 @@
             (typeof x tx)
             (aggregate-type tx ! "when accessing a member of" x)
             (given (defmembers tx)
-                   (typeof m t))))
+                   (member m t ! "of" x))))
 
 (all [t]
      (aggregate-type t ! t "is not an aggergate type"))
@@ -294,6 +294,9 @@
      (exist [t]
             (type-alias a t)
             (aggregate-type t)))
+
+(all [m t]
+     (member m t ! m "is not a member"))
 
 (all [fds]
      (defmembers [:struct_type & fds]) =>
@@ -313,7 +316,7 @@
      (assert
       (type t))
      (all []
-          (typeof v t)))
+          (member v t)))
 
 (all [fds xs]
      (member-initializations fds xs ! fds "is not a member definition list"))
@@ -345,7 +348,7 @@
       (given (defall opts)))
      (defoptions opts name)
      (all []
-          (typeof name (union-type opts))))
+          (member name (union-type opts))))
 
 (all [t v]
      [:option_def t v] =>

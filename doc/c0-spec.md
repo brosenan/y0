@@ -717,7 +717,6 @@ two `float64` fields, `real` and `imaginary`. It initializes them, assigning
 This way of using `struct` types is not common. Insted, they are usually given
 aliases, as in the following example:
 
-
 ```c
 type Complex64 = struct {
     float64 real;
@@ -817,6 +816,26 @@ void foo() {
 ```
 ```status
 ERROR: int64 is not an aggergate type when accessing a member of foo in var something = foo.bar;
+```
+
+Only a member of the `struct` is allowed to the right of the `.`. In the
+following example we get an error because we place a variable name there.
+
+```c
+type Complex64 = struct {
+    float64 real;
+    float64 imaginary;
+};
+
+void foo() {
+    Complex64 z = {1, 2};
+    int64 something_else = 42;
+
+    int64 wrong = z.something_else;
+}
+```
+```status
+ERROR: something_else is not a member of z in int64 wrong = z.something_else;
 ```
 
 ### Struct Initializer List
@@ -1049,7 +1068,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: Cannot access field int64_val of union width outside a case expression in int64 val = n.int64_val;
+ERROR: int64_val is not a member of n in int64 val = n.int64_val;
 ```
 
 The reason for this is that there is no guarantee that at runtime the field
