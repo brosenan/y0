@@ -469,3 +469,12 @@
 (all [x v t]
      (case-has-expression-of-type [:default_case x] v t) <-
      (expr-of-type x t ! "in default case"))
+
+;; ## Arrays
+
+(all [n t]
+     (type [:array_type n t]) <-
+     (type t))
+
+(all [n t xs]
+     (initialization [:array_type n t] xs))

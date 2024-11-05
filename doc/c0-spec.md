@@ -1359,3 +1359,35 @@ void foo() {
 ```status
 ERROR: int16 is not a floating-point type when assigning floating point literal 3.14 in default case in int16 as_int16 = case (x = n.width) { ... };
 ```
+
+## Arrays and Slices
+
+An array is a type containing a fixed number of instances of another type. The
+number of instances must be known at compile-time.
+
+In the following example we define an array of size 4 and element-type `int64`.
+We initialize the array with the values 1, 2, 3 and 4.
+
+```c
+void foo() {
+    [4]int64 my_arr = {1, 2, 3, 4};
+}
+```
+```status
+Success
+```
+
+As can be seen above, the syntax for the array type is `[n]t`, where `n` is an
+integer representing the size of the array (number of elements) and `t` is a
+type. If `t` is not a valid type, an error is reported.
+
+```c
+void foo() {
+    [4]foo my_arr = {1, 2, 3, 4};
+}
+```
+```status
+ERROR: foo is not a type alias in [4]foo my_arr = {1, 2, 3, 4};
+```
+
+The length of the initializer list must match the size of the array.

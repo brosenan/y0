@@ -40,7 +40,7 @@
                           | int8_type | int16_type | int32_type | int64_type
                           | uint8_type | uint16_type | uint32_type | uint64_type
                           | float32_type | float64_type
-                          | void_type | type_alias | struct_type
+                          | void_type | type_alias | struct_type | array_type
                  pointer_type = <'*'> type
                  int8_type    = <'int8'>
                  int16_type   = <'int16'>
@@ -55,6 +55,7 @@
                  void_type ='void'
                  type_alias = identifier
                  struct_type = <'struct'> <'{'> struct_member_def* <'}'>
+                 array_type = <'['> int <']'> type
                  
 
                  <statement> = vardef | implicit_vardef | assign
