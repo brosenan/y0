@@ -1479,3 +1479,17 @@ void foo() {
 ```status
 ERROR: [:uint64_type] is not a floating-point type when assigning floating point literal 2.0 in int64 elem = my_arr[2.0];
 ```
+
+The resulting expression is of type array's element type. We demonstrate this in
+the following example by trying to assign the value of an element of a `int64`
+array to a `int32` variable.
+
+```c
+void foo() {
+    [4]int64 my_arr = {1, 2, 3, 4};
+    int32 elem = my_arr[2];
+}
+```
+```status
+ERROR: Type int64 cannot be used in this context: Type mismatch. Expression my_arr[2] is of type int64 but type int32 was expected in int32 elem = my_arr[2];
+```

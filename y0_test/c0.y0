@@ -507,20 +507,20 @@
 ;; ### Element Access
 
 (all [arr idx t]
-     (expr-of-type [:element_access arr idx] t) <-
+     (typeof [:element_access arr idx] t) <-
      (exist [tarr]
             (typeof arr tarr)
-            (indexable-type tarr ! "trying to access element of" arr))
+            (indexable-type tarr t ! "trying to access element of" arr))
      (expr-of-type idx [:uint64_type]))
 
-(all [t]
-     (indexable-type t ! t "is not an indexable type"))
+(all [tarr telem]
+     (indexable-type tarr telem ! tarr "is not an indexable type"))
 
 (all [n t]
-     (indexable-type [:array_type n t]))
+     (indexable-type [:array_type n t] t))
 
-(all [a]
-     (indexable-type [:type_alias a]) <-
-     (exist [t]
-            (type-alias a t)
-            (indexable-type t)))
+(all [a telem]
+     (indexable-type [:type_alias a] telem) <-
+     (exist [tarr]
+            (type-alias a tarr)
+            (indexable-type tarr telem)))
