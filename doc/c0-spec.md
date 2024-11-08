@@ -127,6 +127,19 @@ void foo() {
 ```status
 ERROR: int32 is not a floating-point type when assigning floating point literal 0.12345 in int32 b = 0.12345;
 ```
+While we haven't yet introduced non-numeric types, integer literals can only be
+assinged to numeric types. Trying to assign an integer literal to, e.g., a
+[pointer](#pointers-and-addresses) (or any other non-numeric type) results in an error.
+
+```c
+void foo() {
+    *int64 a = 1;
+}
+```
+```status
+ERROR: *int64 is not a numeric type in *int64 a = 1;
+```
+
 
 ### Assignability
 

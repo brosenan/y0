@@ -74,7 +74,8 @@
      (float-type t ! "when assigning floating point literal" n))
 
 (all [n t]
-     (expr-of-type [:int n] t))
+     (expr-of-type [:int n] t) <-
+     (numeric-type t))
 
 (all [n t]
      (typeof [:int n] [:int64_type]))
@@ -188,6 +189,12 @@
 ;; ### Numeric Types
 (all [t]
      (numeric-type t ! t "is not a numeric type"))
+
+(all [a]
+     (numeric-type [:type_alias a]) <-
+     (exist [t]
+            (type-alias a t)
+            (numeric-type t)))
 
 (all [t ts]
      (def-numeric-types [t & ts]) =>
