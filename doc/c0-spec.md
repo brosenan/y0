@@ -1567,3 +1567,30 @@ void foo() {
 ```status
 ERROR: Cannot assign non-slice type to a slice. Type mismatch. Expression foo is of type int64 but type []int64 was expected in []int64 my_slice = foo;
 ```
+
+Similar to an array, it is possible to access an element of a slice using the
+`[]` operator.
+
+```c
+void foo() {
+    [4]int64 my_arr = {1, 2, 3, 4};
+    []int64 my_slice = my_arr;
+    int64 my_element = my_slice[3];
+}
+```
+```status
+Success
+```
+
+The type of the element is the element-type.
+
+```c
+void foo() {
+    [4]int64 my_arr = {1, 2, 3, 4};
+    []int64 my_slice = my_arr;
+    int32 my_element = my_slice[3];
+}
+```
+```status
+ERROR: Type int64 cannot be used in this context: Type mismatch. Expression my_slice[3] is of type int64 but type int32 was expected in int32 my_element = my_slice[3];
+```
