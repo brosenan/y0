@@ -79,7 +79,8 @@
                  <unary_expr> = atomic_expr | addressof | deref | minus
                  <atomic_expr> = literal | identifier | null | initializer_list
                                | typed_initializer_list | qualified_expr
-                               | case_expr | element_access | <'('> expr <')'>
+                               | case_expr | element_access | range_expr
+                               | <'('> expr <')'>
                  <literal> = (int / float) | string
 
                  addressof = <'&'> unary_expr
@@ -99,6 +100,7 @@
                  case_expr = <'case'> <'('> identifier <'='> expr <')'>
                              <'{'> case_option_or_default (<','> case_option_or_default)* <'}'>
                  element_access = atomic_expr <'['> expr <']'>
+                 range_expr = atomic_expr <'['> expr <':'> expr <']'>
                  <case_option_or_default> = case_option | default_case
                  case_option = identifier <':'> expr
                  default_case = <'default'> <':'> expr

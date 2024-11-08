@@ -1660,3 +1660,65 @@ ERROR: [:pointer_type t] is not a numeric type in []int64 my_slice = {&my_arr[1]
 ```
 
 **TODO:** Improve this error message.
+
+#### The Range Expression
+
+A better and safer way to create a slice for a sub-range of a given array or
+slice is using a _range expression_ of the form `a[b..e]`.
+
+```c
+void foo() {
+    [4]int64 my_arr = {1, 2, 3, 4};
+    []int64 my_slice = my_arr[2:4];
+}
+```
+```status
+Success
+```
+
+The range expression can work on an array or a slice, but nothing else.
+
+```c
+void foo() {
+    int32 my_non_arr = 3;
+    []int64 my_slice = my_non_arr[2:4];
+}
+```
+```status
+ERROR: int32 is not an indexable type in []int64 my_slice = my_non_arr[2:4];
+```
+
+The expressions on both sides of the `:` must be assignable to `uint64`.
+
+```c
+void foo() {
+    [4]int64 my_arr = {1, 2, 3, 4};
+    []int64 my_slice = my_arr[2.0:4];
+}
+```
+```status
+ERROR: [:uint64_type] is not a floating-point type when assigning floating point literal 2.0 in []int64 my_slice = my_arr[2.0:4];
+```
+
+```c
+void foo() {
+    [4]int64 my_arr = {1, 2, 3, 4};
+    []int64 my_slice = my_arr[2:4.0];
+}
+```
+```status
+ERROR: [:uint64_type] is not a floating-point type when assigning floating point literal 4.0 in []int64 my_slice = my_arr[2:4.0];
+```
+
+The range expression evaluates to a slice of the source array or slice's element
+type.
+
+```c
+void foo() {
+    [4]int64 my_arr = {1, 2, 3, 4};
+    []int32 my_slice = my_arr[2:4];
+}
+```
+```status
+ERROR: Cannot assign to slice with element type int64 into a slice with element type int32 Type mismatch. Expression my_arr[2:4] is of type [:slice_type t] but type []int32 was expected in []int32 my_slice = my_arr[2:4];
+```
