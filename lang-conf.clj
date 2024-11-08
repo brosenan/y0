@@ -41,6 +41,7 @@
                           | uint8_type | uint16_type | uint32_type | uint64_type
                           | float32_type | float64_type
                           | void_type | type_alias | struct_type | array_type
+                          | slice_type
                  pointer_type = <'*'> type
                  int8_type    = <'int8'>
                  int16_type   = <'int16'>
@@ -56,6 +57,7 @@
                  type_alias = identifier
                  struct_type = <'struct'> <'{'> struct_member_def* <'}'>
                  array_type = <'['> int <']'> type
+                 slice_type = <'['> <']'> type
                  
 
                  <statement> = vardef | implicit_vardef | assign

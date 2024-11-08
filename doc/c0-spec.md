@@ -1493,3 +1493,77 @@ void foo() {
 ```status
 ERROR: Type int64 cannot be used in this context: Type mismatch. Expression my_arr[2] is of type int64 but type int32 was expected in int32 elem = my_arr[2];
 ```
+
+### Slices
+
+A slice is a pair of memory addresses marking the beginning and end of a
+continuous memory region containing values of the same type located one next to
+the other. A slice allows element access similar to an array but unlike an
+array, does not come with preallocated space, but rather points to memory
+allocated by some other means.
+
+A slice type has the syntax `[]t`, where `t` is the element type. In the
+following example we define an array and then create a slice that points
+to its elements.
+
+```c
+void foo() {
+    [4]int64 my_arr = {1, 2, 3, 4};
+    []int64 my_slice = my_arr;
+}
+```
+```status
+Success
+```
+
+The element type must be a valid type.
+
+```c
+void foo() {
+    [4]int64 my_arr = {1, 2, 3, 4};
+    []not_a_type my_slice = my_arr;
+}
+```
+```status
+ERROR: not_a_type is not a type alias in []not_a_type my_slice = my_arr;
+```
+
+When initializing a slice with an array, the slice's element type must match
+type array's element type.
+
+```c
+void foo() {
+    [4]int64 my_arr = {1, 2, 3, 4};
+    []int32 my_slice = my_arr;
+}
+```
+```status
+ERROR: Cannot assign to slice with element type int64 into a slice with element type int32 Type mismatch. Expression my_arr is of type [4]int64 but type []int32 was expected in []int32 my_slice = my_arr;
+```
+
+**TODO:** Fix this error message.
+
+A slice can also be assigned the value of a different slice.
+
+```c
+void foo() {
+    [4]int64 my_arr = {1, 2, 3, 4};
+    []int64 my_slice1 = my_arr;
+    []int64 my_slice2 = my_slice1;
+}
+```
+```status
+Success
+```
+
+Assigning other types (non-slice types) is not premitted.
+
+```c
+void foo() {
+    int64 foo = 1234;
+    []int64 my_slice = foo;
+}
+```
+```status
+ERROR: Cannot assign non-slice type to a slice. Type mismatch. Expression foo is of type int64 but type []int64 was expected in []int64 my_slice = foo;
+```
