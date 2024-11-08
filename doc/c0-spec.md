@@ -1607,3 +1607,56 @@ void foo() {
 ```status
 ERROR: Type int64 cannot be used in this context: Type mismatch. Expression my_slice[3] is of type int64 but type int32 was expected in int32 my_element = my_slice[3];
 ```
+
+It is possible to initialize a slice directly from pointers. This is done using
+an initializer list of size two. The first element is the address of element 0,
+and the second pointer is the address of the next element _after the last one_.
+
+In the following example we define a 4-sized array followed by a 2-sized slice,
+which references elements 1 and 2 in the original array.
+
+```c
+void foo() {
+    [4]int64 my_arr = {1, 2, 3, 4};
+    []int64 my_slice = {&my_arr[1], &my_arr[3]};
+}
+```
+```status
+Success
+```
+
+The initializer list for a slice _must_ be of size 2.
+
+```c
+void foo() {
+    [4]int64 my_arr = {1, 2, 3, 4};
+    []int64 my_slice = {&my_arr[1]};
+}
+```
+```status
+ERROR: The initializer list for a slice must be of size 2, containing a start and an end pointer, but &my_arr[1] was given in []int64 my_slice = {&my_arr[1]};
+```
+
+The elements of the initializer list must both be pointers to the element type.
+
+```c
+void foo() {
+    [4]int64 my_arr = {1, 2, 3, 4};
+    []int64 my_slice = {1, &my_arr[3]};
+}
+```
+```status
+ERROR: [:pointer_type t] is not a numeric type in []int64 my_slice = {1, &my_arr[3]};
+```
+
+```c
+void foo() {
+    [4]int64 my_arr = {1, 2, 3, 4};
+    []int64 my_slice = {&my_arr[1], 3};
+}
+```
+```status
+ERROR: [:pointer_type t] is not a numeric type in []int64 my_slice = {&my_arr[1], 3};
+```
+
+**TODO:** Improve this error message.
