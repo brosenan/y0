@@ -55,8 +55,8 @@
                    (exist [t'-unaliased]
                           (unalias t' t'-unaliased)
                           (assignable t-unaliased t'-unaliased
-                                      ! "Type mismatch. Expression" x "is of type" t'
-                                      "but type" t "was expected")))))
+                                      ! "Cannot assign expression" x
+                                      "of type" t' "as type" t !?)))))
 
 (all [x t]
      (expr-of-type [:expr x] t) <-
@@ -229,7 +229,7 @@
 ;; ### Type Assignability
 (all [t1 t2]
      (assignable t1 t2) <-
-     (= t1 t2))
+     (= t1 t2 ! "because type" t1 "differs from type" t2))
 
 (all [t1-kw t2]
      (assignable [t1-kw] t2) <-
@@ -246,7 +246,7 @@
              (symbolize assignable-to [t-kw] assignable-to-t)))
      (all [t']
           (assignable-to-t t'
-                           ! "Type" t' "cannot be used in this context:"))
+                           ! "because type" t' "cannot be safely cast into type" t))
      (all []
           (assignable-to-t t))
      (def-assignable' assignable-to-t src-ts))
@@ -543,11 +543,11 @@
      (exist [telem']
             (slice-type t' telem')
             (= telem telem'
-               ! "Cannot assign to slice with element type" telem'
-               "into a slice with element type" telem)))
+               ! "because the source element type" telem'
+               "does not match the target element type" telem)))
 
 (all [t telem]
-     (slice-type t telem ! "Cannot assign non-slice type to a slice."))
+     (slice-type t telem ! "because type" t "is not a sliceable type"))
 
 (all [n telem]
      (slice-type [:array_type n telem] telem))

@@ -184,7 +184,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: Type int16 cannot be used in this context: Type mismatch. Expression a is of type int16 but type int8 was expected in int8 b = a;
+ERROR: Cannot assign expression a of type int16 as type int8 because type int16 cannot be safely cast into type [:int8_type] in int8 b = a;
 ```
 
 When mixing signed and unsigned values, assignment is only allowed from strictly
@@ -260,7 +260,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: Type [:int64_type] cannot be used in this context: Type mismatch. Expression x is of type [:int64_type] but type int32 was expected in int32 a = x;
+ERROR: Cannot assign expression x of type [:int64_type] as type int32 because type [:int64_type] cannot be safely cast into type [:int32_type] in int32 a = x;
 ```
 
 Floating-point literals are inferred as `float64`.
@@ -272,7 +272,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: Type [:float64_type] cannot be used in this context: Type mismatch. Expression x is of type [:float64_type] but type float32 was expected in float32 a = x;
+ERROR: Cannot assign expression x of type [:float64_type] as type float32 because type [:float64_type] cannot be safely cast into type [:float32_type] in float32 a = x;
 ```
 
 ### Explicit Type Conversion
@@ -386,7 +386,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: Type int64 cannot be used in this context: Type mismatch. Expression d is of type int64 but type int32 was expected in int32 res = -a+b-c*d/a%b;
+ERROR: Cannot assign expression d of type int64 as type int32 because type int64 cannot be safely cast into type [:int32_type] in int32 res = -a+b-c*d/a%b;
 ```
 
 If the target type is not known, an arithmetic expression is only valid if all
@@ -576,7 +576,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: Type mismatch. Expression &a is of type [:pointer_type t] but type *int32 was expected in *int32 p = &a;
+ERROR: Cannot assign expression &a of type [:pointer_type t] as type *int32 because type *int32 differs from type [:pointer_type t] in *int32 p = &a;
 ```
 
 ## Type Aliases
@@ -670,7 +670,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: Type int64 cannot be used in this context: Type mismatch. Expression a is of type long but type short was expected in short b = a;
+ERROR: Cannot assign expression a of type long as type short because type int64 cannot be safely cast into type [:int16_type] in short b = a;
 ```
 
 Initializer lists apply to type aliases as if they were their respective
@@ -1034,7 +1034,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: Type int16 cannot be used in this context: Type mismatch. Expression int16{42} is of type int16 but type int8 was expected for option int8_val in Int n = {int8_val=int16{42}};
+ERROR: Cannot assign expression int16{42} of type int16 as type int8 because type int16 cannot be safely cast into type [:int8_type] for option int8_val in Int n = {int8_val=int16{42}};
 ```
 
 Obviously, `union`s can be combined with other `struct` members, and the
@@ -1316,7 +1316,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: Type int64 cannot be used in this context: Type mismatch. Expression x is of type int64 but type int16 was expected in int16 as_int16 = case (x = n.width) { ... };
+ERROR: Cannot assign expression x of type int64 as type int16 because type int64 cannot be safely cast into type [:int16_type] in int16 as_int16 = case (x = n.width) { ... };
 ```
 
 In a `default` case, the case variable (`x` in the previous examples) is not
@@ -1504,7 +1504,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: Type int64 cannot be used in this context: Type mismatch. Expression my_arr[2] is of type int64 but type int32 was expected in int32 elem = my_arr[2];
+ERROR: Cannot assign expression my_arr[2] of type int64 as type int32 because type int64 cannot be safely cast into type [:int32_type] in int32 elem = my_arr[2];
 ```
 
 ### Slices
@@ -1551,10 +1551,8 @@ void foo() {
 }
 ```
 ```status
-ERROR: Cannot assign to slice with element type int64 into a slice with element type int32 Type mismatch. Expression my_arr is of type [4]int64 but type []int32 was expected in []int32 my_slice = my_arr;
+ERROR: Cannot assign expression my_arr of type [4]int64 as type []int32 because the source element type int64 does not match the target element type int32 in []int32 my_slice = my_arr;
 ```
-
-**TODO:** Fix this error message.
 
 A slice can also be assigned the value of a different slice.
 
@@ -1573,12 +1571,12 @@ Assigning other types (non-slice types) is not premitted.
 
 ```c
 void foo() {
-    int64 foo = 1234;
+    float64 foo = 1234;
     []int64 my_slice = foo;
 }
 ```
 ```status
-ERROR: Cannot assign non-slice type to a slice. Type mismatch. Expression foo is of type int64 but type []int64 was expected in []int64 my_slice = foo;
+ERROR: Cannot assign expression foo of type float64 as type []int64 because type float64 is not a sliceable type in []int64 my_slice = foo;
 ```
 
 Similar to an array, it is possible to access an element of a slice using the
@@ -1605,7 +1603,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: Type int64 cannot be used in this context: Type mismatch. Expression my_slice[3] is of type int64 but type int32 was expected in int32 my_element = my_slice[3];
+ERROR: Cannot assign expression my_slice[3] of type int64 as type int32 because type int64 cannot be safely cast into type [:int32_type] in int32 my_element = my_slice[3];
 ```
 
 It is possible to initialize a slice directly from pointers. This is done using
@@ -1720,5 +1718,5 @@ void foo() {
 }
 ```
 ```status
-ERROR: Cannot assign to slice with element type int64 into a slice with element type int32 Type mismatch. Expression my_arr[2:4] is of type [:slice_type t] but type []int32 was expected in []int32 my_slice = my_arr[2:4];
+ERROR: Cannot assign expression my_arr[2:4] of type [:slice_type t] as type []int32 because the source element type int64 does not match the target element type int32 in []int32 my_slice = my_arr[2:4];
 ```
