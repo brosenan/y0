@@ -162,3 +162,10 @@
 (defn get-statements-to-match [ps head]
   (let [key {:statements (arg-key head)}]
     (get ps key #{})))
+
+(defn store-export [ps module keys value]
+  (->> (for [key keys]
+         [{:export-from module
+           :key key} #{value}])
+       (into {})
+       (merge-with union ps)))

@@ -9,13 +9,15 @@
       * [Predicate Rules Retreival](#predicate-rules-retreival)
     * [The Predicate Store](#the-predicate-store)
   * [Storage and Retreival of Statements and Translation Rules](#storage-and-retreival-of-statements and translation rules)
+  * [Storage and Retreival of Exports](#storage-and-retreival-of-exports)
+    * [Export Storage](#export-storage)
 ```clojure
 (ns y0.predstore-test
   (:require [midje.sweet :refer [fact =>]]
             [y0.predstore :refer [pred-key arg-key arg-key-generalizations
                                   pd-store-rule pd-match store-rule match-rule generalize-arg
                                   store-translation-rule store-statement get-rules-to-match
-                                  get-statements-to-match]]
+                                  get-statements-to-match store-export]]
             [y0.core :refer [&]]
             [y0.status :refer [ok ->s let-s]]))
 
@@ -525,5 +527,43 @@ Or an empty set if no such statements were found.
                   (store-statement `(defoo 2))
                   (ok get-statements-to-match `(defbar (atom nil))))]
         res => #{}))
+
+```
+## Storage and Retreival of Exports
+
+An export is a type of statement that can be _imported_ into another module.
+
+Here we do not go into the semantics of a exports, but rather discuss their
+storage and retreival aspects.
+
+### Export Storage
+
+An export is associated with the _exporting module_ (the ID of the module
+from which the export is made) and one or more _export keys_, which can be
+used in tandem with the exporting module to import a subset of the statements
+exported from a given module.
+
+`store-export` takes a predstore, a module name, a vector of export keys and
+a value, and returns the updated predstore after storing the export.
+```clojure
+(fact
+ (store-export {:foo :bar} "my.module" [:key1 :key2] :the-statement) =>
+ {{:export-from "my.module"
+   :key :key1} #{:the-statement}
+  {:export-from "my.module"
+   :key :key2} #{:the-statement}
+  :foo :bar})
+
+```
+In case that an export for a given module and key already exists in the
+predstore, the value is added to the set.
+```clojure
+(fact
+ (store-export {{:export-from "my.module"
+                 :key :key1} #{:some-statement}} "my.module" [:key1 :key2] :the-statement) =>
+ {{:export-from "my.module"
+   :key :key1} #{:some-statement :the-statement}
+  {:export-from "my.module"
+   :key :key2} #{:the-statement}})
 ```
 
