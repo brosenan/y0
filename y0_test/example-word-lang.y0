@@ -1,0 +1,66 @@
+(ns example-word-lang)
+
+;; # Word Example
+
+;; To demonstrate imports and exports, this module defines a simple language of
+;; word (symbols). It allows for words to be defined. A word that is defined
+;; will them be accepted by the `word` predicate.
+
+;; ## The `word` Predicate
+
+;; We begin by defining the `word` predicate's base case.
+(all [w]
+     (word w ! w "is not a word"))
+
+(assert
+ (word foo ! foo "is not a word"))
+
+;; ## Defining Words
+
+;; Next, we allow for the definition of new words.
+(all [w]
+     (defword w) =>
+     (all []
+          (word w)))
+
+(assert
+ (given (defword foo)
+        (word foo)))
+
+;; ## Exporting Words
+
+;; Now, we define the mechanism that allows words to be exported.
+(all [w]
+     (defword w) =>
+     (export [w' w]
+             (all []
+                  (word w') <- (word w))))
+
+;; This contributes an `export` statement for every use of `defword` (this could
+;; have been placed within the same translation rule as the original definition,
+;; but we chose to split it here for didactic reasons).
+
+;; The `export` statement binds `w'` to be the _imported version_ of `w` when
+;; imported, i.e., `w'` will be a symbol with the same name as `w`, but will
+;; have the namespace of the importing module instead of the exporting module in
+;; `w`.
+
+;; The statement itself within the body of the `export` statement is a deduction
+;; rule which states that `w'` is a word if `w` is a word.
+
+;; ## Importing Words
+
+;; To allow for modules to import words defined in another module, we define the
+;; `import-all-words-from` statement.
+
+(all [module]
+     (import-all-words-from module) =>
+     (import module))
+
+;; `import` is given the name of the module to be imported as a _symbol_, whose
+;; name is the name of the module being imported and its namespace is the name
+;; of the importing module.
+
+;; Its semantics is that it applies all statements from all `export`s of the
+;; requested module, substituting `w'` with a symbol that has the same name as
+;; `w` but with the importing module's name as namespace.

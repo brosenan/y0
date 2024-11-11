@@ -246,3 +246,54 @@
  (exist [u]
         (given (defsomething 1))
         ! $not-ground "has non-ground value" [1 2 u]))
+
+;; ## Exports and Imports
+
+;; Programming languages often have module systems that allow definitions to be
+;; made in one module and to be used in other modules, while maintaining some
+;; level of module isolation. A name given to something in one module does not
+;; conflict with something else that shares the same name in another module,
+;; unless one of them is imported to the other module.
+
+;; In $y_0$, module isolation is achieved by giving symbols namespaces based on
+;; the modules in which they are found. This way, symbol `foo` in module `a`
+;; is represented as `a/foo` and in module `b` as `b/foo`, and are thus not
+;; conflicting.
+
+;; However, imagine module `a` exports `a/foo` and some other module, say module
+;; `c` would like to import it. It is necessary for module `c` to be able to
+;; reference `a/foo`.
+
+;; $y_0$ provides two ways to support this. For
+;; [EDN-based langauges](edn_parser.md), including $y_0$ itself, this is done
+;; using the `ns` statement at the beginning of each source file. When
+;; `:require`ing a specific symbol from a given module, when that symbol is
+;; found in the importing module it will appear with the namespace of the
+;; exporting module.
+
+;; However, for other languages (e.g.,
+;; [Instaparse-based languages](instaparser.md)), replacing the symbols in
+;; advance is not possible, since the decision from which module some symbol
+;; should come is a part of the language's semantics and should therefore be
+;; defined in $y_0$.
+
+;; To allow exactly that, $y_0$ provides the `export` and `import` statements,
+;; described below.
+
+;; ### The Export Statement
+
+;; An `export` statement has the following syntax:
+;; `(export [imp exp...] statements...)`, where `exp` is a term that evaluates
+;; to a symbol of the exporting module, `imp` is a new symbol that becomes a
+;; free variable (there could be multiple `imp`/`exp` pairs) and `statements`
+;; are one or more statements which may use both `imp` and `exp`.
+
+;; Due to the nature of this topic, we cannot demonstrate everything in a single
+;; module. Rather, we need three of them:
+
+;; 1. [A module](example-word-lang.md) to define a language with exports.
+;; 2. [A module](example-words.md) to use this language to define some things.
+;; 3. A module to import these things from the second module (this module).
+
+;; We therefore refer the reader to continue reading
+;; [here](example-word-lang.md).
