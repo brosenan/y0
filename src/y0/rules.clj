@@ -1,11 +1,12 @@
 (ns y0.rules
-  (:require [y0.core :refer [! !? <- => ? exist given trace]]
-            [y0.predstore :refer [get-rules-to-match get-statements-to-match
-                                  match-rule store-rule store-statement
-                                  store-translation-rule]]
-            [y0.status :refer [->s let-s ok]]
-            [y0.term-utils :refer [replace-vars postwalk-with-meta ground?]]
-            [y0.unify :refer [unify reify-term]]))
+  (:require
+   [y0.core :refer [! !? <- => ? exist given trace]]
+   [y0.predstore :refer [get-rules-to-match get-statements-to-match match-rule
+                         store-export store-rule store-statement
+                         store-translation-rule]]
+   [y0.status :refer [->s let-s ok]]
+   [y0.term-utils :refer [ground? replace-vars]]
+   [y0.unify :refer [reify-term unify]]))
 
 (def ^:dynamic *do-trace* false)
 (def ^:dynamic *trace-indent* ">")
@@ -34,7 +35,8 @@
       [goal why-not]
       [(take bang-index goal) (-> bang-index inc (drop goal) (combine-explanations why-not) vec)])))
 
-(declare satisfy-goal check-conditions check-condition add-rule apply-statement)
+(declare satisfy-goal check-conditions check-condition add-rule apply-statement
+         apply-statements)
 
 (defn- check-condition [condition ps vars why-not]
   (when *do-trace*
@@ -162,6 +164,32 @@
           statement (-> statement (replace-vars metavars) reify-term ok)]
     (apply-statement statement ps vars)))
 
+(defn- add-export [ps statement vars]
+  (let [[_export [imp exp] & statements] statement
+        exp-sym (reify-term (replace-vars exp vars))
+        ps (store-export ps (namespace exp-sym) #{:all}
+                         (fn [ps impns]
+                           (let [imp-sym (symbol impns (name exp-sym))
+                                 vars (assoc vars imp imp-sym)]
+                             (apply-statements statements ps vars))))]
+    {:ok ps}))
+
+(defn- apply-import [ps statement vars]
+  (let [[_import sym] statement
+        impns (namespace sym)
+        expns (name sym)
+        export-fns (get ps {:export-from expns
+                            :key :all})]
+    (if (nil? export-fns)
+      {:err ["Nothing to import from" expns]}
+      (loop [fns export-fns
+             ps ps]
+        (if (empty? fns)
+          {:ok ps}
+          (let-s [[f & fns] (ok fns)
+                  ps (f ps impns)]
+                 (recur fns ps)))))))
+
 (defn- apply-statement [statement ps vars]
   (cond
     (contains? vars statement) (recur @(get vars statement) ps vars)
@@ -170,6 +198,8 @@
                                 y0.core/all (add-rule ps statement vars)
                                 y0.core/assert (apply-assert-block ps statement vars)
                                 y0.core/with-meta (apply-with-meta-block ps statement vars)
+                                y0.core/export (add-export ps statement vars)
+                                y0.core/import (apply-import ps statement vars)
                                 ;; Debugging utility. Keeping for the time being.
                                 y0.core/? (let [[_? key] statement]
                                             (if (nil? key)

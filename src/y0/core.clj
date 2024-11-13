@@ -12,6 +12,8 @@
   with-meta
   exist
   given
+  export
+  import
   trace
   &
   <-

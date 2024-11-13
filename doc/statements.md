@@ -7,9 +7,12 @@
     * [Meta-Vars-Must-Be-Ground](#meta-vars-must-be-ground)
   * [Exports and Imports](#exports-and-imports)
     * [The Export Statement](#the-export-statement)
+    * [Imports](#imports)
 ```clojure
 (ns statements
-  (:require [hello :refer [classify]]))
+  (:require [hello :refer [classify]]
+            [example-word-lang :refer [word]]
+            [example-words :as words]))
 
 ```
 # Statements and Translation Rules
@@ -344,3 +347,30 @@ module. Rather, we need three of them:
 
 We therefore refer the reader to continue reading
 [here](example-word-lang.md).
+
+### Imports
+
+By their own, the words we have defined in the
+[words example](example-words.md) do not exist in the namespace of this
+module.
+```clojure
+(assert
+ (word hello ! hello "is not a word"))
+
+```
+They are, however, imported here, so we can access them explicitly, using a
+namespace alias.
+```clojure
+(assert
+ (word words/hello))
+
+```
+An `import` statement can be used to instantiate `export` statements and thus
+make words defined in a different module available in the current namespace.
+```clojure
+(assert
+ (given (import example-words)
+        (word hello)
+        (word world)))
+```
+

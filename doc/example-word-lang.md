@@ -2,7 +2,7 @@
   * [The `word` Predicate](#the-`word`-predicate)
   * [Defining Words](#defining-words)
   * [Exporting Words](#exporting-words)
-  * [Importing Words](#importing-words)
+  * [Where To Next?](#where-to-next?)
 ```clojure
 (ns example-word-lang)
 
@@ -61,21 +61,6 @@ have the namespace of the importing module instead of the exporting module in
 The statement itself within the body of the `export` statement is a deduction
 rule which states that `w'` is a word if `w` is a word.
 
-## Importing Words
+## Where To Next?
 
-To allow for modules to import words defined in another module, we define the
-`import-all-words-from` statement.
-
-```clojure
-(all [module]
-     (import-all-words-from module) =>
-     (import module))
-
-```
-`import` is given the name of the module to be imported as a _symbol_, whose
-name is the name of the module being imported and its namespace is the name
-of the importing module.
-
-Its semantics is that it applies all statements from all `export`s of the
-requested module, substituting `w'` with a symbol that has the same name as
-`w` but with the importing module's name as namespace.
+This example continues in [a module using this language](example-words.md)

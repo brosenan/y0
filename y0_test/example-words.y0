@@ -1,0 +1,12 @@
+(ns example-words
+  (:require [example-word-lang :refer [defword]]))
+
+;; # Example Usage of the Words Language
+
+;; Here we define the following words:
+(defword hello)
+(defword world)
+
+;; ## Where Now?
+
+;; Now we can go back to [see how imports word](statements.md#imports).
