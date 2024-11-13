@@ -1,6 +1,8 @@
 (ns y0.polyglot-loader
-  (:require [y0.status :refer [ok ->s let-s]]
-            [clojure.set :refer [union]]))
+  (:require [clojure.set :refer [union]]
+            [loom.graph :refer [digraph]]
+            [loom.alg :refer [topsort]]
+            [y0.status :refer [ok ->s let-s]]))
 
 (defn- slurp-text [{:keys [path] :as m} read-fn]
   (ok m assoc :text (read-fn path)))
@@ -52,17 +54,8 @@
 
 (defn mstore-toposort [mstore]
   (let [refs (mstore-refs mstore)
-        srcs (mstore-sources mstore)]
-    (loop [sorted (vec srcs)
-           seen srcs
-           queue (seq srcs)]
-      (if (empty? queue)
-        sorted
-        (let [[mid & queue] queue
-              queue (concat queue (seq (refs mid)))]
-          (if (contains? seen mid)
-            (recur sorted seen queue)
-            (recur (conj sorted mid) (conj seen mid) queue)))))))
+        graph (digraph refs)]
+    (topsort graph)))
 
 (defn eval-mstore [mstore eval-func ps]
   (loop [keys (mstore-toposort mstore)

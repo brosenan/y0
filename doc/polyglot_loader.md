@@ -278,7 +278,7 @@ before `m3` and `m4` can come before `m6`), but Clojure has stable
 representations for maps and sets, making it possible to write a test with
 one particular result. Please note that this particular result is
 topologically sorted. `m1` comes first, `m12` comes last; `m3` and `m2`
-precede `m6`, etc. 
+precede `m6`, etc.
 
 ### Evaluating All Modules
 
