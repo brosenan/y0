@@ -169,3 +169,7 @@
            :key key} #{value}])
        (into {})
        (merge-with union ps)))
+
+(defn get-exports [ps module key]
+  (get ps {:export-from module
+           :key key}))

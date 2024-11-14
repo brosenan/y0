@@ -1,8 +1,8 @@
 (ns y0.rules
   (:require
    [y0.core :refer [! !? <- => ? exist given trace]]
-   [y0.predstore :refer [get-rules-to-match get-statements-to-match match-rule
-                         store-export store-rule store-statement
+   [y0.predstore :refer [get-exports get-rules-to-match get-statements-to-match
+                         match-rule store-export store-rule store-statement
                          store-translation-rule]]
    [y0.status :refer [->s let-s ok]]
    [y0.term-utils :refer [ground? replace-vars]]
@@ -179,8 +179,7 @@
         [_import sym] statement
         impns (namespace sym)
         expns (name sym)
-        export-fns (get ps {:export-from expns
-                            :key :all})]
+        export-fns (get-exports ps expns :all)]
     (if (nil? export-fns)
       {:err why-not}
       (loop [fns export-fns

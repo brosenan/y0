@@ -11,13 +11,14 @@
   * [Storage and Retreival of Statements and Translation Rules](#storage-and-retreival-of-statements and translation rules)
   * [Storage and Retreival of Exports](#storage-and-retreival-of-exports)
     * [Export Storage](#export-storage)
+    * [Export Retrieval](#export-retrieval)
 ```clojure
 (ns y0.predstore-test
   (:require [midje.sweet :refer [fact =>]]
             [y0.predstore :refer [pred-key arg-key arg-key-generalizations
                                   pd-store-rule pd-match store-rule match-rule generalize-arg
                                   store-translation-rule store-statement get-rules-to-match
-                                  get-statements-to-match store-export]]
+                                  get-statements-to-match store-export get-exports]]
             [y0.core :refer [&]]
             [y0.status :refer [ok ->s let-s]]))
 
@@ -565,5 +566,27 @@ predstore, the value is added to the set.
    :key :key1} #{:some-statement :the-statement}
   {:export-from "my.module"
    :key :key2} #{:the-statement}})
+
+```
+### Export Retrieval
+
+The function `get-export` takes a predstore, a module name and a key and
+returns the set of exports keyed under them in the predstore.
+```clojure
+(fact
+ (-> {}
+     (store-export "my.module" [:key1 :key2] :statement1)
+     (store-export "my.module" [:key2 :key3] :statement2)
+     (store-export "another.module" [:key1 :key2 :key3] :statement3)
+     (get-exports "my.module" :key2)) => #{:statement1 :statement2})
+
+```
+If no export is found, `nil` is returned.
+```clojure
+(fact
+ (-> {}
+     (store-export "my.module" [:key1 :key2] :statement1)
+     (store-export "my.module" [:key2 :key3] :statement2)
+     (get-exports "another.module" :key2)) => nil)
 ```
 
