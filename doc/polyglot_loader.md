@@ -270,7 +270,7 @@ map from module-IDs to the IDs of modules that directly depend on them.
 returns a sequence of module-IDs, given in some topological order.
 ```clojure
 (fact
- (mstore-toposort my-mstore) => ["y2:m1" "y2:m3" "y2:m2" "y2:m6" "y2:m4" "y2:m12"])
+ (mstore-toposort my-mstore) => ["y2:m1" "y2:m2" "y2:m4" "y2:m3" "y2:m6" "y2:m12"])
 
 ```
 Please note that the order above is only one possible sort (`m2` can come
@@ -317,10 +317,10 @@ the statements to it. For example:
         (do
           (-> mstore (get "y2:m12") :predstore :foo) =>
           ["m1" "text in /m1.y2"
-           "m3" "text in /m3.y2"
            "m2" "text in /m2.y2"
-           "m6" "text in /m6.y2"
            "m4" "text in /m4.y2"
+           "m3" "text in /m3.y2"
+           "m6" "text in /m6.y2"
            "m12" "text in /m12.y2"]
           (-> mstore (get "y2:m12") :predstore :bar) => :baz)))
 ```
