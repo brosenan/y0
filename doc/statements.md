@@ -8,11 +8,15 @@
   * [Exports and Imports](#exports-and-imports)
     * [The Export Statement](#the-export-statement)
     * [Imports](#imports)
+    * [Export Keys and Partial Imports](#export-keys-and-partial-imports)
+      * [Partial Imports](#partial-imports)
 ```clojure
 (ns statements
   (:require [hello :refer [classify]]
             [example-word-lang :refer [word]]
-            [example-words :as words]))
+            [example-words :as words]
+            [fruit-veg-example]
+            [fruit-veg-lang :refer [fruit vegetable]]))
 
 ```
 # Statements and Translation Rules
@@ -332,11 +336,10 @@ described below.
 
 ### The Export Statement
 
-An `export` statement has the following syntax:
-`(export [imp exp...] statements...)`, where `exp` is a term that evaluates
-to a symbol of the exporting module, `imp` is a new symbol that becomes a
-free variable (there could be multiple `imp`/`exp` pairs) and `statements`
-are one or more statements which may use both `imp` and `exp`.
+An `export` statement has the following syntax: `(export [imp exp]
+statements...)`, where `exp` is a term that evaluates to a symbol of the
+exporting module, `imp` is a new symbol that becomes a free variable and
+`statements` are one or more statements which may use both `imp` and `exp`.
 
 Due to the nature of this topic, we cannot demonstrate everything in a single
 module. Rather, we need three of them:
@@ -383,5 +386,50 @@ module).
         (word hello)
         (word world)
         ! "Could not load my module"))
+
+```
+### Export Keys and Partial Imports
+
+Some module systems allow for fine-grained selection of what is imported.
+This could be a single definition (e.g., a function of a type) or a category
+of definitions (i.e., all functions defined in the module but none of the
+constants).
+
+To support partial imports we allow the `export` statement to take a set of
+keys, which can then be used by the `import` statement.
+
+Once again, to demonstrate this we need two additional modules. In the first,
+we define a language for defining fruit and vegetables. Then we use it in
+another module to define some fruit and some vegetables. Then we import them
+from here.
+
+Our language will allow for fruit and vegetables to be imported individually
+and as a category (fruit or vegetables).
+
+Please refer to the [language definition](fruit-veg-lang.md) before reading
+on here.
+
+#### Partial Imports
+
+The `import` statement takes an optional key, which can be used to filter the
+exports that are imported. In the following example we use the `:fruit` key
+to only import fruit from the example module.
+```clojure
+(assert
+ (given (import fruit-veg-example :fruit)
+        (fruit banana)
+        (vegetable tomato)
+        ! tomato "is not a vegetable"))
+
+```
+A key can be either a keyword (as above), or a symbol. For symbols only the
+name is used, such that they can be used across modules. We use a keyword to
+import a specific vegetable.
+```clojure
+(assert
+ (given (import fruit-veg-example tomato)
+        (vegetable tomato)
+        (vegetable cucumber)
+        ! cucumber "is not a vegetable"))
 ```
 

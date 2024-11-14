@@ -164,22 +164,38 @@
           statement (-> statement (replace-vars metavars) reify-term ok)]
     (apply-statement statement ps vars)))
 
+(defn- symname [sym]
+  (if (symbol? sym)
+    (name sym)
+    sym))
+
 (defn- add-export [ps statement vars]
-  (let [[_export [imp exp] & statements] statement
+  (let [statement (rest statement)  ;; Remove 'export
+        [keys statement] (if (set? (first statement))
+                           [(first statement) (rest statement)]
+                           [#{} statement])
+        keys (->> keys
+                  (map #(-> %
+                            (replace-vars vars)
+                            reify-term
+                            symname))
+                  (cons :all))
+        [[imp exp] & statements] statement
         exp-sym (reify-term (replace-vars exp vars))
-        ps (store-export ps (namespace exp-sym) #{:all}
+        ps (store-export ps (namespace exp-sym) keys
                          (fn [ps impns]
                            (let [imp-sym (symbol impns (name exp-sym))
                                  vars (assoc vars imp imp-sym)]
                              (apply-statements statements ps vars))))]
     {:ok ps}))
 
-(defn- apply-import [ps statement vars]
+(defn- apply-import [ps statement _vars]
   (let [[statement why-not] (split-goal statement nil)
-        [_import sym] statement
+        [_import sym key] statement
+        key (if (nil? key) :all key)
         impns (namespace sym)
         expns (name sym)
-        export-fns (get-exports ps expns :all)]
+        export-fns (get-exports ps expns (symname key))]
     (if (nil? export-fns)
       {:err why-not}
       (loop [fns export-fns
