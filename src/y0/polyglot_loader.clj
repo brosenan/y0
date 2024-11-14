@@ -47,10 +47,13 @@
          mid)))
 
 (defn mstore-refs [mstore]
-  (->> (for [[mid m] mstore
-             dep (:deps m)]
-         {(module-id dep) #{mid}})
-       (reduce (partial merge-with union) {})))
+  (let [base (->> (for [[key _] mstore]
+                    {key #{}})
+                  (into {}))]
+    (->> (for [[mid m] mstore
+               dep (:deps m)]
+           {(module-id dep) #{mid}})
+         (reduce (partial merge-with union) base))))
 
 (defn mstore-toposort [mstore]
   (let [refs (mstore-refs mstore)

@@ -260,6 +260,7 @@ map from module-IDs to the IDs of modules that directly depend on them.
 ```clojure
 (fact
  (mstore-refs my-mstore) => {"y2:m1" #{"y2:m2" "y2:m3"}
+                             "y2:m12" #{}
                              "y2:m2" #{"y2:m4" "y2:m6"}
                              "y2:m3" #{"y2:m6"}
                              "y2:m4" #{"y2:m12"}
