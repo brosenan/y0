@@ -372,5 +372,16 @@ make words defined in a different module available in the current namespace.
  (given (import example-words)
         (word hello)
         (word world)))
+
+```
+An `import` statement can be given a why-not explanation, which will be used
+if the import fails (i.e., if the module name does not reference an existing
+module).
+```clojure
+(assert
+ (given (import wrong-module-name ! "Could not load my module")
+        (word hello)
+        (word world)
+        ! "Could not load my module"))
 ```
 

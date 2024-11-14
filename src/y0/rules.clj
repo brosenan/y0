@@ -175,13 +175,14 @@
     {:ok ps}))
 
 (defn- apply-import [ps statement vars]
-  (let [[_import sym] statement
+  (let [[statement why-not] (split-goal statement nil)
+        [_import sym] statement
         impns (namespace sym)
         expns (name sym)
         export-fns (get ps {:export-from expns
                             :key :all})]
     (if (nil? export-fns)
-      {:err ["Nothing to import from" expns]}
+      {:err why-not}
       (loop [fns export-fns
              ps ps]
         (if (empty? fns)
