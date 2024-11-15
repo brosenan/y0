@@ -54,4 +54,4 @@ its header. If this set exists, the export is stored by each of these keys.
 ## What Now?
 
 Please continue to the module in which we
-[use this language to define fruit and vegetables](fruit-veg-example.y0).
+[use this language to define fruit and vegetables](fruit-veg-example.md).
