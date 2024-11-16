@@ -576,3 +576,25 @@
             (indexable-type tarr t)
             (expr-of-type b [:uint64_type])
             (expr-of-type e [:uint64_type])))
+
+;; ## Assignment and Mutability
+
+(all [lx x]
+     [:assign lx x] =>
+     (assert
+      (exist [t]
+             (typeof lx t)
+             (lexpr lx)
+             (expr-of-type x t))))
+
+(all [x]
+     (lexpr x ! x "is not a left-hand expression"))
+
+(all [t v x]
+     [:vardef t v x] =>
+     (all []
+          (lexpr v)))
+
+(all [x]
+     (lexpr [:expr x]) <-
+     (lexpr x))

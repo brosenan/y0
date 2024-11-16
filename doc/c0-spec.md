@@ -1720,3 +1720,58 @@ void foo() {
 ```status
 ERROR: Cannot assign expression my_arr[2:4] of type [:slice_type t] as type []int32 because the source element type int64 does not match the target element type int32 in []int32 my_slice = my_arr[2:4];
 ```
+
+## Assignment and Mutability
+
+Assignment (in contrast with initialization) is the action of assigning a new
+value to an existing memory space. It uses the syntax `lexpr = expr;`, where
+`lexpr` is a _left-hand expression_, i.e., some expression that allows
+assignment into it, such as a variable or an array element.
+
+```c
+void foo() {
+    int64 a = 1;
+    a = 2;
+}
+```
+```status
+Success
+```
+
+The `lexpr` must be a valid expression, e.g., an existing variable.
+
+```c
+void foo() {
+    a = 2;
+}
+```
+```status
+ERROR: Invalid expression a in a = 2;
+```
+
+Assignment requires that the expression to the right of the `=` be assignable to
+the type of `lexpr` it is assigned to.
+
+```c
+void foo() {
+    int64 a = 1;
+    a = 2.0;
+}
+```
+```status
+ERROR: int64 is not a floating-point type when assigning floating point literal 2.0 in a = 2.0;
+```
+
+### Left-Hand Expressions
+
+Not every valid expression can act as a left-hand expression. A numeric literal,
+for example, cannot be assigned to.
+
+```c
+void foo() {
+    1 = 2;
+}
+```
+```status
+ERROR: 1 is not a left-hand expression in 1 = 2;
+```
