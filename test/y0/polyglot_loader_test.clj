@@ -176,6 +176,7 @@
                          :path "path/to/foo.y1"
                          :text "text inside foo.y1"} lang-map)]
         (do
+          (-> m :statements first) => `parsing
           (-> m :statements first meta :matches deref) => {}
           (-> m :statements first meta :refs deref) => #{})))
 
