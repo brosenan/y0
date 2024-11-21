@@ -1,4 +1,4 @@
-(ns rules)
+(ns conditions)
 
 ;; # $y_0$ Rules and Conditions
 

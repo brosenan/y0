@@ -5,7 +5,7 @@
   * [`given` Conditions](#`given`-conditions)
     * [Example: The Lambda Calculus](#example:-the-lambda-calculus)
 ```clojure
-(ns rules)
+(ns conditions)
 
 ```
 # $y_0$ Rules and Conditions

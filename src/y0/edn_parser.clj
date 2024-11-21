@@ -1,6 +1,5 @@
 (ns y0.edn-parser
   (:require [edamame.core :as e :refer [parse-string-all]]
-            [y0.core :refer [y0-symbols]]
             [y0.term-utils :refer [postwalk-with-meta]]
             [y0.status :refer [ok]]))
 
@@ -75,10 +74,13 @@
             refer-map (merge refer-map root-refer-map)
             statements (for [statement statements]
                          (convert-ns statement ns-map refer-map))]
-        (ok [statements (concat (for [module module-list]
-                                  {:lang lang
-                                   :name module})
-                                extra-modules)]))
+        (if (= module (get ns-map nil))
+          (ok [statements (concat (for [module module-list]
+                                    {:lang lang
+                                     :name module})
+                                  extra-modules)])
+          {:err ["Module" module "has wrong name" (get ns-map nil)
+                 "in ns declaration"]}))
       (catch Exception e
         {:err {:error (.getMessage e)}}))))
 

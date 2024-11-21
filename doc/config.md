@@ -162,8 +162,8 @@ environment variable `Y1_PATH`.
    (def lang-map1 (language-map-from-config config)) => #'lang-map1)
    ;; Now we can use parse and see if it works
    (let [{:keys [parse read resolve]} (get lang-map1 "y1")]
-     (parse "my.module" "/my/module.y1" "(ns foo (:require [bar])) defn a b") =>
-     {:ok '[(y1.core/defn foo/a foo/b)
+     (parse "my.module" "/my/module.y1" "(ns my.module (:require [bar])) defn a b") =>
+     {:ok '[(y1.core/defn my.module/a my.module/b)
             ({:lang "y1" :name "bar"}
              {:lang "y0" :name "y1"})]}
        ;; Checking that we got the resolver we wanted
