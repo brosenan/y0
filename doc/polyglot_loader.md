@@ -1,6 +1,7 @@
 * [A Polyglot Module Loader](#a-polyglot-module-loader)
   * [Module and Language Representation](#module-and-language-representation)
     * [Loading a Single Module](#loading-a-single-module)
+    * [Optional Decoration](#optional-decoration)
   * [Module Store](#module-store)
     * [Topological Sorting of a Module Store](#topological-sorting-of-a-module store)
     * [Evaluating All Modules](#evaluating-all-modules)
@@ -67,7 +68,7 @@ For the following examples, let us use the following language-map:
 (def lang-map {"y1" {:resolve (constantly (ok "some/path"))
                      :read my-read1
                      :parse (fn [name _path text]
-                              (ok [`[parsing ~text]
+                              (ok [(with-meta `[parsing ~text] {:foo :bar})
                                    [{:lang "y1"
                                      :name (str name 2)}]]))}
                "y2" {:resolve #(ok % assoc :path "some/other/path")
@@ -131,6 +132,76 @@ the path.
           :statements `[parsing "the contents of some/path"]
           :deps [{:lang "y1"
                   :name "foo2"}]}})
+
+```
+### Optional Decoration
+
+Decorations are meta properties added to the nodes of a parse-tree containing
+semantic information. In order for the analysis to update the decorations as
+it walks through the tree, empty decorations are added before the analysis,
+and the analysis updates them in-place. For in-place updates to be possible,
+the decorations consist of atoms.
+
+In the polyglot loader, the decorations are added only for languages that
+explicitly request them. This is done to make sure that semantic links are
+only drawn between code artifacts that are "interesting" to the end user and
+do not link to the $y_0$ definition of the language. Therefore, in settings
+where the a single language is defined over $y_0$, that language will have
+decorations and $y_0$ will not.
+
+If the language-map entry for a language contains the key `:decorate`, and if
+its value is truthy, decorations are added to the tree. `:decorate` is a
+Boolean flag rather than a function because the nature of the decorations
+themselves is constant and does not change from one language to another.
+
+First, let us see that by default we get no decorations.
+```clojure
+(fact
+ (let-s [m (load-module {:lang "y1"
+                         :name "foo"
+                         :path "path/to/foo.y1"
+                         :text "text inside foo.y1"} lang-map)]
+        (do
+          (-> m :statements) => `[parsing "text inside foo.y1"]
+          (-> m :statements meta) => {:foo :bar})))
+
+```
+Now, let us repeat the same example, but after updating `lang-map` so that
+for language `y1`, `:decorate` would be `true`.
+```clojure
+(fact
+ (let-s [lang-map (ok (update lang-map "y1" #(assoc % :decorate true)))
+         m (load-module {:lang "y1"
+                         :name "foo"
+                         :path "path/to/foo.y1"
+                         :text "text inside foo.y1"} lang-map)]
+        (do
+          (-> m :statements) => `[parsing "text inside foo.y1"]
+          (-> m :statements meta :foo) => :bar
+          (-> m :statements meta :matches deref) => {}
+          (-> m :statements meta :refs deref) => #{})))
+
+```
+As can be seen, the existing meta elements (`:foo`, in this case) still
+exist, but two keys were added, both containing atoms. `:matches` is a map
+containing information about predicates that match this node. `:refs` is a
+set of nodes that reference this node.
+
+The decorations are added throughout the tree, to all nodes that can have
+`meta` properties.
+
+In the following example we demonstrate that decorations are added also to
+the symbol `parsing` inside the top-level list.
+```clojure
+(fact
+ (let-s [lang-map (ok (update lang-map "y1" #(assoc % :decorate true)))
+         m (load-module {:lang "y1"
+                         :name "foo"
+                         :path "path/to/foo.y1"
+                         :text "text inside foo.y1"} lang-map)]
+        (do
+          (-> m :statements first meta :matches deref) => {}
+          (-> m :statements first meta :refs deref) => #{})))
 
 ```
 ## Module Store

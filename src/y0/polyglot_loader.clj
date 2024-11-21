@@ -2,21 +2,30 @@
   (:require [clojure.set :refer [union]]
             [loom.graph :refer [digraph]]
             [loom.alg :refer [topsort]]
-            [y0.status :refer [ok ->s let-s]]))
+            [y0.status :refer [ok ->s let-s]]
+            [y0.term-utils :refer [postwalk-meta]]))
 
 (defn- slurp-text [{:keys [path] :as m} read-fn]
   (ok m assoc :text (read-fn path)))
+
+(defn- decorate-tree [tree]
+  (postwalk-meta (fn [m]
+                   (merge m {:matches (atom {})
+                             :refs (atom #{})})) tree))
 
 (defn load-module [module lang-map]
   (let [{:keys [lang]} module]
     (if (contains? lang-map lang)
       (let [lang-def (get lang-map lang)
-            {:keys [parse read resolve]} lang-def]
+            {:keys [parse read resolve decorate]} lang-def]
         (cond
           (contains? module :statements) (ok module)
           (contains? module :text) (let-s [[statements deps] (parse (:name module)
                                                                     (:path module)
-                                                                    (:text module))]
+                                                                    (:text module))
+                                           statements (ok (if decorate
+                                                            (decorate-tree statements)
+                                                            statements))]
                                           (ok (-> module
                                                   (assoc :statements statements)
                                                   (assoc :deps deps))))
