@@ -47,7 +47,11 @@
    :expr-stringifier {:default {:func (constantly #(explanation-expr-to-str % 3))
                                 :args []}
                       :extract-text {:func (constantly extract-expr-text)
-                                     :args []}}})
+                                     :args []}}
+   :decorate {:default {:func (constantly false)
+                        :args []}
+              :true {:func (constantly true)
+                     :args []}}})
 
 (defn language-map-from-config [config]
   (->> (for [[lang conf] config]
@@ -55,5 +59,6 @@
            [lang {:parse (resolve-config-val lang-config-spec conf :parser)
                   :read (resolve-config-val lang-config-spec conf :reader)
                   :resolve (resolve-config-val lang-config-spec conf :resolver)
-                  :stringify-expr (resolve-config-val lang-config-spec conf :expr-stringifier)}]))
+                  :stringify-expr (resolve-config-val lang-config-spec conf :expr-stringifier)
+                  :decorate (resolve-config-val lang-config-spec conf :decorate)}]))
        (into {})))

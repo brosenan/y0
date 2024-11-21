@@ -136,22 +136,29 @@
                      ;; ...named Y0-PATH
                      :path-prefixes-env "Y1-PATH"
                      ;; Files are read using Clojure's slurp function.
-                     :reader :slurp}}]
+                     :reader :slurp
+                     ;; The tree will be decorated with semantic information.
+                     ;; This should only be set for languages that the end-user
+                     ;; is expected to understand.
+                     :decorate :true}}]
    (def lang-map1 (language-map-from-config config)) => #'lang-map1)
    ;; Now we can use parse and see if it works
-   (let [{:keys [parse read resolve]} (get lang-map1 "y1")]
-     (parse "my.module" "/my/module.y1" "(ns my.module (:require [bar])) defn a b") =>
-     {:ok '[(y1.core/defn my.module/a my.module/b)
-            ({:lang "y1" :name "bar"}
-             {:lang "y0" :name "y1"})]}
-       ;; Checking that we got the resolver we wanted
-     (let [path (io/file "./a/b/c.y1")]
-       (resolve "a.b.c") => {:ok path}
-       (provided
-        (exists? path) => true
-        (getenv "Y1-PATH") => ".:/foo:/bar"))
+ (let [{:keys [parse read resolve]} (get lang-map1 "y1")
+       parsed (parse "my.module" "/my/module.y1" "(ns my.module (:require [bar])) defn a b")]
+   parsed => {:ok '[(y1.core/defn my.module/a my.module/b)
+                    ({:lang "y1" :name "bar"}
+                     {:lang "y0" :name "y1"})]}
+     ;; Because we asked to `:decorate`, `:decorate` is `true` in the
+     ;; `lang-map`.
+   (-> lang-map1 (get "y1") :decorate) => true
+     ;; Checking that we got the resolver we wanted
+   (let [path (io/file "./a/b/c.y1")]
+     (resolve "a.b.c") => {:ok path}
+     (provided
+      (exists? path) => true
+      (getenv "Y1-PATH") => ".:/foo:/bar"))
      ;; :read is a function that actually (tries to) reads files
-     (read "a-path-that-does-not-exist") => (throws java.io.FileNotFoundException)))
+   (read "a-path-that-does-not-exist") => (throws java.io.FileNotFoundException)))
 
 ;; ### Instaparse-Based Language Config
 
@@ -186,14 +193,17 @@
                      :path-prefixes-env "C0-PATH"
                      :reader :slurp}}]
    (def lang-map1 (language-map-from-config config)) => #'lang-map1)
-   ;; Now we can use parse and see if it works
+ ;; Now we can use parse and see if it works
  (let [{:keys [parse _resolve]} (get lang-map1 "c0")]
    (parse "my.module" "/my/module.c0" "import foo; a = 1; b = 2.3;") =>
    {:ok '[[[:import [:dep "foo"]]
            [:statement [:assign my.module/a [:expr [:int 1]]]]
            [:statement [:assign my.module/b [:expr [:float 2.3]]]]]
           [{:lang "c0" :name "foo"}
-           {:lang "y0" :name "c0"}]]}))
+           {:lang "y0" :name "c0"}]]})
+ ;; Because we did not set `:decorate`, `:decorate` is `false` in the
+ ;; `lang-map`.
+ (-> lang-map1 (get "c0") :decorate) => false)
 
 ;; ### Controlling Explanation Output
 
