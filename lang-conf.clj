@@ -139,4 +139,6 @@
        ;; Read files using Clojure's slurp function.
        :reader :slurp
        ;; Stringify by extracting text from the source file
-       :expr-stringifier :extract-text}}
+       :expr-stringifier :extract-text
+       ;; Decorate the tree
+       :decorate :true}}
