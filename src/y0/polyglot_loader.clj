@@ -11,7 +11,7 @@
 (defn- decorate-tree [tree]
   (postwalk-meta (fn [m]
                    (merge m {:matches (atom {})
-                             :refs (atom #{})})) tree))
+                             :refs (atom nil)})) tree))
 
 (defn load-module [module lang-map]
   (let [{:keys [lang]} module]

@@ -248,14 +248,14 @@
 ;; opposite direction, i.e., from the definition to its references.
 
 ;; To do this, we give the definition a mutable `:refs` decoration, containing
-;; an empty set. This set will then be populated with nodes that are referencing
-;; this definition.
+;; an empty sequence (`nil`). This set will then be populated with nodes that
+;; are referencing this definition.
 (fact
- (let-s [definition (ok `(defvar foo bar) with-meta {:refs (atom #{})})
+ (let-s [definition (ok `(defvar foo bar) with-meta {:refs (atom nil)})
          ps (apply-normal-statement varlang-ps definition {})
          t (ok (atom nil))
          _ (satisfy-goal ps `(expr foo ~t) ["Something went wrong"])]
-        (-> definition meta :refs deref reify-term) => #{`foo}))
+        (-> definition meta :refs deref reify-term) => [`foo]))
 
 ;; However, sometimes the definition is synthetic, created by a translation rule
 ;; based on elements from the source code. In such cases, it is common that the
@@ -266,9 +266,9 @@
 ;; So, if the definition itself has no `:refs` decoration but the first argument
 ;; does, we add the node to the first argument's `:refs`.
 (fact
- (let-s [first-arg (ok `foo with-meta {:refs (atom #{})})
+ (let-s [first-arg (ok `foo with-meta {:refs (atom nil)})
          definition (ok `(defvar ~first-arg bar))
          ps (apply-normal-statement varlang-ps definition {})
          t (ok (atom nil))
          _ (satisfy-goal ps `(expr foo ~t) ["Something went wrong"])]
-        (-> first-arg meta :refs deref reify-term) => #{`foo}))
+        (-> first-arg meta :refs deref reify-term) => [`foo]))

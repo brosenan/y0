@@ -157,12 +157,12 @@
           (-> m :statements) => `[parsing "text inside foo.y1"]
           (-> m :statements meta :foo) => :bar
           (-> m :statements meta :matches deref) => {}
-          (-> m :statements meta :refs deref) => #{})))
+          (-> m :statements meta :refs deref) => nil?)))
 
 ;; As can be seen, the existing meta elements (`:foo`, in this case) still
 ;; exist, but two keys were added, both containing atoms. `:matches` is a map
 ;; containing information about predicates that match this node. `:refs` is a
-;; set of nodes that reference this node.
+;; sequence of nodes that reference this node.
 
 ;; The decorations are added throughout the tree, to all nodes that can have
 ;; `meta` properties.
@@ -178,7 +178,7 @@
         (do
           (-> m :statements first) => `parsing
           (-> m :statements first meta :matches deref) => {}
-          (-> m :statements first meta :refs deref) => #{})))
+          (-> m :statements first meta :refs deref) => nil)))
 
 ;; ## Module Store
 
