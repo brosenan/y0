@@ -279,10 +279,10 @@
     (when (some? matches)
       (swap! matches #(assoc % pred {:args args
                                      :def def})))
-    (if-let [{:keys [refs]} (meta def)]
+    (if-let [refs (:refs (meta def))]
       (swap! refs #(conj % subj))
       (let [[_name first-arg & _args] def]
-        (when-let [{:keys [refs]} (meta first-arg)]
+        (when-let [refs (:refs (meta first-arg))]
           (swap! refs #(conj % subj)))))))
 
 (defn satisfy-goal [ps goal why-not]
