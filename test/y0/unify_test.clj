@@ -202,3 +202,11 @@
    (reify-term (list 1 2 'y0.core/& tail)) => (list 1 2 'y0.core/& tail)
    (reify-term [1 2 'y0.core/& 'tail]) => [1 2 'y0.core/& 'tail]
    (reify-term (list 1 2 'y0.core/& 'tail)) => (list 1 2 'y0.core/& 'tail)))
+
+;; It also recurses into maps and sets.
+(fact
+ (let [x (atom 2)]
+   (reify-term {:a 1
+                :b x}) => {:a 1
+                           :b 2}
+   (reify-term #{1 x}) => #{1 2}))

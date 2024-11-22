@@ -74,7 +74,7 @@
 (defn- resolve-subject [why-not]
   (replace {`? *subject*} why-not))
 
-(defn- add-deduction-rule [ps bindings head conditions vars]
+(defn- add-deduction-rule [ps bindings head conditions vars origin]
   (let [[head why-not] (split-goal head nil)
         vars' (new-vars vars bindings)
         head' (replace-vars head vars')
@@ -97,7 +97,8 @@
                    (if (unify goal head)
                      (with-bindings {#'*subject* (second goal)}
                        (check-conditions conditions ps vars why-not))
-                     {:err why-not}))))]
+                     {:err why-not}))))
+        body (with-meta body {:origin origin})]
     (store-rule ps head' body)))
 
 (defn- expect-status [status why-not test vars primary]
@@ -264,12 +265,30 @@
 (defn add-rule [ps rule vars]
   (let [[_all bindings head op & terms] rule]
     (cond
-      (or (nil? op) (= op `<-)) (add-deduction-rule ps bindings head terms vars)
+      (or (nil? op) (= op `<-)) (add-deduction-rule ps bindings head terms vars (-> rule meta :origin))
       (= op `=>) (add-translation-rule ps bindings head terms vars)
       :else {:err ["Invalid rule operator" op]})))
+
+(defn- update-decorations [goal rule]
+  (let [[pred subj & args] goal
+        subj (if (instance? clojure.lang.IAtom subj)
+               @subj
+               subj)
+        {:keys [matches]} (meta subj)
+        def (-> rule meta :origin)]
+    (when (some? matches)
+      (swap! matches #(assoc % pred {:args args
+                                     :def def})))
+    (if-let [{:keys [refs]} (meta def)]
+      (swap! refs #(conj % subj))
+      (let [[_name first-arg & _args] def]
+        (when-let [{:keys [refs]} (meta first-arg)]
+          (swap! refs #(conj % subj)))))))
 
 (defn satisfy-goal [ps goal why-not]
   (let [[goal why-not] (split-goal goal why-not)
         why-not (resolve-subject why-not)]
     (let-s [rule (match-rule ps goal)]
-           (rule goal why-not ps))))
+           (do
+             (update-decorations goal rule)
+             (rule goal why-not ps)))))

@@ -66,4 +66,10 @@
     (seq? t) (if (empty? t)
                t
                (with-meta (seq (reify-terms t)) (meta t)))
+    (map? t) (with-meta (->> (for [[k v] t]
+                               [(reify-term k) (reify-term v)])
+                             (into {})) (meta t))
+    (set? t) (with-meta (->> (for [x t]
+                               (reify-term x))
+                             set) (meta t))
     :else t))

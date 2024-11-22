@@ -4,6 +4,7 @@
     * [Providing Why-Not-Explanations](#providing-why-not-explanations)
   * [Handling Statements](#handling-statements)
     * [Reporting Unhandled Statements](#reporting-unhandled-statements)
+  * [Tree Decoration](#tree-decoration)
 ```clojure
 (ns y0.rules-test
   (:require [midje.sweet :refer [fact =>]]
@@ -238,5 +239,40 @@ pointless and therefore not allowed.
    (:err status) =>
    ["No rules are defined to translate statement" `(my-stmt 123)
     "and therefore it does not have any meaning"]))
+
+```
+## Tree Decoration
+
+One of the benefits of having a declarative language for defining the
+semantics of programming languages is that it can be used to retrieve
+semantic information about a program automatically, without the need to
+explicitly program this for every language.
+
+In $y_0$, every time a rule is applied to a node in the parse tree, some
+semantic information can be gathered. If the tree node has
+[mutable decorations](polyglot_loader.md#optional-decoration), they will be
+updated with information about the application of this rule.
+
+To demonstrate this we start by defining a simple language, where _variables_
+can be defined with _types_, and then used in _expressions_.
+```clojure
+(let-s [ps (->s (ok {})
+                (add-rule `(all [x t] (expr x t ! x "is not an expression")) {})
+                (add-rule `(all [v t] (defvar v t) y0/=> (all [] (expr v t))) {}))]
+       (def varlang-ps ps))
+
+```
+Now let us introduce a "program" that defines variable `foo` of type `bar`.
+We will then create a node referencing `foo` and add an empty `:matches`
+decoration to it. Then we will call `satisfy-goal` with predicate `expr` and a
+variable for the type. Finally, we will examine the decoration value.
+```clojure
+(fact
+ (let-s [ps (apply-normal-statement varlang-ps `(defvar foo bar) {})
+         node (ok `foo with-meta {:matches (atom {})})
+         t (ok (atom nil))
+         _ (satisfy-goal ps `(expr ~node ~t) ["Something went wrong"])]
+        (-> node meta :matches deref) => {`expr {:args [t]
+                                                 :def `(defvar foo bar)}}))
 ```
 

@@ -1,11 +1,12 @@
 (ns y0.rules-test
-  (:require [midje.sweet :refer [fact =>]]
-            [y0.rules :refer [new-vars add-rule satisfy-goal
-                              apply-normal-statement]]
-            [y0.core :refer [all !] :as y0]
-            [y0.status :refer [->s ok let-s]]
-            [y0.predstore :refer [match-rule pred-key]]
-            [y0.explanation :refer [explanation-to-str]]))
+  (:require
+   [midje.sweet :refer [=> fact]]
+   [y0.core :refer [! all] :as y0]
+   [y0.explanation :refer [explanation-to-str]]
+   [y0.predstore :refer [match-rule]]
+   [y0.rules :refer [add-rule apply-normal-statement new-vars satisfy-goal]]
+   [y0.status :refer [->s let-s ok]]
+   [y0.unify :refer [reify-term]]))
 
 ;; This module is responsible for rules and their interpretation.
 
@@ -201,3 +202,73 @@
    (:err status) =>
    ["No rules are defined to translate statement" `(my-stmt 123)
     "and therefore it does not have any meaning"]))
+
+;; ## Tree Decoration
+
+;; One of the benefits of having a declarative language for defining the
+;; semantics of programming languages is that it can be used to retrieve
+;; semantic information about a program automatically, without the need to
+;; explicitly program this for every language.
+
+;; In $y_0$, every time a rule is applied to a node in the parse tree, some
+;; semantic information can be gathered. If the tree node has
+;; [mutable decorations](polyglot_loader.md#optional-decoration), they will be
+;; updated with information about the application of this rule.
+
+;; To demonstrate this we start by defining a simple language, where _variables_
+;; can be defined with _types_, and then used in _expressions_.
+(let-s [ps (->s (ok {})
+                (add-rule `(all [x t] (expr x t ! x "is not an expression")) {})
+                (add-rule `(all [v t] (defvar v t) y0/=> (all [] (expr v t))) {}))]
+       (def varlang-ps ps))
+
+;; Now let us introduce a "program" that defines variable `foo` of type `bar`.
+;; We will then create a node referencing `foo` and add an empty `:matches`
+;; decoration to it. Then we will call `satisfy-goal` with predicate `expr` and a
+;; variable for the type. Finally, we will examine the decoration value.
+(fact
+ (let-s [ps (apply-normal-statement varlang-ps `(defvar foo bar) {})
+         node (ok `foo with-meta {:matches (atom {})})
+         t (ok (atom nil))
+         _ (satisfy-goal ps `(expr ~node ~t) ["Something went wrong"])]
+        (-> node meta :matches deref reify-term) =>
+        {`expr {:args [`bar]
+                :def `(defvar foo bar)}}))
+
+;; Given these decorations, one cal learn the following things about the node:
+;; 1. It is an expression (`expr`).
+;; 2. It is of type `bar`.
+;; 3. It was defined in the node `(defvar foo bar)`, which in term has pointers
+;;    to the code location in which it was created.
+
+;; ### Tracing References
+
+;; In the previous example we saw how the `:def` attribute is populated to link
+;; to the definition. It is also desired, however, to collect pointers in the
+;; opposite direction, i.e., from the definition to its references.
+
+;; To do this, we give the definition a mutable `:refs` decoration, containing
+;; an empty set. This set will then be populated with nodes that are referencing
+;; this definition.
+(fact
+ (let-s [definition (ok `(defvar foo bar) with-meta {:refs (atom #{})})
+         ps (apply-normal-statement varlang-ps definition {})
+         t (ok (atom nil))
+         _ (satisfy-goal ps `(expr foo ~t) ["Something went wrong"])]
+        (-> definition meta :refs deref reify-term) => #{`foo}))
+
+;; However, sometimes the definition is synthetic, created by a translation rule
+;; based on elements from the source code. In such cases, it is common that the
+;; first argument of the definition (the statement's subject) is a node in the
+;; user's code parse-tree. In such cases we wish to make the reference from
+;; there.
+
+;; So, if the definition itself has no `:refs` decoration but the first argument
+;; does, we add the node to the first argument's `:refs`.
+(fact
+ (let-s [first-arg (ok `foo with-meta {:refs (atom #{})})
+         definition (ok `(defvar ~first-arg bar))
+         ps (apply-normal-statement varlang-ps definition {})
+         t (ok (atom nil))
+         _ (satisfy-goal ps `(expr foo ~t) ["Something went wrong"])]
+        (-> first-arg meta :refs deref reify-term) => #{`foo}))

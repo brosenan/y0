@@ -116,7 +116,7 @@
            (->s 
             (ok pd)
             (pd-update-tags arg)
-            (ok assoc key (with-meta body {:head head}))))))
+            (ok assoc key (vary-meta body #(assoc % :head head)))))))
 
 (defn pd-match [pd goal]
   (loop [keys (-> goal second arg-key arg-key-generalizations)]
