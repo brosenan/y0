@@ -38,6 +38,12 @@
 (declare satisfy-goal check-conditions check-condition add-rule apply-statement
          apply-statements)
 
+(defn- check-given-condition [condition why-not vars ps]
+  (let-s [[_given statement & conditions] (ok condition)
+          statement (ok statement vary-meta assoc :def *subject*)
+          ps' (apply-statement statement ps vars)]
+         (check-conditions conditions ps' vars why-not)))
+
 (defn- check-condition [condition ps vars why-not]
   (when *do-trace*
     (println *trace-indent* 
@@ -48,9 +54,7 @@
                 (-> condition first (= `exist)) (let [[_exist bindings & conditions] condition
                                                       vars (new-vars vars bindings)]
                                                   (check-conditions conditions ps vars why-not))
-                (-> condition first (= `given)) (let-s [[_given statement & conditions] (ok condition)
-                                                        ps' (apply-statement statement ps vars)]
-                                                       (check-conditions conditions ps' vars why-not))
+                (-> condition first (= `given)) (check-given-condition condition why-not vars ps)
                 (-> condition first (= `?)) (do
                                               (apply println "?" (replace-vars (rest condition) vars))
                                               {:ok nil})
@@ -74,7 +78,7 @@
 (defn- resolve-subject [why-not]
   (replace {`? *subject*} why-not))
 
-(defn- add-deduction-rule [ps bindings head conditions vars origin]
+(defn- add-deduction-rule [ps bindings head conditions vars origin def]
   (let [[head why-not] (split-goal head nil)
         vars' (new-vars vars bindings)
         head' (replace-vars head vars')
@@ -98,7 +102,8 @@
                      (with-bindings {#'*subject* (second goal)}
                        (check-conditions conditions ps vars why-not))
                      {:err why-not}))))
-        body (with-meta body {:origin origin})]
+        body (with-meta body {:origin origin
+                              :def def})]
     (store-rule ps head' body)))
 
 (defn- expect-status [status why-not test vars primary]
@@ -249,11 +254,27 @@
     origin
     statement))
 
+(defn- decorated? [node]
+  (-> node meta :matches nil? not))
+
+(defn- find-definition [node]
+  (cond
+    (instance? clojure.lang.IAtom node) (recur @node)
+    (decorated? node) node
+    (sequential? node) (recur (second node))
+    :else nil))
+
 (defn- add-translation-rule [ps bindings head terms vars]
   (let [vars' (new-vars vars bindings)
         head' (replace-vars head vars')
         body (fn [statement ps]
-               (let [terms (map #(vary-meta % assoc :origin (origin-of statement)) terms)
+               (let [definition (or (find-definition statement)
+                                    (-> statement meta :origin))
+                     terms (map (fn [x]
+                                  (vary-meta
+                                   x #(-> %
+                                          (assoc :origin (origin-of statement))
+                                          (assoc :def definition)))) terms)
                      vars (new-vars vars bindings)
                      head (replace-vars head vars)]
                  (if (unify statement head)
@@ -265,7 +286,9 @@
 (defn add-rule [ps rule vars]
   (let [[_all bindings head op & terms] rule]
     (cond
-      (or (nil? op) (= op `<-)) (add-deduction-rule ps bindings head terms vars (-> rule meta :origin))
+      (or (nil? op) (= op `<-)) (add-deduction-rule ps bindings head terms vars
+                                                    (-> rule meta :origin)
+                                                    (-> rule meta :def))
       (= op `=>) (add-translation-rule ps bindings head terms vars)
       :else {:err ["Invalid rule operator" op]})))
 
