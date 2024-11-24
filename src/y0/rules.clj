@@ -78,7 +78,7 @@
 (defn- resolve-subject [why-not]
   (replace {`? *subject*} why-not))
 
-(defn- add-deduction-rule [ps bindings head conditions vars origin def]
+(defn- add-deduction-rule [ps bindings head conditions vars def]
   (let [[head why-not] (split-goal head nil)
         vars' (new-vars vars bindings)
         head' (replace-vars head vars')
@@ -102,8 +102,7 @@
                      (with-bindings {#'*subject* (second goal)}
                        (check-conditions conditions ps vars why-not))
                      {:err why-not}))))
-        body (with-meta body {:origin origin
-                              :def def})]
+        body (with-meta body {:def def})]
     (store-rule ps head' body)))
 
 (defn- expect-status [status why-not test vars primary]
@@ -287,7 +286,6 @@
   (let [[_all bindings head op & terms] rule]
     (cond
       (or (nil? op) (= op `<-)) (add-deduction-rule ps bindings head terms vars
-                                                    (-> rule meta :origin)
                                                     (-> rule meta :def))
       (= op `=>) (add-translation-rule ps bindings head terms vars)
       :else {:err ["Invalid rule operator" op]})))
