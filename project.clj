@@ -8,7 +8,8 @@
                  [org.clojure/tools.cli "1.1.230"]
                  [clojure-term-colors "0.1.0"]
                  [instaparse "1.5.0"]
-                 [aysylu/loom "1.0.2"]]
+                 [aysylu/loom "1.0.2"]
+                 [hiccup "2.0.0-RC3"]]
   :profiles {:dev {:dependencies [[midje "1.10.10"]]}}
   :plugins [[lein-midje "3.2.2"]]
   :repl-options {:init-ns y0.core})
