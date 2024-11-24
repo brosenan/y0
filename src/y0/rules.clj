@@ -298,15 +298,13 @@
                @subj
                subj)
         {:keys [matches]} (meta subj)
-        def (-> rule meta :origin)]
+        def (-> rule meta :def)
+        {:keys [refs]} (meta def)]
     (when (some? matches)
-      (swap! matches #(assoc % pred {:args args
-                                     :def def})))
-    (if-let [refs (:refs (meta def))]
-      (swap! refs #(conj % subj))
-      (let [[_name first-arg & _args] def]
-        (when-let [refs (:refs (meta first-arg))]
-          (swap! refs #(conj % subj)))))))
+      (swap! matches assoc pred {:args args
+                                 :def def}))
+    (when (some? refs)
+      (swap! refs conj subj))))
 
 (defn satisfy-goal [ps goal why-not]
   (let [[goal why-not] (split-goal goal why-not)

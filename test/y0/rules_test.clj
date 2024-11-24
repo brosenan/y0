@@ -354,60 +354,49 @@
 
 ;; ### Updating Decorations
 
-;; To demonstrate this we start by defining a simple language, where _variables_
-;; can be defined with _types_, and then used in _expressions_.
-(let-s [ps (->s (ok {})
-                (add-rule `(all [x t] (expr x t ! x "is not an expression")) {})
-                (add-rule `(all [v t] (defvar v t) y0/=> (all [] (expr v t))) {}))]
-       (def varlang-ps ps))
+;; In this subsection we discuss how mutable decorations are being updated. When
+;; a goal is evaluated, if the goal's _subject_ (its first argument) has mutable
+;; decorations, they are updated to add information about the goal being
+;; evaluated.
 
-;; Now let us introduce a "program" that defines variable `foo` of type `bar`.
-;; We will then create a node referencing `foo` and add an empty `:matches`
-;; decoration to it. Then we will call `satisfy-goal` with predicate `expr` and a
-;; variable for the type. Finally, we will examine the decoration value.
+;; In the following example we define predicate `p`, which takes a subject and
+;; two more arguments. We then call it with a `decorated` subject and observe
+;; the annotations.
 (fact
- (let-s [ps (apply-normal-statement varlang-ps `(defvar foo bar) {})
-         node (ok `foo with-meta {:matches (atom {})})
-         t (ok (atom nil))
-         _ (satisfy-goal ps `(expr ~node ~t) ["Something went wrong"])]
+ (let-s [ps (add-rule {} `(all [x y z] (p x y z)) {})
+         node (ok `foo decorated)
+         _ (satisfy-goal ps `(p ~node bar baz) ["Something went wrong"])]
         (-> node meta :matches deref reify-term) =>
-        {`expr {:args [`bar]
-                :def `(defvar foo bar)}}))
+        {`p {:args [`bar `baz]
+             :def nil}}))
 
-;; Given these decorations, one cal learn the following things about the node:
-;; 1. It is an expression (`expr`).
-;; 2. It is of type `bar`.
-;; 3. It was defined in the node `(defvar foo bar)`, which in term has pointers
-;;    to the code location in which it was created.
+;; Here we can see that the `:matches` decoration is updated with a new key, the
+;; name `p` of the predicate that matched this node. The corresponding value is
+;; a map with two elements: `:args`, containing the other arguments in the goal,
+;; and `:def` which is `nil` in this case and will be discussed next.
 
-;; ### Tracing References
-
-;; In the previous example we saw how the `:def` attribute is populated to link
-;; to the definition. It is also desired, however, to collect pointers in the
-;; opposite direction, i.e., from the definition to its references.
-
-;; To do this, we give the definition a mutable `:refs` decoration, containing
-;; an empty sequence (`nil`). This set will then be populated with nodes that
-;; are referencing this definition.
+;; If the rule we are applying has a `:def` meta property, the node this
+;; property points to becomes the value of the `:def` element in the `:matches`
+;; decoration.
 (fact
- (let-s [definition (ok `(defvar foo bar) with-meta {:refs (atom nil)})
-         ps (apply-normal-statement varlang-ps definition {})
-         t (ok (atom nil))
-         _ (satisfy-goal ps `(expr foo ~t) ["Something went wrong"])]
-        (-> definition meta :refs deref reify-term) => [`foo]))
+ (let-s [ps (add-rule {} (with-meta `(all [x y z] (p x y z))
+                           {:def `(some def)}) {})
+         node (ok `foo decorated)
+         _ (satisfy-goal ps `(p ~node bar baz) ["Something went wrong"])]
+        (-> node meta :matches deref reify-term) =>
+        {`p {:args [`bar `baz]
+             :def `(some def)}}))
 
-;; However, sometimes the definition is synthetic, created by a translation rule
-;; based on elements from the source code. In such cases, it is common that the
-;; first argument of the definition (the statement's subject) is a node in the
-;; user's code parse-tree. In such cases we wish to make the reference from
-;; there.
-
-;; So, if the definition itself has no `:refs` decoration but the first argument
-;; does, we add the node to the first argument's `:refs`.
+;; If in addition, the definition node is `decorated`, the subject node is added
+;; to the definition node's `:refs`.
 (fact
- (let-s [first-arg (ok `foo with-meta {:refs (atom nil)})
-         definition (ok `(defvar ~first-arg bar))
-         ps (apply-normal-statement varlang-ps definition {})
-         t (ok (atom nil))
-         _ (satisfy-goal ps `(expr foo ~t) ["Something went wrong"])]
-        (-> first-arg meta :refs deref reify-term) => [`foo]))
+ (let-s [def (ok `(some def) decorated)
+         ps (add-rule {} (with-meta `(all [x y z] (p x y z))
+                           {:def def}) {})
+         node (ok `foo decorated)
+         _ (satisfy-goal ps `(p ~node bar baz) ["Something went wrong"])]
+        (do
+          (-> node meta :matches deref reify-term) =>
+          {`p {:args [`bar `baz]
+               :def `(some def)}}
+          (-> def meta :refs deref) => [node])))
