@@ -3,6 +3,7 @@
     * [Preprocessing](#preprocessing)
     * [HTML File Names from Module Names](#html-file-names-from-module names)
     * [Node URIs](#node-uris)
+  * [Tree to Hiccup](#tree-to-hiccup)
 ```clojure
 (ns y0.to-html-test
   (:require [midje.sweet :refer [fact =>]]
@@ -127,5 +128,66 @@ It returns `nil` if the node is not annotated.
 (fact
  (let [node `foo]
    (node-uri node) => nil))
+
+```
+## Tree to Hiccup
+
+At the core of generating HTML out of decorated parse-trees lies the ability
+to take the contents of a file as a string along with its tree representation
+and generate a [Hiccup](https://github.com/weavejester/hiccup) representation
+of an HTML tree which follows the structure of the parse-tree, but weaves the
+text inside it.
+
+The function `tree-to-hiccup` does this. It takes a module (map) containing
+the fields `:text` and `:statements`, and an annotation function which
+returns the element name and attributes for each HTML element based on the
+corresponding node.
+
+`tree-to-hiccup` works list to list. For an empty tree (empty list), the text
+is returned as a single element of a list.
+```clojure
+(fact
+ (tree-to-hiccup {:text "This is some text"
+                  :statements []}
+                 (constantly [:span {}])) => ["This is some text"])
+
+```
+Given a single node, the output consists of three elements: the text before
+the start of that node, the HTML element representing the node and the text
+after.
+```clojure
+(fact
+ (tree-to-hiccup {:text "123456789"
+                  :statements [(with-meta [:int 456] {:start 1000004
+                                                      :end 1000007})]}
+                 (constantly [:span {}])) =>
+ ["123" [:span {} "456"] "789"])
+
+```
+Given `n` "flat" nodes, the list will contain `2n+1` elements.
+```clojure
+(fact
+ (tree-to-hiccup {:text "1234567890"
+                  :statements [(with-meta [:int 34] {:start 1000003
+                                                      :end 1000005})
+                               (with-meta [:int 78] {:start 1000007
+                                                     :end 1000009})]}
+                 (constantly [:span {}])) =>
+ ["12" [:span {} "34"] "56" [:span {} "78"] "90"])
+
+```
+Nested nodes create nested HTML elements.
+```clojure
+(fact
+ (tree-to-hiccup {:text "123456789"
+                  :statements [(with-meta [:foo
+                                           (with-meta [:int 34] {:start 1000003
+                                                                 :end 1000005})
+                                           (with-meta [:int 56] {:start 1000005
+                                                                 :end 1000007})]
+                                 {:start 1000002
+                                  :end 1000008})]}
+                 (constantly [:span {}])) =>
+ ["1" [:span {} "2" [:span {} "34"] "" [:span {} "56"] "7"] "89"])
 ```
 
