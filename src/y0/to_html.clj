@@ -64,3 +64,22 @@
 (defn tree-to-hiccup [{:keys [text statements]} annotate]
   (let [lines (str/split text #"\n")]
     (tree-and-lines-to-hiccup lines statements {:start 0} annotate)))
+
+(defn- assoc-if [m k v]
+  (if (seq v)
+    (assoc m k v)
+    m))
+
+(defn annotate-node [node]
+  (let [{:keys [matches]} (meta node)
+        matches (if (some? matches)
+                  @matches
+                  {})
+        {:keys [html]} matches
+        {:keys [id]} html
+        attrs (-> {}
+                  (assoc-if :id (str id))
+                  (assoc-if :class 
+                            (str/join " " (->> matches keys
+                                               (filter symbol?) (map name)))))]
+    [:span attrs]))

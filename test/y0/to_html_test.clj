@@ -160,3 +160,36 @@
                                   :end 1000008})]}
                  (constantly [:span {}])) =>
  ["1" [:span {} "2" [:span {} "34"] "" [:span {} "56"] "7"] "89"])
+
+;; ## Nodes Annotations
+
+;; `tree-to-hiccup` takes an `annotate` function as parameter. This function
+;; takes a node and returns a pair containing an element type and a map of
+;; attributes for that node.
+
+;; The function `annotate-node` provides the default functionality for this.
+;; Given a node that doesn't have decorations, it returns `[:span {}]`, as the
+;; default.
+(fact
+ (annotate-node `foo) => [:span {}])
+
+;; The same is true for nodes with `:matches` decorations that do not contain
+;; the `:html` key.
+(fact
+ (annotate-node (with-meta `foo
+                  {:matches (atom {})})) => [:span {}])
+
+;; However, if the `:html` key does exist and contains an `:id`, the `:id`
+;; attribute is populated with its value.
+(fact
+ (annotate-node (with-meta `foo
+                  {:matches (atom {:html {:id 7}})})) =>
+ [:span {:id "7"}])
+
+;; If the `:matches` contains any symbol keys (representing matched predicates),
+;; the name of each such predicate becomes a class in the `:class` attribute.
+(fact
+ (annotate-node (with-meta `foo
+                  {:matches (atom {`p1 {}
+                                   `p2 {}})})) =>
+ [:span {:class "p1 p2"}])

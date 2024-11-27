@@ -4,6 +4,7 @@
     * [HTML File Names from Module Names](#html-file-names-from-module names)
     * [Node URIs](#node-uris)
   * [Tree to Hiccup](#tree-to-hiccup)
+  * [Nodes Annotations](#nodes-annotations)
 ```clojure
 (ns y0.to-html-test
   (:require [midje.sweet :refer [fact =>]]
@@ -189,5 +190,46 @@ Nested nodes create nested HTML elements.
                                   :end 1000008})]}
                  (constantly [:span {}])) =>
  ["1" [:span {} "2" [:span {} "34"] "" [:span {} "56"] "7"] "89"])
+
+```
+## Nodes Annotations
+
+`tree-to-hiccup` takes an `annotate` function as parameter. This function
+takes a node and returns a pair containing an element type and a map of
+attributes for that node.
+
+The function `annotate-node` provides the default functionality for this.
+Given a node that doesn't have decorations, it returns `[:span {}]`, as the
+default.
+```clojure
+(fact
+ (annotate-node `foo) => [:span {}])
+
+```
+The same is true for nodes with `:matches` decorations that do not contain
+the `:html` key.
+```clojure
+(fact
+ (annotate-node (with-meta `foo
+                  {:matches (atom {})})) => [:span {}])
+
+```
+However, if the `:html` key does exist and contains an `:id`, the `:id`
+attribute is populated with its value.
+```clojure
+(fact
+ (annotate-node (with-meta `foo
+                  {:matches (atom {:html {:id 7}})})) =>
+ [:span {:id "7"}])
+
+```
+If the `:matches` contains any symbol keys (representing matched predicates),
+the name of each such predicate becomes a class in the `:class` attribute.
+```clojure
+(fact
+ (annotate-node (with-meta `foo
+                  {:matches (atom {`p1 {}
+                                   `p2 {}})})) =>
+ [:span {:class "p1 p2"}])
 ```
 
