@@ -70,6 +70,14 @@
     (assoc m k v)
     m))
 
+(defn- node-name-if [node]
+  (if (sequential? node)
+    (let [head (first node)]
+      (if (instance? clojure.lang.Named head)
+        [(name head)]
+        []))
+    []))
+
 (defn annotate-node [node]
   (let [{:keys [matches]} (meta node)
         matches (if (some? matches)
@@ -77,9 +85,11 @@
                   {})
         {:keys [html]} matches
         {:keys [id]} html
+        classes (->> matches keys
+                     (filter symbol?) (map name)
+                     (concat (node-name-if node)))
         attrs (-> {}
                   (assoc-if :id (str id))
-                  (assoc-if :class 
-                            (str/join " " (->> matches keys
-                                               (filter symbol?) (map name)))))]
+                  (assoc-if :class
+                            (str/join " " classes)))]
     [:span attrs]))

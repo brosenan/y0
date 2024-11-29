@@ -231,5 +231,29 @@ the name of each such predicate becomes a class in the `:class` attribute.
                   {:matches (atom {`p1 {}
                                    `p2 {}})})) =>
  [:span {:class "p1 p2"}])
+
+```
+If the node is a list or a vector and has a symbol as its first element, the
+symbol's name is added as a class.
+```clojure
+(fact
+ (annotate-node (with-meta `(foo 1 2)
+                  {:matches (atom {`p1 {}
+                                   `p2 {}})})) =>
+ [:span {:class "foo p1 p2"}]
+ (annotate-node (with-meta `(:bar 1 2)
+                  {:matches (atom {`p1 {}
+                                   `p2 {}})})) =>
+ [:span {:class "bar p1 p2"}])
+
+```
+If the first element of the node is not a symbol or a keyword, the class is
+not added.
+```clojure
+(fact
+ (annotate-node (with-meta `(1 2)
+                  {:matches (atom {`p1 {}
+                                   `p2 {}})})) =>
+ [:span {:class "p1 p2"}])
 ```
 
