@@ -175,7 +175,8 @@
     sym))
 
 (defn- add-export [ps statement vars]
-  (let [statement (rest statement)  ;; Remove 'export
+  (let [{:keys [def]} (meta statement)
+        statement (rest statement)  ;; Remove export
         [keys statement] (if (set? (first statement))
                            [(first statement) (rest statement)]
                            [#{} statement])
@@ -190,7 +191,9 @@
         ps (store-export ps (namespace exp-sym) keys
                          (fn [ps impns]
                            (let [imp-sym (symbol impns (name exp-sym))
-                                 vars (assoc vars imp imp-sym)]
+                                 vars (assoc vars imp imp-sym)
+                                 statements (->> statements
+                                                 (map #(vary-meta % assoc :def def)))]
                              (apply-statements statements ps vars))))]
     {:ok ps}))
 
