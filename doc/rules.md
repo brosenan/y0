@@ -414,8 +414,8 @@ has propagated to the rules it generated.
                                                    (all []
                                                         (foo x') <- (foo x)))
                                  {:def `y})
-                               `(import y0.rules-test)] {} {})
-         r (match-rule ps `(foo ~'x))]
+                               `(import some-ns/y0.rules-test)] {} {})
+         r (match-rule ps `(foo ~'some-ns/x))]
         (-> r meta :def)) => `y)
 
 ```
