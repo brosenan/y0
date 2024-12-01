@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   width="210mm"
+   height="297mm"
+   viewBox="0 0 210 297"
+   version="1.1"
+   id="svg5"
+   inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
+   sodipodi:docname="y0.svg"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview7"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:document-units="mm"
+     showgrid="false"
+     inkscape:zoom="0.914906"
+     inkscape:cx="187.99745"
+     inkscape:cy="560.71334"
+     inkscape:window-width="2560"
+     inkscape:window-height="1355"
+     inkscape:window-x="0"
+     inkscape:window-y="0"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="g7751" />
+  <defs
+     id="defs2">
+    <inkscape:path-effect
+       effect="fillet_chamfer"
+       id="path-effect309"
+       is_visible="true"
+       lpeversion="1"
+       nodesatellites_param="F,0,0,1,0,6.0854167,0,1 @ F,0,0,1,0,6.0854167,0,1 @ F,0,0,1,0,6.0854167,0,1 @ F,0,0,1,0,6.0854167,0,1 @ F,0,0,1,0,6.0854167,0,1 @ F,0,0,1,0,6.0854167,0,1"
+       unit="px"
+       method="auto"
+       mode="F"
+       radius="23"
+       chamfer_steps="1"
+       flexible="false"
+       use_knot_distance="true"
+       apply_no_radius="true"
+       apply_with_radius="true"
+       only_selected="false"
+       hide_knots="false" />
+    <inkscape:path-effect
+       effect="fillet_chamfer"
+       id="path-effect309-3"
+       is_visible="true"
+       lpeversion="1"
+       nodesatellites_param="F,0,0,1,0,6.0854167,0,1 @ F,0,0,1,0,6.0854167,0,1 @ F,0,0,1,0,6.0854167,0,1 @ F,0,0,1,0,6.0854167,0,1 @ F,0,0,1,0,6.0854167,0,1 @ F,0,0,1,0,6.0854167,0,1"
+       unit="px"
+       method="auto"
+       mode="F"
+       radius="23"
+       chamfer_steps="1"
+       flexible="false"
+       use_knot_distance="true"
+       apply_no_radius="true"
+       apply_with_radius="true"
+       only_selected="false"
+       hide_knots="false" />
+  </defs>
+  <g
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer"
+     id="layer1">
+    <g
+       id="g7751">
+      <rect
+         style="fill:#241f1c;fill-opacity:1;stroke-width:0.264583"
+         id="rect7982"
+         width="122.4332"
+         height="60.256954"
+         x="33.130535"
+         y="127.83295" />
+      <g
+         id="g7928"
+         transform="translate(14.057434,76.15234)">
+        <g
+           id="g7917">
+          <path
+             sodipodi:type="star"
+             style="fill:#124d00;fill-opacity:1;stroke-width:0.264583"
+             id="path293-6"
+             inkscape:flatsided="true"
+             sodipodi:sides="6"
+             sodipodi:cx="56.561852"
+             sodipodi:cy="76.024689"
+             sodipodi:r1="35.730316"
+             sodipodi:r2="30.943361"
+             sodipodi:arg1="0.52359878"
+             sodipodi:arg2="1.0471976"
+             inkscape:rounded="0"
+             inkscape:randomized="0"
+             d="M 82.235087,96.932555 61.831977,108.7123 a 10.540251,10.540251 2.5219888e-7 0 1 -10.540251,0 L 30.888615,96.932555 A 10.540251,10.540251 60 0 1 25.61849,87.80443 l 0,-23.559483 a 10.540251,10.540251 120 0 1 5.270126,-9.128125 l 20.40311,-11.779741 a 10.540251,10.540251 2.5219887e-7 0 1 10.540251,0 l 20.403111,11.779741 a 10.540251,10.540251 60 0 1 5.270125,9.128125 l 0,23.559483 a 10.540251,10.540251 120 0 1 -5.270126,9.128125 z"
+             inkscape:path-effect="#path-effect309-3"
+             transform="matrix(0.57713708,0,0,0.57713708,22.277368,36.869284)" />
+          <path
+             sodipodi:type="star"
+             style="fill:#1d8300;fill-opacity:1;stroke-width:0.264583"
+             id="path293"
+             inkscape:flatsided="true"
+             sodipodi:sides="6"
+             sodipodi:cx="56.561852"
+             sodipodi:cy="76.024689"
+             sodipodi:r1="35.730316"
+             sodipodi:r2="30.943361"
+             sodipodi:arg1="0.52359878"
+             sodipodi:arg2="1.0471976"
+             inkscape:rounded="0"
+             inkscape:randomized="0"
+             d="M 82.235087,96.932555 61.831977,108.7123 a 10.540251,10.540251 2.5219888e-7 0 1 -10.540251,0 L 30.888615,96.932555 A 10.540251,10.540251 60 0 1 25.61849,87.80443 l 0,-23.559483 a 10.540251,10.540251 120 0 1 5.270126,-9.128125 l 20.40311,-11.779741 a 10.540251,10.540251 2.5219887e-7 0 1 10.540251,0 l 20.403111,11.779741 a 10.540251,10.540251 60 0 1 5.270125,9.128125 l 0,23.559483 a 10.540251,10.540251 120 0 1 -5.270126,9.128125 z"
+             inkscape:path-effect="#path-effect309"
+             transform="matrix(0.57713708,0,0,0.57713708,20.293974,34.149182)" />
+        </g>
+        <g
+           id="g7742"
+           transform="translate(2.5541512,0.11409521)">
+          <g
+             id="g7913"
+             transform="translate(0.06164318,0.28742038)">
+            <text
+               xml:space="preserve"
+               style="font-size:22.5778px;fill:#ffffff;fill-opacity:1;stroke-width:0.264583"
+               x="43.6465"
+               y="79.984138"
+               id="text7182"><tspan
+                 sodipodi:role="line"
+                 id="tspan7180"
+                 style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:22.5778px;font-family:'TeX Gyre Schola Math';-inkscape-font-specification:'TeX Gyre Schola Math';fill:#ffffff;fill-opacity:1;stroke-width:0.264583"
+                 x="43.6465"
+                 y="79.984138">y</tspan></text>
+            <text
+               xml:space="preserve"
+               style="font-size:13.2427px;fill:#ffffff;fill-opacity:1;stroke-width:0.155187"
+               x="51.114235"
+               y="88.226036"
+               id="text7704"><tspan
+                 sodipodi:role="line"
+                 id="tspan7702"
+                 style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'TeX Gyre Schola Math';-inkscape-font-specification:'TeX Gyre Schola Math';stroke-width:0.155187"
+                 x="51.114235"
+                 y="88.226036">0</tspan></text>
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>
