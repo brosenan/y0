@@ -1,3 +1,5 @@
+![logo](y0.svg)
+
 # $y_0$: A Language for Defining Programming Language Semantics
 
 $y_0$, AKA Y Nought, AKA Why Not, is a declarative language intended for defining the semantics of programming languages. Similar to how [parser generators](https://en.wikipedia.org/wiki/Comparison_of_parser_generators) define languages for defining the _syntax_ of computer and programming languages, $y_0$ is designed to define their _semantics_.
