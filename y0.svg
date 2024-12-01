@@ -2,9 +2,9 @@
 <!-- Created with Inkscape (http://www.inkscape.org/) -->
 
 <svg
-   width="37.701mm"
-   height="42.081001mm"
-   viewBox="0 0 37.701 42.081001"
+   width="41.344002mm"
+   height="38.437mm"
+   viewBox="0 0 41.344002 38.437"
    version="1.1"
    id="svg5"
    inkscape:version="1.2.2 (b0a8486541, 2022-12-01)"
@@ -25,14 +25,14 @@
      inkscape:document-units="mm"
      showgrid="false"
      inkscape:zoom="0.914906"
-     inkscape:cx="188.54396"
+     inkscape:cx="189.63697"
      inkscape:cy="560.71334"
      inkscape:window-width="2560"
      inkscape:window-height="1355"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
-     inkscape:current-layer="g7751" />
+     inkscape:current-layer="g7928" />
   <defs
      id="defs2">
     <inkscape:path-effect
@@ -78,9 +78,10 @@
        id="g7751">
       <g
          id="g7928"
-         transform="translate(-34.531311,-57.864347)">
+         transform="translate(-65.979792,10.13075)">
         <g
-           id="g7917">
+           id="g310"
+           transform="translate(32.722097,-70.298037)">
           <path
              sodipodi:type="star"
              style="fill:#124d00;fill-opacity:1;stroke-width:0.264583"
@@ -97,7 +98,7 @@
              inkscape:randomized="0"
              d="M 82.235087,96.932555 61.831977,108.7123 a 10.540251,10.540251 2.5219888e-7 0 1 -10.540251,0 L 30.888615,96.932555 A 10.540251,10.540251 60 0 1 25.61849,87.80443 l 0,-23.559483 a 10.540251,10.540251 120 0 1 5.270126,-9.128125 l 20.40311,-11.779741 a 10.540251,10.540251 2.5219887e-7 0 1 10.540251,0 l 20.403111,11.779741 a 10.540251,10.540251 60 0 1 5.270125,9.128125 l 0,23.559483 a 10.540251,10.540251 120 0 1 -5.270126,9.128125 z"
              inkscape:path-effect="#path-effect309-3"
-             transform="matrix(0.57713708,0,0,0.57713708,22.277368,36.869284)" />
+             transform="matrix(0,0.57713708,-0.57713708,0,98.797977,48.102009)" />
           <path
              sodipodi:type="star"
              style="fill:#1d8300;fill-opacity:1;stroke-width:0.264583"
@@ -114,36 +115,36 @@
              inkscape:randomized="0"
              d="M 82.235087,96.932555 61.831977,108.7123 a 10.540251,10.540251 2.5219888e-7 0 1 -10.540251,0 L 30.888615,96.932555 A 10.540251,10.540251 60 0 1 25.61849,87.80443 l 0,-23.559483 a 10.540251,10.540251 120 0 1 5.270126,-9.128125 l 20.40311,-11.779741 a 10.540251,10.540251 2.5219887e-7 0 1 10.540251,0 l 20.403111,11.779741 a 10.540251,10.540251 60 0 1 5.270125,9.128125 l 0,23.559483 a 10.540251,10.540251 120 0 1 -5.270126,9.128125 z"
              inkscape:path-effect="#path-effect309"
-             transform="matrix(0.57713708,0,0,0.57713708,20.293974,34.149182)" />
-        </g>
-        <g
-           id="g7742"
-           transform="translate(2.5541512,0.11409521)">
+             transform="matrix(0,0.57713708,-0.57713708,0,96.814583,45.381907)" />
           <g
-             id="g7913"
-             transform="translate(0.06164318,0.28742038)">
-            <text
-               xml:space="preserve"
-               style="font-size:22.5778px;fill:#ffffff;fill-opacity:1;stroke-width:0.264583"
-               x="43.6465"
-               y="79.984138"
-               id="text7182"><tspan
-                 sodipodi:role="line"
-                 id="tspan7180"
-                 style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:22.5778px;font-family:'TeX Gyre Schola Math';-inkscape-font-specification:'TeX Gyre Schola Math';fill:#ffffff;fill-opacity:1;stroke-width:0.264583"
+             id="g7742"
+             transform="translate(2.5541512,0.11409521)">
+            <g
+               id="g7913"
+               transform="translate(0.06164318,0.28742038)">
+              <text
+                 xml:space="preserve"
+                 style="font-size:22.5778px;fill:#ffffff;fill-opacity:1;stroke-width:0.264583"
                  x="43.6465"
-                 y="79.984138">y</tspan></text>
-            <text
-               xml:space="preserve"
-               style="font-size:13.2427px;fill:#ffffff;fill-opacity:1;stroke-width:0.155187"
-               x="51.114235"
-               y="88.226036"
-               id="text7704"><tspan
-                 sodipodi:role="line"
-                 id="tspan7702"
-                 style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'TeX Gyre Schola Math';-inkscape-font-specification:'TeX Gyre Schola Math';stroke-width:0.155187"
+                 y="79.984138"
+                 id="text7182"><tspan
+                   sodipodi:role="line"
+                   id="tspan7180"
+                   style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:22.5778px;font-family:'TeX Gyre Schola Math';-inkscape-font-specification:'TeX Gyre Schola Math';fill:#ffffff;fill-opacity:1;stroke-width:0.264583"
+                   x="43.6465"
+                   y="79.984138">y</tspan></text>
+              <text
+                 xml:space="preserve"
+                 style="font-size:13.2427px;fill:#ffffff;fill-opacity:1;stroke-width:0.155187"
                  x="51.114235"
-                 y="88.226036">0</tspan></text>
+                 y="88.226036"
+                 id="text7704"><tspan
+                   sodipodi:role="line"
+                   id="tspan7702"
+                   style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'TeX Gyre Schola Math';-inkscape-font-specification:'TeX Gyre Schola Math';stroke-width:0.155187"
+                   x="51.114235"
+                   y="88.226036">0</tspan></text>
+            </g>
           </g>
         </g>
       </g>
