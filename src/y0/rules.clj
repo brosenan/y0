@@ -11,6 +11,7 @@
 (def ^:dynamic *do-trace* false)
 (def ^:dynamic *trace-indent* ">")
 (def ^:dynamic *subject* nil)
+(def ^:dynamic *update-decor* nil)
 
 (defn new-vars [bindings symbols]
   (loop [bindings bindings
@@ -92,6 +93,8 @@
                                    vec)
                        head (replace-vars head vars)]
                    (unify goal head)
+                   (when (some? *update-decor*)
+                     (*update-decor* #(assoc % :err why-not)))
                    {:err why-not}))
                (fn [goal why-not ps]
                  (let [vars (new-vars vars bindings)
@@ -305,12 +308,15 @@
       (swap! matches assoc pred {:args args
                                  :def def}))
     (when (some? refs)
-      (swap! refs conj subj))))
+      (swap! refs conj subj))
+    (if (some? matches)
+      #(swap! matches update pred %)
+      (constantly nil))))
 
 (defn satisfy-goal [ps goal why-not]
   (let [[goal why-not] (split-goal goal why-not)
         why-not (resolve-subject why-not)]
     (let-s [rule (match-rule ps goal)]
-           (do
-             (update-decorations goal rule)
-             (rule goal why-not ps)))))
+           (let [update-decor (update-decorations goal rule)]
+             (binding [*update-decor* update-decor]
+               (rule goal why-not ps))))))

@@ -491,5 +491,22 @@ to the definition node's `:refs`.
           {`p {:args [`bar `baz]
                :def `(some def)}}
           (-> def meta :refs deref) => [node])))
+
+```
+If a predicate that matched a node emits an explanation (i.e., has a `!` in
+its head), that explanation is added to the decoration, as the `:err` key in
+that predicate's entry in `:matches`.
+```clojure
+(fact
+ (let-s [ps (add-rule {} (with-meta `(all [x y z]
+                                          (p x y z
+                                             ! "some explanation for" x))
+                           {:def `(some def)}) {})
+         node (ok `foo decorated)]
+        (do (satisfy-goal ps `(p ~node bar baz) nil)
+            (-> node meta :matches deref reify-term))) =>
+ {`p {:args [`bar `baz]
+      :def `(some def)
+      :err ["some explanation for" `foo]}})
 ```
 
