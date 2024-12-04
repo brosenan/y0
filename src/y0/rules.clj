@@ -79,6 +79,11 @@
 (defn- resolve-subject [why-not]
   (replace {`? *subject*} why-not))
 
+(defn report-err [why-not]
+  (when (some? *update-decor*)
+    (*update-decor* #(assoc % :err why-not)))
+  {:err why-not})
+
 (defn- add-deduction-rule [ps bindings head conditions vars def]
   (let [[head why-not] (split-goal head nil)
         vars' (new-vars vars bindings)
@@ -93,9 +98,7 @@
                                    vec)
                        head (replace-vars head vars)]
                    (unify goal head)
-                   (when (some? *update-decor*)
-                     (*update-decor* #(assoc % :err why-not)))
-                   {:err why-not}))
+                   (report-err why-not)))
                (fn [goal why-not ps]
                  (let [vars (new-vars vars bindings)
                        head (replace-vars head vars)]
@@ -104,7 +107,7 @@
                    (if (unify goal head)
                      (with-bindings {#'*subject* (second goal)}
                        (check-conditions conditions ps vars why-not))
-                     {:err why-not}))))
+                     (report-err why-not)))))
         body (with-meta body {:def def})]
     (store-rule ps head' body)))
 

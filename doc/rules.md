@@ -15,11 +15,12 @@
 (ns y0.rules-test
   (:require
    [midje.sweet :refer [=> fact]]
-   [y0.core :refer [! all <- given export import] :as y0]
+   [y0.builtins :refer [add-builtins]]
+   [y0.core :refer [! <- all export given import] :as y0]
    [y0.explanation :refer [explanation-to-str]]
    [y0.predstore :refer [get-statements-to-match match-rule]]
-   [y0.rules :refer [add-rule apply-normal-statement new-vars satisfy-goal
-                     apply-statements]]
+   [y0.rules :refer [add-rule apply-normal-statement apply-statements new-vars
+                     satisfy-goal]]
    [y0.status :refer [->s let-s ok]]
    [y0.unify :refer [reify-term]]))
 
@@ -508,5 +509,39 @@ that predicate's entry in `:matches`.
  {`p {:args [`bar `baz]
       :def `(some def)
       :err ["some explanation for" `foo]}})
+
+```
+An error is also reported if the predicate itself does not emit an
+explanation, but rather fails to unify against the given arguments.
+```clojure
+(fact
+ (let-s [ps (add-rule {} (with-meta `(all [x]
+                                          (p x 1))
+                           {:def `(some def)}) {})
+         node (ok `foo decorated)]
+        (do (satisfy-goal ps `(p ~node 2 ! "this should be 1") nil)
+            (-> node meta :matches deref reify-term))) =>
+ {`p {:args [2]
+      :def `(some def)
+      :err ["this should be 1"]}})
+
+```
+The same applies to builtin predicates.
+```clojure
+(fact
+ (let-s [ps (->s (ok {})
+                 (ok add-builtins)
+                 (add-rule (with-meta `(all [x y]
+                                            (p x y) <-
+                                            (y0/= x y ! x "is not the same as" y))
+                             {:def `(some def)}) {}))
+         node (ok `foo decorated)]
+        (do (satisfy-goal ps `(p ~node bar ! "comparing node to bar") nil)
+            (-> node meta :matches deref reify-term))) =>
+ {`p {:args [`bar]
+      :def `(some def)}
+  `y0/= {:args [`bar]
+         :def nil
+         :err [`foo "is not the same as" `bar "comparing node to bar"]}})
 ```
 

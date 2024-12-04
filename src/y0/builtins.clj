@@ -1,13 +1,13 @@
 (ns y0.builtins 
   (:require [clojure.string :as str]
-            [y0.rules :refer [new-vars]]
+            [y0.rules :refer [new-vars report-err]]
             [y0.term-utils :refer [replace-vars]]
             [y0.unify :refer [reify-term unify]]))
 
 (defn- unify-or-err [a b why-not]
   (if (unify a b)
-      {:ok nil}
-      {:err why-not}))
+    {:ok nil}
+    (report-err why-not)))
 
 (defn eq [goal why-not _ps]
   (let [[_= a b] goal]
