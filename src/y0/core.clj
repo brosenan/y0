@@ -9,6 +9,7 @@
 (def-symbols
   all
   assert
+  assert!
   with-meta
   exist
   given

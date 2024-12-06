@@ -12,6 +12,7 @@
 (def ^:dynamic *trace-indent* ">")
 (def ^:dynamic *subject* nil)
 (def ^:dynamic *update-decor* nil)
+(def ^:dynamic *error-target* nil)
 
 (defn new-vars [bindings symbols]
   (loop [bindings bindings
@@ -111,12 +112,18 @@
         body (with-meta body {:def def})]
     (store-rule ps head' body)))
 
-(defn- expect-status [status why-not test vars primary]
+(defn- expect-status [status why-not test vars primary recoverable]
   (if (nil? why-not)
     (cond
-      (contains? status :err) (if primary
-                                {:err (concat (:err status) ["in assertion" test])}
-                                status)
+      (contains? status :err) (let [status (if primary
+                                             {:err (concat (:err status) ["in assertion" test])}
+                                             status)]
+                                (if (and recoverable
+                                         (some? *error-target*))
+                                  (do
+                                    (swap! *error-target* conj status)
+                                    {:ok nil})
+                                  status))
       :else status)
     (cond
       (contains? status :ok) {:err
@@ -127,7 +134,7 @@
        ["Wrong explanation is given:" (:err status) "instead of" why-not]}
       :else (ok nil))))
 
-(defn apply-assert-block [ps assert-block vars]
+(defn apply-assert-block [ps assert-block vars recoverable]
   (let [[_assert & assertions] assert-block
         origin (-> assert-block meta :origin)
         why-not-context (if (nil? origin)
@@ -141,7 +148,8 @@
                   _nil (expect-status
                         (check-condition assertion ps vars why-not-context)
                         why-not assertion vars
-                        (nil? origin))]
+                        (nil? origin)
+                        recoverable)]
                  (recur assertions)))))))
 
 (defn apply-normal-statement [ps statement vars]
@@ -220,13 +228,14 @@
                   ps (f ps impns)]
                  (recur fns ps)))))))
 
-(defn- apply-statement [statement ps vars]
+(defn apply-statement [statement ps vars]
   (cond
     (contains? vars statement) (recur @(get vars statement) ps vars)
     (sequential? statement) (let [[form & _] statement]
                               (case form
                                 y0.core/all (add-rule ps statement vars)
-                                y0.core/assert (apply-assert-block ps statement vars)
+                                y0.core/assert (apply-assert-block ps statement vars true)
+                                y0.core/assert! (apply-assert-block ps statement vars false)
                                 y0.core/with-meta (apply-with-meta-block ps statement vars)
                                 y0.core/export (add-export ps statement vars)
                                 y0.core/import (apply-import ps statement vars)
