@@ -80,7 +80,7 @@
       (ok mstore)
       (let-s [[key & keys] (ok keys)
               m (ok mstore get key)
-              ps (eval-func ps (:statements m))
+              ps (eval-func ps (:statements m) (:is-main m))
               m (ok m assoc :predstore ps)
               mstore (ok mstore assoc key m)]
              (recur keys mstore ps)))))

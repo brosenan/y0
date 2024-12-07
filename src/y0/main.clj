@@ -11,7 +11,7 @@
                                     explanation-expr-to-str explanation-to-str]]
             [y0.polyglot-loader :refer [eval-mstore load-with-deps]]
             [y0.resolvers :refer [y0-resolver]]
-            [y0.rules :refer [apply-statements]]
+            [y0.rules :refer [apply-statements *skip-recoverable-assertions*]]
             [y0.spec-analyzer :refer [convert-error-locations
                                       process-lang-spec]]
             [y0.status :refer [let-s ok]])
@@ -48,13 +48,17 @@
       (vec (for [[term loc] (all-unique-locations explanation)]
              (println (str (render-location loc) (blue "Note") ":") (pr-str term)))))))
 
+(defn- evaluate-statements [ps statements is-main]
+  (binding [*skip-recoverable-assertions* (not is-main)]
+                                                (apply-statements statements ps {})))
+
 (defn- eval-modules [modules language lang-map]
   (let [modules (for [module modules]
                     {:lang language
                      :name module})
           status (let-s [mstore (load-with-deps modules lang-map)
                          ps (ok (add-builtins {}))]
-                        (eval-mstore mstore #(apply-statements %2 %1 {}) ps))]
+                        (eval-mstore mstore evaluate-statements ps))]
       (if (:err status)
         (do
           (print-error status)

@@ -65,7 +65,8 @@
                                      :text (join "\n" current-block)}]
                                    langmap)
             ps (ok (add-builtins {}))]
-           (eval-mstore mstore #(apply-statements %2 %1 {}) ps))))
+           (eval-mstore mstore (fn [ps statements _is-main]
+                                 (apply-statements statements ps {})) ps))))
 
 (defn convert-error-locations
   ([explanation spec-path line]

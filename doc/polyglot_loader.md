@@ -366,8 +366,8 @@ as a [predstore](predstore.md). This is a map containing predicates, rules
 and statements that are computed from the `:statements` in the different
 modules.
 
-`eval-mstore` takes a module-store, an evaluation function and an initial
-predstore, and _evaluates_ it. It
+`eval-mstore` takes a module-store along with an evaluation function and an
+initial predstore, and _evaluates_ it. It
 [topologically sorts](#topological-sorting-of-a-module-store) the modules
 and evaluates them one by one, by calling the evaluation function.
 
@@ -377,30 +377,34 @@ module, containing the predstore as seen at the end of this module.
 To demonstrate this, we use the following fake function as the evaluation
 function.
 ```clojure
-(defn fake-eval-statements [ps statements]
-  (ok ps update :foo #(concat % statements)))
+(defn fake-eval-statements [ps statements is-main]
+  (let [key (if is-main :foo :bar)]
+    (ok ps update key #(concat % statements))))
 
 ```
-This function maintains a single entry in the predstore, `:foo`, and appends
-the statements to it. For example:
+This function maintains two entries in the predstore, `:foo` and `:bar`, and
+appends the statements to them, such that _main_ modules are added to `:foo`
+and non-main modules are added to `:bar`. For example:
 ```clojure
 (fact
  (->s (ok {})
-      (fake-eval-statements [1 2 3])
-      (fake-eval-statements [4 5])
-      (fake-eval-statements [6 7 8]))
- => {:ok {:foo [1 2 3 4 5 6 7 8]}})
+      (fake-eval-statements [1 2 3] true)
+      (fake-eval-statements [4 5] false)
+      (fake-eval-statements [6 7 8] false))
+ => {:ok {:foo [1 2 3]
+          :bar [4 5 6 7 8]}})
 
 (fact
- (let-s [mstore (eval-mstore my-mstore fake-eval-statements {:bar :baz})]
+ (let-s [mstore (eval-mstore my-mstore fake-eval-statements {:a :z})]
         (do
           (-> mstore (get "y2:m12") :predstore :foo) =>
+          ["m12" "text in /m12.y2"]
+          (-> mstore (get "y2:m12") :predstore :bar) =>
           ["m1" "text in /m1.y2"
            "m2" "text in /m2.y2"
            "m4" "text in /m4.y2"
            "m3" "text in /m3.y2"
-           "m6" "text in /m6.y2"
-           "m12" "text in /m12.y2"]
-          (-> mstore (get "y2:m12") :predstore :bar) => :baz)))
+           "m6" "text in /m6.y2"]
+          (-> mstore (get "y2:m12") :predstore :a) => :z)))
 ```
 
