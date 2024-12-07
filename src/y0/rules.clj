@@ -13,7 +13,7 @@
 (def ^:dynamic *subject* nil)
 (def ^:dynamic *update-decor* nil)
 (def ^:dynamic *error-target* nil)
-
+(def ^:dynamic *skip-recoverable-assertions* false)
 (defn new-vars [bindings symbols]
   (loop [bindings bindings
          [sym & syms] symbols]
@@ -140,17 +140,20 @@
         why-not-context (if (nil? origin)
                           []
                           ["in" origin])]
-    (loop [assertions assertions]
-      (let [[assertion & assertions] assertions]
-        (if (nil? assertion)
-          (ok ps)
-          (let-s [[assertion why-not] (ok assertion split-goal nil)
-                  _nil (expect-status
-                        (check-condition assertion ps vars why-not-context)
-                        why-not assertion vars
-                        (nil? origin)
-                        recoverable)]
-                 (recur assertions)))))))
+    (if (and *skip-recoverable-assertions*
+             recoverable)
+      {:ok ps}
+      (loop [assertions assertions]
+        (let [[assertion & assertions] assertions]
+          (if (nil? assertion)
+            (ok ps)
+            (let-s [[assertion why-not] (ok assertion split-goal nil)
+                    _nil (expect-status
+                          (check-condition assertion ps vars why-not-context)
+                          why-not assertion vars
+                          (nil? origin)
+                          recoverable)]
+                   (recur assertions))))))))
 
 (defn apply-normal-statement [ps statement vars]
   (let-s [statement (ok statement replace-vars vars)
