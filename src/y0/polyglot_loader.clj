@@ -38,8 +38,11 @@
 (defn module-id [{:keys [lang name]}]
   (str lang ":" name))
 
+(defn- mark-as-main [ms]
+  (map #(assoc % :is-main true) ms))
+
 (defn load-with-deps [ms lang-map]
-  (loop [ms ms
+  (loop [ms (mark-as-main ms)
          mstore {}]
     (if (empty? ms)
       (ok mstore)

@@ -263,7 +263,8 @@ dependencies from `my-deps`.
 Now we have what we need to call `load-with-deps`.
 ```clojure
 (fact
- (def my-mstore (unwrap-status (load-with-deps [{:lang "y2" :name "m12"}] lang-map2)))
+ (let-s [ms (load-with-deps [{:lang "y2" :name "m12"}] lang-map2)]
+        (def my-mstore ms))
  => #'my-mstore
  my-mstore => {"y2:m12" {:lang "y2"
                          :name "m12"
@@ -271,7 +272,8 @@ Now we have what we need to call `load-with-deps`.
                          :text "text in /m12.y2"
                          :statements ["m12" "text in /m12.y2"]
                          :deps [{:lang "y2" :name "m6"}
-                                {:lang "y2" :name "m4"}]}
+                                {:lang "y2" :name "m4"}]
+                         :is-main true}
                "y2:m6" {:lang "y2"
                         :name "m6"
                         :path "/m6.y2"
@@ -305,6 +307,10 @@ Now we have what we need to call `load-with-deps`.
                         :deps []}})
 
 ```
+In addition to loading `m12` with all its transitive dependencies,
+`load-with-deps` also marked `m12` as a main module by setting `:is-main` to
+`true`.
+
 ### Topological Sorting of a Module Store
 
 Given a module-store, we wish to find an order in which we could evaluate
