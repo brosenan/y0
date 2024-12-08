@@ -1775,3 +1775,33 @@ void foo() {
 ```status
 ERROR: 1 is not a left-hand expression in 1 = 2;
 ```
+
+## Functions
+
+We have already discussed `void` functions with no parameters in the
+[Essentials](#essentials) section.
+
+A function can be called from another.
+
+```c
+void foo() {
+}
+
+void bar() {
+    foo();
+}
+```
+```status
+Success
+```
+
+A function can only be called if it's defined.
+
+```c
+void bar() {
+    foo();
+}
+```
+```status
+ERROR: Call to undefined function foo in foo();
+```

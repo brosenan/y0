@@ -61,12 +61,13 @@
                  
 
                  <statement> = vardef | implicit_vardef | assign
-                             | type_alias_def
+                             | type_alias_def | expr_stmt
 
                  vardef = type identifier <'='> expr <';'>
                  implicit_vardef = <'var'> identifier <'='> expr <';'>
                  assign = expr <'='> expr <';'>
                  type_alias_def = <'type'> identifier <'='> type <';'>
+                 expr_stmt = expr <';'>
                  
                  <struct_member_def> = field_def | union_def
                  field_def = type identifier <';'>
@@ -80,7 +81,7 @@
                  <atomic_expr> = literal | identifier | null | initializer_list
                                | typed_initializer_list | qualified_expr
                                | case_expr | element_access | range_expr
-                               | <'('> expr <')'>
+                               | func_call | <'('> expr <')'>
                  <literal> = (int / float) | string
 
                  addressof = <'&'> unary_expr
@@ -99,11 +100,12 @@
                  qualified_expr = atomic_expr <'.'> member_expr
                  case_expr = <'case'> <'('> identifier <'='> expr <')'>
                              <'{'> case_option_or_default (<','> case_option_or_default)* <'}'>
-                 element_access = atomic_expr <'['> expr <']'>
-                 range_expr = atomic_expr <'['> expr <':'> expr <']'>
                  <case_option_or_default> = case_option | default_case
                  case_option = identifier <':'> expr
                  default_case = <'default'> <':'> expr
+                 element_access = atomic_expr <'['> expr <']'>
+                 range_expr = atomic_expr <'['> expr <':'> expr <']'>
+                 func_call = identifier <'('> <')'>
 
                  <member_expr> = identifier
 

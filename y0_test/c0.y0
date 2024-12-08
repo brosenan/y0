@@ -2,12 +2,6 @@
 
 ;; # $c_0$ is not C
 
-;; ## Function Definition
-(all [t name args stmts]
-     [:func_def t name args & stmts] =>
-     (assert
-      (statements stmts)))
-
 ;; ## Statements
 (all [stmts]
      (statements stmts ! "Invalid statement vector:" stmts))
@@ -598,3 +592,25 @@
 (all [x]
      (lexpr [:expr x]) <-
      (lexpr x))
+
+;; ## Functions
+
+(all [t f params stmts]
+     [:func_def t f params & stmts] =>
+     (assert
+      (statements stmts))
+     (all []
+          (function f params t)))
+
+(all [x]
+     [:expr_stmt x] =>
+     (assert
+      (expr-of-type x [:foo])))
+
+(all [f args t]
+     (expr-of-type [:func_call f & args] t) <-
+     (exist [params rettype]
+            (function f params rettype)))
+
+(all [f params rettype]
+     (function f params rettype ! "Call to undefined function" f))
