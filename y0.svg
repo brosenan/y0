@@ -24,15 +24,15 @@
      inkscape:deskcolor="#d1d1d1"
      inkscape:document-units="mm"
      showgrid="false"
-     inkscape:zoom="0.914906"
-     inkscape:cx="189.63697"
-     inkscape:cy="560.71334"
+     inkscape:zoom="2.5877449"
+     inkscape:cx="41.541961"
+     inkscape:cy="177.95417"
      inkscape:window-width="2560"
-     inkscape:window-height="1355"
+     inkscape:window-height="1403"
      inkscape:window-x="0"
      inkscape:window-y="0"
      inkscape:window-maximized="1"
-     inkscape:current-layer="g7928" />
+     inkscape:current-layer="g971" />
   <defs
      id="defs2">
     <inkscape:path-effect
@@ -117,33 +117,57 @@
              inkscape:path-effect="#path-effect309"
              transform="matrix(0,0.57713708,-0.57713708,0,96.814583,45.381907)" />
           <g
-             id="g7742"
-             transform="translate(2.5541512,0.11409521)">
+             id="g971"
+             transform="translate(-0.01638406,-1.0076447)">
             <g
-               id="g7913"
-               transform="translate(0.06164318,0.28742038)">
+               id="g998"
+               transform="translate(1.1797881,0.52839882)">
               <text
                  xml:space="preserve"
-                 style="font-size:22.5778px;fill:#ffffff;fill-opacity:1;stroke-width:0.264583"
-                 x="43.6465"
-                 y="79.984138"
+                 style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:31.309px;font-family:'Nimbus Roman';-inkscape-font-specification:'Nimbus Roman, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#ffffff;fill-opacity:1;stroke-width:0.366901"
+                 x="43.186726"
+                 y="80.234886"
                  id="text7182"><tspan
                    sodipodi:role="line"
                    id="tspan7180"
-                   style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:22.5778px;font-family:'TeX Gyre Schola Math';-inkscape-font-specification:'TeX Gyre Schola Math';fill:#ffffff;fill-opacity:1;stroke-width:0.264583"
-                   x="43.6465"
-                   y="79.984138">y</tspan></text>
+                   style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:31.309px;font-family:'Nimbus Roman';-inkscape-font-specification:'Nimbus Roman, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#ffffff;fill-opacity:1;stroke-width:0.366901"
+                   x="43.186726"
+                   y="80.234886">y</tspan></text>
               <text
                  xml:space="preserve"
-                 style="font-size:13.2427px;fill:#ffffff;fill-opacity:1;stroke-width:0.155187"
-                 x="51.114235"
-                 y="88.226036"
+                 style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15.3844px;font-family:'Nimbus Roman';-inkscape-font-specification:'Nimbus Roman, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;fill:#ffffff;fill-opacity:1;stroke-width:0.180284"
+                 x="52.600998"
+                 y="90.648972"
                  id="text7704"><tspan
                    sodipodi:role="line"
                    id="tspan7702"
-                   style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-family:'TeX Gyre Schola Math';-inkscape-font-specification:'TeX Gyre Schola Math';stroke-width:0.155187"
-                   x="51.114235"
-                   y="88.226036">0</tspan></text>
+                   style="font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;font-size:15.3844px;font-family:'Nimbus Roman';-inkscape-font-specification:'Nimbus Roman, Normal';font-variant-ligatures:normal;font-variant-caps:normal;font-variant-numeric:normal;font-variant-east-asian:normal;stroke-width:0.180284"
+                   x="52.600998"
+                   y="90.648972">0</tspan></text>
+              <circle
+                 style="fill:#1d8300;fill-opacity:1;stroke-width:0.263769"
+                 id="path229"
+                 cx="45.802101"
+                 cy="85.436813"
+                 r="1.1508905" />
+              <circle
+                 style="fill:#1d8300;fill-opacity:1;stroke-width:0.263769"
+                 id="path229-2"
+                 cx="46.80344"
+                 cy="67.507683"
+                 r="1.1508905" />
+              <circle
+                 style="fill:#1d8300;fill-opacity:1;stroke-width:0.263769"
+                 id="path229-29"
+                 cx="51.489838"
+                 cy="77.716499"
+                 r="1.1508905" />
+              <circle
+                 style="fill:#1d8300;fill-opacity:1;stroke-width:0.166918"
+                 id="path229-7"
+                 cx="56.133923"
+                 cy="66.918404"
+                 r="0.72830659" />
             </g>
           </g>
         </g>
