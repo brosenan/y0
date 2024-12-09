@@ -1,4 +1,4 @@
-![logo](y0.svg)
+![logo](y0.png)
 
 # $y_0$: A Language for Defining Programming Language Semantics
 
