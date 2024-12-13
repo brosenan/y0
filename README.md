@@ -194,6 +194,9 @@ ecosystem, including:
 *   [Language-spec](doc/spec_analyzer.md) support for allowing literate
     unit-tests for language definitions.
 
+This repo does not implement a language server. This will be provided by a
+different repo.
+
 ## Documentation
 
 ### $y_0$ Language Documentation
@@ -235,19 +238,6 @@ ran from test/y0
 * [testing](doc/testing.md)
 * [to_html](doc/to_html.md)
 * [unify](doc/unify.md)
-
-## Development Status
-
-At this point the language itself is implemented to the point where one can
-define the semantics of s-expression-based languages with it (e.g., [our example
-language](doc/y1.md)).
-
-Some features are still missing. For example:
-
-*   A bootstrapping of $y_0$ to validate itself.
-*   Integration with one or more parser generators.
-
-LSP support will be provided by a separate project.
 
 ## License
 
