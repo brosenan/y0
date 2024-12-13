@@ -213,7 +213,7 @@ ecosystem, including:
     *   [Language semantics](doc/c0.md)
     *   [Language config, defining c0's syntax](lang-conf.clj)
 
-### API Documentation
+### Developer Documentation
 
 <!-- generated with:
 for f in $(ls -1); do b=${f%_test.clj}; echo "* [$b](doc/$b.md)"; done
