@@ -3,16 +3,6 @@
 ;; # $c_0$ is not C
 
 ;; ## Statements
-(all [stmts]
-     (statements stmts ! "Invalid statement vector:" stmts))
-
-(all [stmt stmts]
-     (statements [stmt & stmts]) <-
-     (given stmt
-            (statements stmts)))
-(all []
-     (statements []))
-
 (all [t v x]
      [:vardef t v x] =>
      (assert
@@ -598,9 +588,36 @@
 (all [t f params stmts]
      [:func_def t f params & stmts] =>
      (assert
-      (statements stmts))
+      (statements stmts t))
      (all []
           (function f params t)))
+
+(all [stmts t]
+     (statements stmts t ! "Invalid statement vector:" stmts))
+
+(all [stmt stmts t]
+     (statements [stmt & stmts] t) <-
+     (statement stmt stmts t))
+(all [t]
+     (statements [] t) <-
+     (function-ends-without-return t))
+
+(all [t]
+     (function-ends-without-return t
+                                   ! "Function returning non-void type" t
+                                   "ends without a return statement"))
+(all []
+     (function-ends-without-return [:void_type]))
+
+(all [stmt stmts t]
+     (statement stmt stmts t) <-
+     (given stmt
+            (statements stmts t)))
+
+(all [expr stmts t]
+     (statement [:return_stmt expr] stmts t) <-
+     (expr-of-type expr t)
+     (= stmts [] ! "Unreachable code after return statement:" stmts))
 
 (all [x]
      [:expr_stmt x] =>

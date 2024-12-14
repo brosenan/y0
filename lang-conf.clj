@@ -53,7 +53,7 @@
                  uint64_type  = <'uint64'>
                  float32_type = <'float32'>
                  float64_type = <'float64'>
-                 void_type ='void'
+                 void_type = <'void'>
                  type_alias = identifier
                  struct_type = <'struct'> <'{'> struct_member_def* <'}'>
                  array_type = <'['> int <']'> type
@@ -61,13 +61,14 @@
                  
 
                  <statement> = vardef | implicit_vardef | assign
-                             | type_alias_def | expr_stmt
+                             | type_alias_def | expr_stmt | return_stmt
 
                  vardef = type identifier <'='> expr <';'>
                  implicit_vardef = <'var'> identifier <'='> expr <';'>
                  assign = expr <'='> expr <';'>
                  type_alias_def = <'type'> identifier <'='> type <';'>
                  expr_stmt = expr <';'>
+                 return_stmt = <'return'> expr <';'>
                  
                  <struct_member_def> = field_def | union_def
                  field_def = type identifier <';'>

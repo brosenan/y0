@@ -1813,6 +1813,7 @@ expressions, evaluating to their return types.
 
 ```c
 int32 foo() {
+    return 2;
 }
 
 void bar() {
@@ -1825,6 +1826,7 @@ Success
 
 ```c
 int32 foo() {
+    return 2;
 }
 
 void bar() {
@@ -1835,3 +1837,38 @@ void bar() {
 ERROR: Cannot assign expression foo() of type int32 as type int16 because type int32 cannot be safely cast into type [:int16_type] in int16 r = foo();
 ```
 
+#### The `return` Statement
+
+A non-`void` function must conclude with a `return` statement.
+
+```c
+int32 foo() {
+}
+```
+```status
+ERROR: Function returning non-void type int32 ends without a return statement in int32 foo() { }
+```
+
+The expression in the `return` statement must be assignable to the function's
+return type.
+
+```c
+int32 foo() {
+    return 2.0;
+}
+```
+```status
+ERROR: int32 is not a floating-point type when assigning floating point literal 2.0 in int32 foo() { ... }
+```
+
+Statements following a `return` statements are not allowed.
+
+```c
+int32 foo() {
+    return 2;
+    int64 a = 3;
+}
+```
+```status
+ERROR: Unreachable code after return statement: int64 a = 3; in int32 foo() { ... }
+```
