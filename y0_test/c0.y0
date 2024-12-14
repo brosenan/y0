@@ -605,12 +605,13 @@
 (all [x]
      [:expr_stmt x] =>
      (assert
-      (expr-of-type x [:foo])))
+      (exist [t]
+             (expr-of-type x t))))
 
 (all [f args t]
-     (expr-of-type [:func_call f & args] t) <-
-     (exist [params rettype]
-            (function f params rettype)))
+     (typeof [:func_call f & args] t) <-
+     (exist [params]
+            (function f params t)))
 
 (all [f params rettype]
      (function f params rettype ! "Call to undefined function" f))

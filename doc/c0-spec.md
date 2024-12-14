@@ -1805,3 +1805,33 @@ void bar() {
 ```status
 ERROR: Call to undefined function foo in foo();
 ```
+
+### Return Values
+
+A function may return a (non-void) type. Such functions can be used in
+expressions, evaluating to their return types.
+
+```c
+int32 foo() {
+}
+
+void bar() {
+    int32 r = foo();
+}
+```
+```status
+Success
+```
+
+```c
+int32 foo() {
+}
+
+void bar() {
+    int16 r = foo();
+}
+```
+```status
+ERROR: Cannot assign expression foo() of type int32 as type int16 because type int32 cannot be safely cast into type [:int16_type] in int16 r = foo();
+```
+
