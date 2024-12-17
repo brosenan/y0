@@ -106,7 +106,7 @@
                  default_case = <'default'> <':'> expr
                  element_access = atomic_expr <'['> expr <']'>
                  range_expr = atomic_expr <'['> expr <':'> expr <']'>
-                 func_call = identifier <'('> <')'>
+                 func_call = identifier <'('> (expr (<','> expr)* )? <')'>
 
                  <member_expr> = identifier
 

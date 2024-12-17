@@ -1872,3 +1872,71 @@ int32 foo() {
 ```status
 ERROR: Unreachable code after return statement: int64 a = 3; in int32 foo() { ... }
 ```
+
+### Parameters and Arguments
+
+A function can define zero or more parameters.
+
+```c
+void foo(int32 a, float64 b) {
+}
+```
+```status
+Success
+```
+
+The parameters can be referenced in the function's body.
+
+```c
+float64 foo(int32 a, float64 b) {
+    return a + b;
+}
+```
+```status
+Success
+```
+
+When calling a function, the correct number of arguments needs to be provided.
+
+```c
+float64 foo(int32 a, float64 b) {
+    return a + b;
+}
+
+void bar() {
+    foo(1, 2.0);
+}
+```
+```status
+Success
+```
+
+And not a different number...
+
+```c
+float64 foo(int32 a, float64 b) {
+    return a + b;
+}
+
+void bar() {
+    foo(1, 2.0, 3.4);
+}
+```
+```status
+ERROR: Expecterd 2 arguments, received 3 in call to function foo in foo(1, 2.0, 3.4);
+```
+
+The types of the arguments must be assignable to the parameter types.
+
+```c
+float64 foo(int32 a, float64 b) {
+    return a + b;
+}
+
+void bar() {
+    foo(1.0, 2.0);
+}
+```
+```status
+ERROR: int32 is not a floating-point type when assigning floating point literal 1.0 in argument a of function foo in foo(1.0, 2.0);
+```
