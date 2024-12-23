@@ -27,7 +27,7 @@
        :grammar "compilation_unit = import* definition*
                  
                  import = <'import'> dep <';'>
-                 dep = #'[a-z_0-9.]+'
+                 dep = #'[a-z][a-z_0-9]*([.][a-z][a-z_0-9]*)*'
                  
                  <definition> = func_decl | func_def | type_alias_def
                  func_decl = type identifier <'('> arg_defs <')'> <';'>

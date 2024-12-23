@@ -685,3 +685,8 @@
 (all [t p arg]
      (match-param-args-type [:arg_def t p] arg) <-
      (expr-of-type arg t ! "in argument" p))
+
+;; ## Imports
+
+(all [dep]
+     [:import [:dep dep]] =>)

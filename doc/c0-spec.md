@@ -1940,3 +1940,32 @@ void bar() {
 ```status
 ERROR: int32 is not a floating-point type when assigning floating point literal 1.0 in argument a of function foo in foo(1.0, 2.0);
 ```
+
+## Imports
+
+A $C_0$ source file contains a module. Modules can be imported by other modules
+to make the definitions made in one module available to other modules.
+
+For this section, let us consider the module `some.module1`:
+```c
+type Tree = struct {
+    int64 key;
+    *Tree left;
+    *Tree right;
+};
+
+void doSomethingWithTree(*Tree t) {
+
+}
+```
+
+### The `import` Statement
+
+In order to import a module, the `import` statement can be used.
+
+```c
+import some.module1;
+```
+```status
+Success
+```

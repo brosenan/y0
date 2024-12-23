@@ -643,7 +643,7 @@ example and then for the module.
    (provided
     (mock-parse "example" "example" "#include \"foo.h\"\nvoid main() {\n}") =>
     (ok [[] [{:lang "y4" :name "foo"}]])
-    (mock-parse "foo" "foo" ["struct Foo {};"]) => (ok [[] []]))))
+    (mock-parse "foo" "foo" "struct Foo {};") => (ok [[] []]))))
 
 ```
 ### Code Location in Errors

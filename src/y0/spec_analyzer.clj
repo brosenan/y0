@@ -58,7 +58,8 @@
                                                  (fn [name] (ok name)))
                                           (assoc :read 
                                                  (fn [name]
-                                                   (get modules name)))))]
+                                                   (->> (get modules name)
+                                                        (join "\n"))))))]
     (let-s [mstore (load-with-deps [{:lang lang
                                      :name "example"
                                      :path "example"
