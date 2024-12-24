@@ -690,3 +690,6 @@
 
 (all [dep]
      [:import [:dep dep]] =>)
+
+(all [alias dep]
+     [:import alias [:dep dep]] =>)

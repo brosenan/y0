@@ -1969,3 +1969,13 @@ import some.module1;
 ```status
 Success
 ```
+
+`import` statements can name an alias, which is separated from the module name
+with a `=` operator.
+
+```c
+import m1 = some.module1;
+```
+```status
+Success
+```
