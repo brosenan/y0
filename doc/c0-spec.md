@@ -576,7 +576,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: Cannot assign expression &a of type [:pointer_type t] as type *int32 because type *int32 differs from type [:pointer_type t] in *int32 p = &a;
+ERROR: Cannot assign expression &a of type [:pointer_type t] as type *int32 because the object type int32 differs from int16 in *int32 p = &a;
 ```
 
 ## Type Aliases
@@ -699,6 +699,25 @@ void foo() {
 ```
 ```status
 ERROR: [:pointer_type t] is not a numeric type in assignment to numeric type [:int16_type] in short b = {&a};
+```
+
+### Type Aliases and Pointers
+
+Pointers should be assignable to other pointers, as long as they agree on the
+underlying object type. If we define two aliases to the same type, pointers of
+these aliases should be assignable to on another.
+
+```c
+type short = int16;
+type kurz = int16;
+
+void foo() {
+    short a = 2;
+    *kurz b = &a;
+}
+```
+```status
+Success
 ```
 
 ## Structs

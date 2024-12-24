@@ -263,6 +263,17 @@
                                  [:uint8_type] [:uint16_type] [:uint32_type]
                                  [:int8_type] [:int16_type] [:int32_type]])
 
+(all [t1 pt2]
+     (assignable [:pointer_type t1] pt2) <-
+     (exist [t2]
+            (= pt2 [:pointer_type t2] ! pt2 "because is not a pointer type")
+            (exist [t1-unal]
+                   (unalias t1 t1-unal)
+                   (exist [t2-unal]
+                          (unalias t2 t2-unal)
+                          (= t1-unal t2-unal
+                             ! "because the object type" t1-unal
+                             "differs from" t2-unal)))))
 ;; ## Structs
 
 (all [x m t]
