@@ -706,6 +706,13 @@
                   (type-alias talias' t') <-
                   (type-alias talias t'))))
 
+(all [_t f _params _stmts]
+     [:func_def _t f _params & _stmts] =>
+     (export [f' f]
+             (all [params t]
+                  (function f' params t) <-
+                  (function f params t))))
+
 (all [dep]
      [:import [:dep dep]] =>
      (import dep))

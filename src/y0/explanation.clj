@@ -82,10 +82,13 @@
 (defn extract-expr-text [expr]
   (cond
     (has-location? expr) (let [loc (meta expr)]
-                           (with-open [r (io/reader (:path loc))]
-                             (-> (line-seq r)
-                                 (extract-location loc)
-                                 stringify-lines)))
+                           (try
+                             (with-open [r (io/reader (:path loc))]
+                               (-> (line-seq r)
+                                   (extract-location loc)
+                                   stringify-lines))
+                             (catch Exception e
+                               expr)))
     (sequential? expr) (->> expr
                             (map extract-expr-text)
                             (join ", "))

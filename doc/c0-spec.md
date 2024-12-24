@@ -1999,16 +1999,20 @@ import m1 = some.module1;
 Success
 ```
 
-### Importing Type Aliases
+### Global Imports.
 
-All type aliases that are defined in an imported module are imported to the
-importing module.
+When not specifying an alias in an `import` statement, the definitions in the
+module are imported globally to the importing module.
+
+This means that all type aliases and functions defined in the dependency become
+available in the importing module.
 
 ```c
 import some.module1;
 
 void foo() {
     Tree t = {42, null, null};
+    doSomethingWithTree(&t);
 }
 ```
 ```status
