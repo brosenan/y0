@@ -49,13 +49,15 @@
          node))
      node)))
 
-(defn extract-deps [node coll-atom kw]
-  (when (vector? node)
+(defn extract-deps [node coll-atom kw ns]
+  (if (vector? node)
     (let [[kw' module] node]
-      (when (= kw' kw)
-        (check-form node)
-        (swap! coll-atom conj module))))
-  node)
+      (if (= kw' kw)
+        (do (check-form node)
+            (swap! coll-atom conj module)
+            [kw (symbol ns module)])
+        node))
+    node))
 
 (defn convert-int-node [node]
   (if (vector? node)
@@ -90,7 +92,7 @@
                  statements (vec (postwalk-with-meta
                                   #(-> %
                                        (symbolize module id-kws)
-                                       (extract-deps deps-atom dep-kw)
+                                       (extract-deps deps-atom dep-kw module)
                                        convert-int-node
                                        convert-float-node) statements))
                  deps (-> (for [dep @deps-atom]

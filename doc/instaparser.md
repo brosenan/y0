@@ -188,18 +188,21 @@ Like identifiers, the names of the dependent modules should be identified
 in a node with a single element -- a string containing the node's name.
 
 `extract-deps` takes a node, an atom holding a collection (typically, it will
-be empty upon calling the function) and the designated keyword for marking
-dependencies, and returns the node unchanged, but in case of a dependency, it
-adds the module name to the collection.
+be empty upon calling the function), the designated keyword for marking
+dependencies and the name of the enclosing module. If the node is a
+dependency, it adds the module name to the collection and replaces the string
+(dependency module name) with a symbol.
 ```clojure
 (fact
  (let [a (atom nil)]
    ;; This does not add a dependency to the collection.
-   (extract-deps [:import [:dep "some.module"] [:identifier "somemod"]] a :dep) =>
+   (extract-deps [:import [:dep "some.module"] [:identifier "somemod"]]
+                 a :dep "foo.bar") =>
    [:import [:dep "some.module"] [:identifier "somemod"]]
    @a => nil
    ;; But this does...
-   (extract-deps [:dep "some.module"] a :dep) => [:dep "some.module"]
+   (extract-deps [:dep "some.module"] a :dep "foo.bar") =>
+   [:dep 'foo.bar/some.module]
    @a => ["some.module"]))
 
 ```
@@ -208,9 +211,9 @@ that one element is not a string, exceptions are thrown.
 ```clojure
 (fact
  (let [a (atom nil)]
-   (extract-deps [:dep "some.module" "some.other.module"] a :dep) =>
+   (extract-deps [:dep "some.module" "some.other.module"] a :dep "foo.bar") =>
    (throws ":dep node should contain one element but has 2")
-   (extract-deps [:dep [:qname "some" "module"]] a :dep) =>
+   (extract-deps [:dep [:qname "some" "module"]] a :dep "foo.bar") =>
    (throws ":dep node should contain a single string. Found: [:qname \"some\" \"module\"]")))
 
 ```
@@ -293,8 +296,8 @@ parse-tree is given a location.
        {:keys [ok]} status
        [statements deps] ok]
    statements =>
-   [[:import [:dep "foo.core"]]
-    [:import [:dep "bar.core"]]
+   [[:import [:dep 'my.module/foo.core]]
+    [:import [:dep 'my.module/bar.core]]
     [:statement [:assign 'my.module/a [:expr [:int -3]]]]
     [:statement [:assign 'my.module/b [:expr [:float 5.7]]]]
     [:statement

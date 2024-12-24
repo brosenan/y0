@@ -196,7 +196,7 @@
  ;; Now we can use parse and see if it works
  (let [{:keys [parse _resolve]} (get lang-map1 "c0")]
    (parse "my.module" "/my/module.c0" "import foo; a = 1; b = 2.3;") =>
-   {:ok '[[[:import [:dep "foo"]]
+   {:ok '[[[:import [:dep my.module/foo]]
            [:statement [:assign my.module/a [:expr [:int 1]]]]
            [:statement [:assign my.module/b [:expr [:float 2.3]]]]]
           [{:lang "c0" :name "foo"}
