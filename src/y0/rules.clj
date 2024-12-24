@@ -214,8 +214,9 @@
                              (apply-statements statements ps vars))))]
     {:ok ps}))
 
-(defn- apply-import [ps statement _vars]
+(defn- apply-import [ps statement vars]
   (let [[statement why-not] (split-goal statement nil)
+        statement (-> statement (replace-vars vars) reify-term)
         [_import sym key] statement
         key (if (nil? key) :all key)
         impns (namespace sym)

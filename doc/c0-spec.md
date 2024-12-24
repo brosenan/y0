@@ -1979,3 +1979,19 @@ import m1 = some.module1;
 ```status
 Success
 ```
+
+### Importing Type Aliases
+
+All type aliases that are defined in an imported module are imported to the
+importing module.
+
+```c
+import some.module1;
+
+void foo() {
+    Tree t = {42, null, null};
+}
+```
+```status
+Success
+```
