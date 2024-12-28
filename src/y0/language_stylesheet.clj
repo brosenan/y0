@@ -26,12 +26,14 @@
 (defn compile-stylesheet [lss]
   (let [[default & rules] lss
         rules (compile-rules rules)]
-    (fn [node-name matched-preds attr]
-      (loop [rules rules]
-        (if (empty? rules)
-          (get default attr)
-          (let [[[sel attrs] & rules] rules]
-            (if (and (contains? attrs attr)
-                     (sel node-name matched-preds))
-              (get attrs attr)
-              (recur rules))))))))
+    (fn [node attr]
+      (let [node-name (first node)
+            matched-preds (->> node meta :matches deref keys (map name) set)]
+        (loop [rules rules]
+          (if (empty? rules)
+            (get default attr)
+            (let [[[sel attrs] & rules] rules]
+              (if (and (contains? attrs attr)
+                       (sel node-name matched-preds))
+                (get attrs attr)
+                (recur rules)))))))))

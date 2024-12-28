@@ -78,22 +78,22 @@
 ;; for specific cases.
 
 ;; The function `compile-stylesheet` takes a stylesheet and returns a function
-;; which represents it. The "compiled stylesheet" function takes a name of a
-;; parse-tree node (symbol or keyword), a set of strings representing names
-;; of matched predicate (omitting their namespaces) and a keyword representing
-;; an attribute. It returns the value of that attribute for this node based on
-;; the stylesheet.
+;; which represents it. The "compiled stylesheet" function takes a decorated
+;; parse-tree node and a keyword representing an attribute. It returns the value
+;; of that attribute for this node based on the stylesheet.
 
 ;; If the attribute is not defined, `nil` is returned.
 (fact
- (let [f (compile-stylesheet [{}])]
-   (f  :foo #{} :my-attr)) => nil)
+ (let [node (with-meta [:foo 1 2 3] {:matches (atom {})})
+       f (compile-stylesheet [{}])]
+   (f node :my-attr)) => nil)
 
 ;; If the attribute is defined in the default block, and no other rule matches,
 ;; the default value is returned.
 (fact
- (let [f (compile-stylesheet [{:my-attr 42}])]
-   (f :foo #{} :my-attr)) => 42)
+ (let [node (with-meta [:foo 1 2 3] {:matches (atom {})})
+       f (compile-stylesheet [{:my-attr 42}])]
+   (f node :my-attr)) => 42)
 
 ;; ### Stylesheet Rules
 
@@ -102,21 +102,27 @@
 ;; declaration block defines a value for the requested attribute, this value
 ;; takes priority over the default.
 (fact
- (let [f (compile-stylesheet [{:my-attr 42}
+ (let [node (with-meta [:foo 1 2 3] {:matches (atom {'my-ns/bar {}
+                                                     'my-ns/baz {}})})
+       f (compile-stylesheet [{:my-attr 42}
                               :foo.bar {:my-attr 43}])]
-   (f :foo #{"bar" "baz"} :my-attr)) => 43)
+   (f node :my-attr)) => 43)
 
 ;; If more than one rule matches, the last takes precedence.
 (fact
- (let [f (compile-stylesheet [{:my-attr 42}
+ (let [node (with-meta [:foo 1 2 3] {:matches (atom {'my-ns/bar {}
+                                                     'my-ns/baz {}})})
+       f (compile-stylesheet [{:my-attr 42}
                               :foo.bar {:my-attr 43}
                               :foo.bar.baz {:my-attr 44}])]
-   (f :foo #{"bar" "baz"} :my-attr)) => 44)
+   (f node :my-attr)) => 44)
 
 ;; Rules that do not provide a value for the given attribute are ignored, even
 ;; if they are more specific.
 (fact
- (let [f (compile-stylesheet [{:my-attr 42}
+ (let [node (with-meta [:foo 1 2 3] {:matches (atom {'my-ns/bar {}
+                                                     'my-ns/baz {}})})
+       f (compile-stylesheet [{:my-attr 42}
                               :foo.bar {:my-attr 43}
                               :foo.bar.baz {:some-other-attr 88}])]
-   (f :foo #{"bar" "baz"} :my-attr)) => 43)
+   (f node :my-attr)) => 43)
