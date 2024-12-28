@@ -23,8 +23,8 @@
       (let [[sel attrs & rules] rules]
         (recur rules (conj crules [(selector-to-func sel) attrs]))))))
 
-(defn compile-stylesheet [ss]
-  (let [[default & rules] ss
+(defn compile-stylesheet [lss]
+  (let [[default & rules] lss
         rules (compile-rules rules)]
     (fn [node-name matched-preds attr]
       (loop [rules rules]
