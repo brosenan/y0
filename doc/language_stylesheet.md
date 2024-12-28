@@ -3,6 +3,7 @@
     * [Matched Predicates](#matched-predicates)
   * [The Language](#the-language)
     * [Stylesheet Rules](#stylesheet-rules)
+    * [Attribute Value Language](#attribute-value-language)
 ```clojure
 (ns y0.language-stylesheet-test
   (:require [midje.sweet :refer [fact =>]]
@@ -148,5 +149,82 @@ if they are more specific.
                               :foo.bar {:my-attr 43}
                               :foo.bar.baz {:some-other-attr 88}])]
    (f node :my-attr)) => 43)
+
+```
+### Attribute Value Language
+
+Attribute values appearing in declaration blocks are written in a simple
+expression language which allows content from the parse-tree node to be used
+in the returned expression.
+
+The function `eval-attr` is responsible for this. It takes an attribute value
+expression and a decorated parse-tree node as input, and returns the
+evaluated value of that attribute.
+
+For "simple" values, the values are returned unchanged.
+```clojure
+(fact
+ (eval-attr 42 [:my-node 1 2 3]) => 42)
+
+```
+The form `with-pred` replaces symbols or keywords in its body with predicate
+attributes.
+```clojure
+(fact
+ (let [node (with-meta [:my-node 1 2 3]
+              {:matches (atom {'y1/typeof {:args ['y1/int]}})})]
+   (eval-attr '(with-pred [y1/typeof :type]
+                 ["Type:" :type]) node)) => ["Type:" 'y1/int])
+
+```
+The form `with-node` replaces symbols or keywords with arguments of the tree
+node.
+```clojure
+(fact
+ (let [node [:my-node 1 2 3]]
+   (eval-attr '(with-node [:a :b]
+                 ["A:" :a "\nB:" :b]) node)) => ["A:" 1 "\nB:" 2])
+
+```
+The form `str` turns a list or a vector into a string.
+```clojure
+(fact
+ (let [node [:my-node 1 2 3]]
+   (eval-attr '(str ["Hello" "world"]) node)) => "Hello world")
+
+```
+It uses [explanation-to-str](explanation.md#stringifying-explanations) so
+that tree nodes are stringified properly.
+```clojure
+(fact
+ (eval-attr '(str ["Hello" [:world 1 2 3]]) [:my-node 1 2 3]) =>
+ "Hello [:world 1 2 ...]")
+
+```
+The forms discussed here can appear anywhere in the expression.
+```clojure
+(fact
+ (let [node (with-meta [:my-node 1 2 3]
+              {:matches (atom {'y1/typeof {:args ['y1/int]}})})]
+   (eval-attr '[(with-pred [y1/typeof :type]
+                  ["Type:" :type])
+                (with-node [:a :b :c]
+                  ["A:" :a ", B:" :b ", C:" :c])
+                (str ["Hello" "world"])] node)) => [["Type:" 'y1/int]
+                                                    ["A:" 1 ", B:" 2 ", C:" 3]
+                                                    "Hello world"])
+
+```
+They can also be combined.
+```clojure
+(fact
+ (let [node (with-meta [:my-node 1 2 3]
+              {:matches (atom {'y1/typeof {:args ['y1/int]}})})]
+   (eval-attr '(str (with-pred [y1/typeof :type]
+                      (with-node [:a :b]
+                        ["Type:" :type "\n"
+                         "A:" :a "\n"
+                         "B:" :b "\n"]))) node)) =>
+ "Type: int \n A: 1 \n B: 2 \n")
 ```
 

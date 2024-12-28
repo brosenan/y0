@@ -1,6 +1,8 @@
 (ns y0.language-stylesheet
-  (:require [clojure.string :as str]
-            [clojure.set :as set]))
+  (:require [y0.explanation :refer [explanation-to-str]]
+            [clojure.string :as str]
+            [clojure.set :as set]
+            [clojure.walk :as walk]))
 
 (defn- extract-matches [sel]
   (let [n (name sel)
@@ -22,6 +24,35 @@
       crules
       (let [[sel attrs & rules] rules]
         (recur rules (conj crules [(selector-to-func sel) attrs]))))))
+
+(defn- handle-with-pred [[_with-pred [pred & params] body] node]
+  (let [args (-> node meta :matches deref (get pred) :args)
+        rep (zipmap params args)]
+    (walk/postwalk-replace rep body)))
+
+(defn- handle-with-node [[_with-node params body] [_head & args]]
+  (let [rep (zipmap params args)]
+    (walk/postwalk-replace rep body)))
+
+(declare eval-attr)
+
+(defn- handle-str [[_str v] node]
+  (explanation-to-str v))
+
+(defn- maybe-form [expr node]
+  (let [name (first expr)]
+    (cond
+      (= name 'with-pred) (handle-with-pred expr node)
+      (= name 'with-node) (handle-with-node expr node)
+      (= name 'str) (handle-str expr node)
+      :else expr)))
+
+(defn eval-attr [expr node]
+  (walk/postwalk (fn [expr]
+                  (if (seq? expr)
+                    (maybe-form expr node)
+                    expr))
+                expr))
 
 (defn compile-stylesheet [lss]
   (let [[default & rules] lss
