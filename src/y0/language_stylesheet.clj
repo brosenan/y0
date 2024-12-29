@@ -6,15 +6,18 @@
 
 (defn- extract-matches [sel]
   (let [n (name sel)
-        [n & matches] (str/split n #"[.]")]
-    (if (symbol? sel)
-      [(symbol (namespace sel) n) matches]
-      [(keyword n) matches])))
+        [n & matches] (str/split n #"[.]")
+        n (cond
+            (empty? n) nil
+            (symbol? sel) (symbol (namespace sel) n)
+            (keyword sel) (keyword n))]
+    [n matches]))
 
 (defn selector-to-func [sel]
   (let [[n matches] (extract-matches sel)]
     (fn [name pred-names]
-      (and (= n name)
+      (and (or (nil? n)
+               (= n name))
            (set/subset? matches pred-names)))))
 
 (defn- compile-rules [rules]

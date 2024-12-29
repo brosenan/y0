@@ -70,6 +70,15 @@
    (f :bar #{"baz"}) => false
    (f :bar1 #{"baz" "quux"}) => false))
 
+;; A symbol selector that begins with a `.` represents a selector that selects
+;; based only on matched predicates and disregards the node name.
+(fact
+ (let [f (selector-to-func '.baz.quux)]
+   (f :bar #{"baz" "quux"}) => true
+   (f 'foo #{"baz" "quux"}) => true
+   (f :bar #{"baz"}) => false
+   (f :bar1 #{"baz" "quux"}) => true))
+
 ;; ## The Language
 
 ;; A language stylesheet is a vector consisting of a _default block_, defining
