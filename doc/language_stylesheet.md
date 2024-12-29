@@ -237,5 +237,20 @@ They can also be combined.
                          "A:" :a "\n"
                          "B:" :b "\n"]))) node)) =>
  "Type: int \n A: 1 \n B: 2 \n")
+
+```
+In the following example we use the attribute value language in a stylesheet.
+We define a matcher for an expression, which in [y1](y1.md) is matched by the
+`typeof` predicate. We define the `:hover-text` attribute by providing the
+type.
+```clojure
+(fact
+ (let [lss (compile-stylesheet '[{}
+                                 .typeof
+                                 {:hover-text (str (with-pred [y1/typeof :type]
+                                                     ["Type:" :type]))}])
+       node (with-meta [:my-expr 1 2 3]
+              {:matches (atom {'y1/typeof {:args ['y1/int]}})})]
+   (lss node :hover-text) => "Type: int"))
 ```
 

@@ -62,12 +62,13 @@
         rules (compile-rules rules)]
     (fn [node attr]
       (let [node-name (first node)
-            matched-preds (->> node meta :matches deref keys (map name) set)]
-        (loop [rules rules]
-          (if (empty? rules)
-            (get default attr)
-            (let [[[sel attrs] & rules] rules]
-              (if (and (contains? attrs attr)
-                       (sel node-name matched-preds))
-                (get attrs attr)
-                (recur rules)))))))))
+            matched-preds (->> node meta :matches deref keys (map name) set)
+            attr-expr (loop [rules rules]
+                        (if (empty? rules)
+                          (get default attr)
+                          (let [[[sel attrs] & rules] rules]
+                            (if (and (contains? attrs attr)
+                                     (sel node-name matched-preds))
+                              (get attrs attr)
+                              (recur rules)))))]
+        (eval-attr attr-expr node)))))
