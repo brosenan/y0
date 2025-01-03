@@ -699,23 +699,51 @@
 
 ;; ## Imports
 
+;; ### Global Imports
+
 (all [talias t]
      [:type_alias_def talias t] =>
-     (export [talias' talias]
+     (export #{:global} [talias' talias]
              (all [t']
                   (type-alias talias' t') <-
                   (type-alias talias t'))))
 
 (all [_t f _params _stmts]
      [:func_def _t f _params & _stmts] =>
-     (export [f' f]
+     (export #{:global} [f' f]
              (all [params t]
                   (function f' params t) <-
                   (function f params t))))
 
 (all [dep]
      [:import [:dep dep]] =>
-     (import dep))
+     (import dep :global))
+
+;; ### Scoped Imports
+
+(all [talias t]
+     [:type_alias_def talias t] =>
+     (export #{:scoped} [talias' talias]
+             (all [t']
+                  (scoped-type-alias talias' t') <-
+                  (type-alias talias t'))))
+
+(all [a t]
+     (scoped-type-alias a t ! a "is not a type alias"))
+
+(all [m a t]
+     (type-alias [:qname m a] t) <-
+     (module-alias m)
+     (given (module-scope m)
+            (scoped-type-alias a t ! "within module" m)))
+
+(all [m]
+     (module-alias m ! m "is not a module alias"))
 
 (all [alias dep]
-     [:import alias [:dep dep]] =>)
+     [:import alias [:dep dep]] =>
+     (all []
+          (module-scope alias) =>
+          (import dep :scoped))
+     (all []
+          (module-alias alias)))

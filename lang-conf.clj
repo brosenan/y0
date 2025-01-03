@@ -55,12 +55,13 @@
                  float32_type = <'float32'>
                  float64_type = <'float64'>
                  void_type = <'void'>
-                 type_alias = identifier
+                 type_alias = identifier | qname
                  struct_type = <'struct'> <'{'> struct_member_def* <'}'>
                  array_type = <'['> int <']'> type
                  slice_type = <'['> <']'> type
-                 
 
+                 qname = identifier <'::'> identifier
+                 
                  <statement> = vardef | implicit_vardef | assign
                              | type_alias_def | expr_stmt | return_stmt
 

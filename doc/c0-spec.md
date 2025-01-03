@@ -2018,3 +2018,54 @@ void foo() {
 ```status
 Success
 ```
+
+### Scoped Imports
+
+When an `import` specifies an alias, the symbols imported from this import are
+scoped under that alias.
+
+In the following example, the module `some.module1` is imported with alias `m1`
+and we define a variable of type `m1::Tree`, i.e., a type alias to `Tree` in
+module `m1`.
+
+```c
+import m1 = some.module1;
+
+void foo() {
+    m1::Tree t = {42, null, null};
+}
+```
+```status
+Success
+```
+
+In a qualified type name, the module alias needs to be a valid module alias,
+i.e., from a previous import.
+
+```c
+import m1 = some.module1;
+
+void foo() {
+    m2::Tree t = {42, null, null};
+}
+```
+```status
+ERROR: m2 is not a module alias in m2::Tree t = {42, null, null};
+```
+
+Similarly, the type needs to be one defined within the module.
+
+```c
+import m1 = some.module1;
+
+type Leaf = struct {
+    int64 value;
+};
+
+void foo() {
+    m1::Leaf t = {42};
+}
+```
+```status
+ERROR: Leaf is not a type alias within module m1 in m1::Leaf t = {42};
+```
