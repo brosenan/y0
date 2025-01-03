@@ -1,6 +1,6 @@
 (defproject y0lsp "0.0.1-SNAPSHOT"
   :description "A universal language server based on the y0 language"
-  :url "https://github.com/brosenan/y0/lsp"
+  :url "https://github.com/brosenan/y0/tree/main/lsp"
   :license {:name "EPL-2.0 OR GPL-2.0-or-later WITH Classpath-exception-2.0"
             :url "https://www.eclipse.org/legal/epl-2.0/"}
   :dependencies [[org.clojure/clojure "1.10.0"]
