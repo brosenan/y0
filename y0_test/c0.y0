@@ -747,3 +747,19 @@
           (import dep :scoped))
      (all []
           (module-alias alias)))
+
+(all [_t f _ps _stmts]
+     [:func_def _t f _ps & _stmts] =>
+     (export #{:scoped} [f' f]
+             (all [ps t]
+                  (scoped-function f' ps t) <-
+                  (function f ps t))))
+
+(all [m f ps t]
+     (function [:qname m f] ps t) <-
+     (module-alias m)
+     (given (module-scope m)
+            (scoped-function f ps t ! "within module" m)))
+
+(all [f ps t]
+     (scoped-function f ps t ! f "is not a function"))

@@ -2069,3 +2069,46 @@ void foo() {
 ```status
 ERROR: Leaf is not a type alias within module m1 in m1::Leaf t = {42};
 ```
+
+Imported functions are also scoped under the module alias.
+
+```c
+import m1 = some.module1;
+
+void foo() {
+    m1::Tree t = {42, null, null};
+    m1::doSomethingWithTree(&t);
+}
+```
+```status
+Success
+```
+
+As with type aliases, the module name must be a valid alias.
+
+```c
+import m1 = some.module1;
+
+void foo() {
+    m1::Tree t = {42, null, null};
+    m2::doSomethingWithTree(&t);
+}
+```
+```status
+ERROR: m2 is not a module alias in m2::doSomethingWithTree(&t);
+```
+
+The function needs to be defined within the named module.
+
+```c
+import m1 = some.module1;
+
+void bar() {}
+
+void foo() {
+    m1::bar();
+}
+```
+```status
+ERROR: bar is not a function within module m1 in m1::bar();
+```

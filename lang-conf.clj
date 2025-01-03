@@ -108,9 +108,11 @@
                  default_case = <'default'> <':'> expr
                  element_access = atomic_expr <'['> expr <']'>
                  range_expr = atomic_expr <'['> expr <':'> expr <']'>
-                 func_call = identifier <'('> (expr (<','> expr)* )? <')'>
+                 func_call = func_name <'('> (expr (<','> expr)* )? <')'>
 
                  <member_expr> = identifier
+
+                 <func_name> = identifier | qname
 
                  keyword = 'int8' | 'int16' | 'int32' | 'int64'
                            | 'uint8' | 'uint16' | 'uint32' | 'uint64'
