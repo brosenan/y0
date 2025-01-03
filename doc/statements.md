@@ -68,9 +68,9 @@ Now, to give meaning to `defoo` and `defbar`, we define a translation
 rule for each of them.
 ```clojure
 (all [x]
-     (defoo x) => (all [] (foo x)))
+     (defoo x) => (fact (foo x)))
 (all [x]
-     (defbar x) => (all [] (bar x)))
+     (defbar x) => (fact (bar x)))
 
 ```
 These rules translate each statement into a trivial rule that defines
@@ -97,7 +97,7 @@ In the following example we define a rule that will take existing
 [classification](hello.md#rule-specialization) of the defined object.
 ```clojure
 (all [x]
-     (defoo x) => (all [] (classify x "A foo thingy")))
+     (defoo x) => (fact (classify x "A foo thingy")))
 
 ```
 This retrospectively appies to `fig`, which was previously defined as
@@ -134,7 +134,7 @@ definitions directly, we can do this as follows:
 (all [x] (foobar x ! x "needs to be defined as both foo and bar"))
 (all [x] (defoo x) =>
      (all [] (defbar x) =>
-          (all [] (foobar x))))
+          (fact (foobar x))))
 
 ```
 Now, anything that is defined as both `foo` and `bar` should be
@@ -169,7 +169,7 @@ and an assertion.
 ```clojure
 (all [x]
      (defquux x) =>
-     (all [] (quux x))
+     (fact (quux x))
      (assert
       (foo x ! x "is not foo" "in" (defquux x))
       (bar x ! x "is not bar" "in" (defquux x))))
@@ -213,7 +213,7 @@ a list.
      (baz x l ! x "is not a baz"))
 (all [x l]
      (defbaz x & l) =>
-     (all []
+     (fact
           (baz x l)))
 
 (defbaz a b c d e)

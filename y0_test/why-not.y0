@@ -23,7 +23,7 @@
 
 ;; We can define another failing rule for `bit` rejecting yet another value
 ;; with a different explanation
-(all []
+(fact
      (bit 2 ! "2 is not a bit value. Only 0 and 1"))
 
 (assert
@@ -46,7 +46,7 @@
      (bit-vec [b & bv]) <-
      (bit b)
      (bit-vec bv))
-(all []
+(fact
      (bit-vec []))
 
 ;; This predicate accepts vectors of bits and rejects anything else.
@@ -106,7 +106,7 @@
      (defoo x) =>
      (assert
       (is-symbol x))
-     (all [] (foo x)))
+     (fact (foo x)))
 
 ;; Where `is-symbol` is defined as follows:
 (all [x]

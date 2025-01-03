@@ -12,12 +12,12 @@
 
 (all [f]
      (defruit f) =>
-     (all []
+     (fact
           (fruit f)))
 
 (all [v]
      (defvegetable v) =>
-     (all []
+     (fact
           (vegetable v)))
 
 ;; ## Exports
@@ -33,13 +33,13 @@
 (all [f]
      (defruit f) =>
      (export #{:fruit f} [f' f]
-             (all []
+             (fact
                   (fruit f') <- (fruit f))))
 
 (all [v]
      (defvegetable v) =>
      (export #{:vegetable v} [v' v]
-             (all []
+             (fact
                   (vegetable v') <- (vegetable v))))
 
 ;; ## What Now?

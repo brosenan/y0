@@ -20,7 +20,7 @@
 ;; Next, we allow for the definition of new words.
 (all [w]
      (defword w) =>
-     (all []
+     (fact
           (word w)))
 
 (assert
@@ -33,7 +33,7 @@
 (all [w]
      (defword w) =>
      (export [w' w]
-             (all []
+             (fact
                   (word w') <- (word w))))
 
 ;; This contributes an `export` statement for every use of `defword` (this could

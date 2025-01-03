@@ -97,8 +97,8 @@
 
 (all [x]
      (numeric-type x ! x "is not a numeric type"))
-(all [] (numeric-type int))
-(all [] (numeric-type float))
+(fact (numeric-type int))
+(fact (numeric-type float))
 
 (assert
  (typeof (+ 1 (+ 2 3)) int)
@@ -164,7 +164,7 @@
               ! "Variable names in let expressions must be symbols." var "is given")
      (exist [var-t]
             (typeof var-expr var-t)
-            (given (all [] (typeof var var-t))
+            (given (fact (typeof var var-t))
                    (typeof-let var-expr-pairs expr t))))
 
 
@@ -325,7 +325,7 @@
 ;; indicates that it is _private_, i.e., only used within this module.
 (all [var type vartypes]
      (declvars- [var type & vartypes]) =>
-     (all [] (typeof var type))
+     (fact (typeof var type))
      (declvars- vartypes))
 
 ;; `declvars-` takes a vector of name, type pairs and associates the types to
@@ -452,10 +452,10 @@
 
 ;; We have already encountered some $y_1$ built-in types, so let's define them
 ;; as such.
-(all [] (type int))
-(all [] (type float))
-(all [] (type string))
-(all [] (type bool))
+(fact (type int))
+(fact (type float))
+(fact (type string))
+(fact (type bool))
 (all [t]
      (type (vector t)) <-
      (type t))
@@ -517,7 +517,7 @@
 ;; `decltypes-` declares all elements of the given vector as types.
 (all [t ts]
      (decltypes- [t & ts]) =>
-     (all []
+     (fact
           (type t))
      (decltypes- ts))
 (assert
@@ -535,7 +535,7 @@
             (= ctor (name & params) ! "A constructor must be of the form (name args)." ctor "was given")
             (type-constructor-params params))
      (type-constructors ctors))
-(all []
+(fact
      (type-constructors ()))
 
 (all [params]
@@ -544,7 +544,7 @@
      (type-constructor-params (param & params)) <-
      (type param)
      (type-constructor-params params))
-(all []
+(fact
      (type-constructor-params ()))
 
 (assert
@@ -719,7 +719,7 @@
              (inspect var :symbol ! "Expected symbol, found" var)
              (= params (param & r-params)
                 ! "Too many variables in destructor." (var & vars) "are not matched by constructor parameters.")))
-     (all []
+     (fact
           (typeof var param))
      (declparams- vars r-params))
 (all [params]
@@ -826,7 +826,7 @@
      (class-methods (method & methods)) <-
      (class-method method)
      (class-methods methods))
-(all []
+(fact
      (class-methods ()))
 
 ;; This definition applies `class-method` on each element. So let us define
@@ -932,9 +932,9 @@
 
 ;; If we bridge this gap, we get a valid expression.
 (assert
- (given (all [] (Show int []))
+ (given (fact (Show int []))
         (typeof (show 2) string))
- (given (all [] (Convertable- int [float]))
+ (given (fact (Convertable- int [float]))
         (typeof (convert- 2) float)))
 
 ;; ### Instance Definitions
@@ -1006,7 +1006,7 @@
      (type-constraints [constraint & constraints]) <-
      (type-constraint constraint)
      (type-constraints constraints))
-(all []
+(fact
      (type-constraints []))
 
 ;; To define the validity of each type constraint, we first define
@@ -1074,7 +1074,7 @@
      (check-constraints [constraint & constraints]) <-
      (check-constraint constraint)
      (check-constraints constraints))
-(all []
+(fact
      (check-constraints []))
 
 ;; This is acheived by calling the class predicate for each constraint.
@@ -1090,9 +1090,9 @@
                    (class t ts-v))))
 
 (assert
- (given (all [] (Show int []))
+ (given (fact (Show int []))
         (check-constraint (Show int)))
- (given (all [] (Convertable- int [float]))
+ (given (fact (Convertable- int [float]))
         (check-constraint (Convertable- int float)))
  (check-constraint (Show)
                    ! "A type constraint must contain at least one type."))
@@ -1103,7 +1103,7 @@
      (declconstraints- [(class type & types) & constraints]) =>
      (assert
       (to-vec types types-vec))
-     (all []
+     (fact
           (class type types-vec))
      (declconstraints- constraints))
 
@@ -1165,7 +1165,7 @@
 ;; Defining the parameters is done using the following translation rule.
 (all [name names type types]
      (defparams- [name & names] [type & types]) =>
-     (all []
+     (fact
           (typeof name type))
      (defparams- names types))
 

@@ -8,22 +8,22 @@
      (assert
       (type t)
       (expr-of-type x t))
-     (all [] (typeof v t)))
+     (fact (typeof v t)))
 
 (all [v x
       t]
      [:implicit_vardef v x] =>
      (assert
       (typeof x t))
-     (all [] (typeof v t)))
+     (fact (typeof v t)))
 
 (all [alias t]
      [:type_alias_def alias t] =>
      (assert
-      (given (all []
+      (given (fact
                   (type-alias alias t))
              (type t)))
-     (all []
+     (fact
           (type-alias alias t))
      (all []
           (defmembers [:type_alias alias]) =>
@@ -158,8 +158,8 @@
 (all [t]
      (float-type t ! t "is not a floating-point type"))
 
-(all [] (float-type [:float32_type]))
-(all [] (float-type [:float64_type]))
+(fact (float-type [:float32_type]))
+(fact (float-type [:float64_type]))
 
 (all [alias t]
      (type-alias alias t ! alias "is not a type alias"))
@@ -182,9 +182,9 @@
 
 (all [t ts]
      (def-numeric-types [t & ts]) =>
-     (all []
+     (fact
           (type t))
-     (all []
+     (fact
           (numeric-type t))
      (all [xs]
           (initialization t xs) <-
@@ -231,13 +231,13 @@
      (all [t']
           (assignable-to-t t'
                            ! "because type" t' "cannot be safely cast into type" t))
-     (all []
+     (fact
           (assignable-to-t t))
      (def-assignable' assignable-to-t src-ts))
 
 (all [assignable-to-t src-t src-ts]
      (def-assignable' assignable-to-t [src-t & src-ts]) =>
-     (all []
+     (fact
           (assignable-to-t src-t))
      (def-assignable' assignable-to-t src-ts))
 
@@ -317,7 +317,7 @@
      [:field_def t v] =>
      (assert
       (type t))
-     (all []
+     (fact
           (member v t)))
 
 (all [fds xs]
@@ -349,14 +349,14 @@
      (assert
       (given (defall opts)))
      (defoptions opts name)
-     (all []
+     (fact
           (member name (union-type opts))))
 
 (all [t v]
      [:option_def t v] =>
      (assert
       (type t))
-     (all []
+     (fact
           (option v t)))
 
 (all [opt opts uname]
@@ -420,7 +420,7 @@
       [:case_option v x] cases opts) <-
      (exist [t]
             (option v t))
-     (given (all []
+     (given (fact
                  (option-is-covered v))
             (all-options-are-uniquely-covered cases opts)))
 
@@ -443,7 +443,7 @@
             (option-is-covered v))
      (all-options-are-covered opts))
 
-(all []
+(fact
      (all-options-are-covered []))
 
 (all [cases v t]
@@ -465,7 +465,7 @@
      (case-has-expression-of-type [:case_option fld x] v t) <-
      (exist [tfld]
             (option fld tfld)
-            (given (all [] (typeof v tfld))
+            (given (fact (typeof v tfld))
                    (expr-of-type x t))))
 
 (all [x v t]
@@ -587,7 +587,7 @@
 
 (all [t v x]
      [:vardef t v x] =>
-     (all []
+     (fact
           (lexpr v)))
 
 (all [x]
@@ -601,7 +601,7 @@
      (assert
       (given params
              (statements stmts t)))
-     (all []
+     (fact
           (function f params t)))
 
 (all [stmts t]
@@ -618,7 +618,7 @@
      (function-ends-without-return t
                                    ! "Function returning non-void type" t
                                    "ends without a return statement"))
-(all []
+(fact
      (function-ends-without-return [:void_type]))
 
 (all [stmt stmts t]
@@ -655,7 +655,7 @@
 
 (all [t p]
      [:arg_def t p] =>
-     (all []
+     (fact
           (typeof p t)))
 
 (all [p c]
@@ -745,7 +745,7 @@
      (all []
           (module-scope alias) =>
           (import dep :scoped))
-     (all []
+     (fact
           (module-alias alias)))
 
 (all [_t f _ps _stmts]

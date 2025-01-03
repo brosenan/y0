@@ -18,12 +18,12 @@ or a vegetable, informing corresponding predicates.
 
 (all [f]
      (defruit f) =>
-     (all []
+     (fact
           (fruit f)))
 
 (all [v]
      (defvegetable v) =>
-     (all []
+     (fact
           (vegetable v)))
 
 ```
@@ -41,13 +41,13 @@ its header. If this set exists, the export is stored by each of these keys.
 (all [f]
      (defruit f) =>
      (export #{:fruit f} [f' f]
-             (all []
+             (fact
                   (fruit f') <- (fruit f))))
 
 (all [v]
      (defvegetable v) =>
      (export #{:vegetable v} [v' v]
-             (all []
+             (fact
                   (vegetable v') <- (vegetable v))))
 
 ```

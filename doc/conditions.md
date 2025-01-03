@@ -77,7 +77,7 @@ Peano numbers.
 Now we provide a trivial rule for the first part of the definition: `z`
 is a Peano number.
 ```clojure
-(all [] (peano z))
+(fact (peano z))
 
 ```
 And now we get to the recursive part:
@@ -150,8 +150,8 @@ have either type (`foolish` or `barley`), based on the following rules:
 This can be expressed in $y_0$ using the following rules:
 ```clojure
 (all [x t] (foobar-type x t ! x "is not a foobar expression"))
-(all [] (foobar-type foo foolish))
-(all [] (foobar-type bar barley))
+(fact (foobar-type foo foolish))
+(fact (foobar-type bar barley))
 (all [a b] (foobar-type (+ a b) foolish) <-
      (exist [type-a type-b]
             (foobar-type a type-a)
@@ -270,7 +270,7 @@ Next, let us define the `defconst` statement, which contributes
 a symbol to `lambda-expr`.
 ```clojure
 (all [var expr]
-     (defconst var expr) => (all [] (lambda-expr var)))
+     (defconst var expr) => (fact (lambda-expr var)))
 
 (defconst id (lambda x x))
 (assert
@@ -303,7 +303,7 @@ This is where the `given` condition comes in.
 ```clojure
 (all [var expr]
      (lambda-expr (lambda var expr)) <-
-     (given (all [] (lambda-expr var))
+     (given (fact (lambda-expr var))
             (lambda-expr expr)))
 
 (assert

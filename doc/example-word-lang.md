@@ -30,7 +30,7 @@ Next, we allow for the definition of new words.
 ```clojure
 (all [w]
      (defword w) =>
-     (all []
+     (fact
           (word w)))
 
 (assert
@@ -45,7 +45,7 @@ Now, we define the mechanism that allows words to be exported.
 (all [w]
      (defword w) =>
      (export [w' w]
-             (all []
+             (fact
                   (word w') <- (word w))))
 
 ```

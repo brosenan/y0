@@ -32,7 +32,7 @@ as a bit in any of the following rules (i.e., `0` or `1`) is not a bit.
 We can define another failing rule for `bit` rejecting yet another value
 with a different explanation
 ```clojure
-(all []
+(fact
      (bit 2 ! "2 is not a bit value. Only 0 and 1"))
 
 (assert
@@ -57,7 +57,7 @@ bit vectors.
      (bit-vec [b & bv]) <-
      (bit b)
      (bit-vec bv))
-(all []
+(fact
      (bit-vec []))
 
 ```
@@ -127,7 +127,7 @@ adds a restriction that a `foo` must be a symbol.
      (defoo x) =>
      (assert
       (is-symbol x))
-     (all [] (foo x)))
+     (fact (foo x)))
 
 ```
 Where `is-symbol` is defined as follows:

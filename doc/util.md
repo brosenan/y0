@@ -33,9 +33,9 @@ The default rule will just return `false`.
 ```
 Special cases for an empty vector and an empty list return `true`.
 ```clojure
-(all []
+(fact
      (empty? [] true))
-(all []
+(fact
      (empty? () true))
 
 (assert

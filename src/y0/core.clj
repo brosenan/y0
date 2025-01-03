@@ -8,6 +8,7 @@
 
 (def-symbols
   all
+  fact
   assert
   assert!
   with-meta

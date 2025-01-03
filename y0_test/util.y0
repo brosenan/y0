@@ -22,9 +22,9 @@
      (empty? coll false))
 
 ;; Special cases for an empty vector and an empty list return `true`.
-(all []
+(fact
      (empty? [] true))
-(all []
+(fact
      (empty? () true))
 
 (assert

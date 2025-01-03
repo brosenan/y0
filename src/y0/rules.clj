@@ -161,6 +161,7 @@
           trans-rules (ok (seq (get-rules-to-match ps statement)))]
          (if (and (empty? trans-rules)
                   (not= (first statement) `all)
+                  (not= (first statement) `fact)
                   (not= (first statement) `assert))
            {:err ["No rules are defined to translate statement" statement
                   "and therefore it does not have any meaning"]}
@@ -232,12 +233,16 @@
                   ps (f ps impns)]
                  (recur fns ps)))))))
 
+(defn- add-fact [ps [_fact fact] vars]
+  (add-rule ps `(y0.core/all [] ~fact) vars))
+
 (defn apply-statement [statement ps vars]
   (cond
     (contains? vars statement) (recur @(get vars statement) ps vars)
     (sequential? statement) (let [[form & _] statement]
                               (case form
                                 y0.core/all (add-rule ps statement vars)
+                                y0.core/fact (add-fact ps statement vars)
                                 y0.core/assert (apply-assert-block ps statement vars true)
                                 y0.core/assert! (apply-assert-block ps statement vars false)
                                 y0.core/with-meta (apply-with-meta-block ps statement vars)

@@ -7,78 +7,91 @@
 ```
 # Introduction to $y_0$
 
-$y_0$ is a language for defining the _semantics_ of programming languages. It allows for
-the definition of _rules_ which define which programs are valid, and if a program isn't,
-provide explanations as to what the problem is.
+$y_0$ is a language for defining the _semantics_ of programming languages. It
+allows for the definition of _rules_ which define which programs are valid,
+and if a program isn't, provide explanations as to what the problem is.
 
-To focus on _semantics_ rather than _syntax_, $y_0$ works on programs in the form of
-their _Abstract Syntax Trees_, or ASTs for short. A parser is expected to have parsed
-the program from its textual form into this tree. $y_0$ is then used to analyze the
-tree and determine whether it is valid or not.
+To focus on _semantics_ rather than _syntax_, $y_0$ works on programs in the
+form of their _Abstract Syntax Trees_, or ASTs for short. A parser is
+expected to have parsed the program from its textual form into this tree.
+$y_0$ is then used to analyze the tree and determine whether it is valid or
+not.
 
-$y_0$ uses [EDN](https://github.com/edn-format/edn) (s-expressions) for its own syntax
-and for the data format it uses for the trees it acceps. For this reason the languages
-we will discuss in this document are going to be subsets of EDN.
+$y_0$ uses [EDN](https://github.com/edn-format/edn) (s-expressions) for its
+own syntax and for the data format it uses for the trees it acceps. For this
+reason the languages we will discuss in this document are going to an
+instance of EDN.
 
-In this document we start, step by step, to define languages of growing complexity as
-we introduce new features of $y_0$.
+In this document we start, step by step, to define languages of growing
+complexity as we introduce new features of $y_0$.
 
 ## Predicates
 
-The basic abstraction in $y_0$ is called a _predicate_. A predicate defines a relationship
-between things. At its simplest form, it can define the relationship between a language
-and ASTs that are valid in that language.
+The basic abstraction in $y_0$ is called a _predicate_. A predicate defines a
+relationship between things. At its simplest form, it can define the
+relationship between a language and ASTs that are valid in that language.
 
-To demonstrate this, consider the simplest language possible. The `bit` language. This
-"language" has only two possible programs: `0` and `1`.
+To demonstrate this, consider the simplest language possible. The `bit`
+language. This "language" has only two possible programs: `0` and `1`.
 
-To define this language we need to define three rules. One to define each possible value,
-and a third rule (which has to come first for reasons we will discuss later) to define
-the error in case someone checks if something other than `0` or `1` is a bit.
+To define this language we need to define a _rule_ and two _facts_. The rule
+is a base (catch-all rule), which matches anything and _rejects_ whatever it
+matches.
 
-All rules in $y_0$ are based on the keyword `all` followed by a list of variable names
-used in the rule, followed by the rule's _head_. The first rule we will define (the
-error case for all non-bit ASTs) will also contain `!` followed by the error to be
-presented to the user.
+All rules in $y_0$ are based on the keyword `all` followed by a list of
+variable names used in the rule, followed by the rule's _head_. The following
+rule (the catch-all rule for all non-bit ASTs) will also contain `!` followed
+by the error to be presented to the user.
 ```clojure
 (all [x]
      (bit x ! "Expected a bit, received" x))
 
 ```
-This is a "catch all" rule, since `x` in this rule is a _free variable_ which can match
-anything. Now we wish to provide _specializations_ for this rule, making sure it will
-succeed for `0` and `1`.
+This "catch all" rule will catch anything that does not match anything more
+specific, and provide an error message stating it is not a bit.
+
+In order to state that both `0` and `1` are indeed bits, we override the
+catch-all rule with two _facts_, as follows:
 ```clojure
-(all []
-     (bit 0))
-(all []
-     (bit 1))
+(fact
+ (bit 0))
+(fact
+ (bit 1))
+
+```
+A fact can be thought of as a rule without free variables. While the variable
+`x` in the catch-all rule is a free variable and can represent anything, the
+value `1` in the fact `(fact (bit 1))` just represents itself. The same fact
+could be written as a rule, with zero free variables, as: `(all [] (bit 1))`.
  
+```clojure
  
 ```
-Congratulations to us! We have just defined our first $y_0$ language by defining a
-predicate that accepts it. OK, it ain't fancy or anything, but it's a language
-nevertheless. But what can we do with?
+Congratulations to us! We have just defined our first $y_0$ language by
+defining a predicate that accepts it. OK, it ain't fancy or anything, but
+it's a language nevertheless. But what can we do with?
 
-For one, we can test it. We first want to test that both `0` and `1` are accepted.
-We will do so in the following `test` block.
+For one, we can test it. We first want to test that both `0` and `1` are
+accepted. We will do so in the following `test` block.
 ```clojure
 (assert
  (bit 0)
  (bit 1))
 
 ```
-What we have here is a `test` block. It starts with the keyword `test` and continues
-with some number (two in this case) of _tests_. The simplest tests are _goals_.
-One can think of goals as _calls to a predicate_. They have a similar structure
-to the predicate's head, and in our case, they have exactly the same values.
-This of-course will not be the case as we define more complex languages.
+What we have here is an `assert` block. It starts with the keyword `assert`
+and continues with some number (two in this case) of
+[conditions](conditions.md). The simplest conditions are
+[goals](conditions.md#goal-conditions). One can think of goals as _calls to a
+predicate_. They have a similar structure to the predicate's head, and in our
+case, they have exactly the same values. This of-course will not be the case
+as we define more complex languages.
 
-A `test` block runs when $y_0$ loads the source file. It then evaluates the goals
-and expects success. If they fail, a message with the reason of the failure is
-presented. Because this `.md` file is created from
-[a matching `.y0` file](https://github.com/brosenan/y0/blob/main/y0_test/hello.y0),
-you can be sure these goals succeed, telling us that both `0` and `1` are `bit`s.
+An `assert` block runs when $y_0$ loads the source file. It then evaluates
+the goals and expects success. If they fail, a message with the reason of the
+failure is presented. Because this `.md` file is created from [a matching
+`.y0` file](https://github.com/brosenan/y0/blob/main/y0_test/hello.y0), you
+can be sure these goals succeed, telling us that both `0` and `1` are `bit`s.
 
 We can also test for the error message we expect for non-bits.
 ```clojure
@@ -86,10 +99,11 @@ We can also test for the error message we expect for non-bits.
  (bit 2 ! "Expected a bit, received" 2))
 
 ```
-Here the meaning of the `!` symbol is different: it means that an error is _expected_.
+Here the meaning of the `!` symbol is different: it means that an error is
+_expected_.
 
-This test succeeds because the error message we provided after the `!` matches the
-one provided by the error-case rule exactly.
+This test succeeds because the error message we provided after the `!`
+matches the one provided by the error-case rule exactly.
 
 ## Rule Specialization
 
@@ -116,8 +130,8 @@ input, it will still provide an answer, albeit not a useful one.
 ```
 Now we can define special cases. We start with a special case for the number `1`.
 ```clojure
-(all []
-     (classify 1 "The number one"))
+(fact
+ (classify 1 "The number one"))
 
 ```
 Now, if we run the test again, we get a usefule answer.
@@ -128,8 +142,8 @@ Now, if we run the test again, we get a usefule answer.
 ```
 Next, we will define a rule for `()`, an empty list.
 ```clojure
-(all []
-     (classify () "An empty list"))
+(fact
+ (classify () "An empty list"))
 
 ```
 Lists are overloaded in langauges based on s-expressions to act as _forms_. A form
@@ -175,8 +189,8 @@ for vectors of different sizes (and any size), regardless of the first element.
 ```clojure
 (all [x xs]
      (classify [x & xs] "A vector with some elements"))
-(all []
-     (classify [] "An empty vector"))
+(fact
+ (classify [] "An empty vector"))
 (all [x1]
      (classify [x1] "A vector with one element"))
 (all [x1 x2]
