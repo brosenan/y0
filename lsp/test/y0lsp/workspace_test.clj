@@ -192,3 +192,30 @@
 ;; In the previous example, `y1:3` was a member of `:all-deps` for `y1:2`
 ;; despite not being a dependency, because `y1:3` precedes `y1:2` in the
 ;; topological sort.
+
+;; ### Incremental Updates
+
+;; When evaluating a module, if some of the dependencies are already evaluated
+;; (i.e., have a `:cache`), it is not necessary to reevaluate all of them.
+
+;; We can choose a dependency that has a `:cache` (we will call this the
+;; _pivot_) and start the evaluation from its `:ps`. Then, when looking for
+;; modules to evaluate, we omit from the search the pivot's `:all-deps`. This
+;; way we make sure that each module is only evaluted once, either before, as
+;; captued by the cache, or now, but never both.
+
+;; In the following example we create an example workspace of `12` and, as
+;; before, evaluate module `6`. Then we evaluate module `12` using a different
+;; evaluation function. We notice how `6` and its dependencies are reused from
+;; the first evaluation, while `12` and `4` come from the new evaluation.
+(fact
+ (let [eval-func-before (fn [ps {:keys [name]}]
+                          (update ps :before #(conj % name)))
+       eval-func-now (fn [ps {:keys [name]}]
+                       (update ps :now #(conj % name)))
+       ws (-> (new-workspace)
+              (add-module {:lang "y1" :name "12"} load-dividers)
+              (eval-with-deps {:lang "y1" :name "6"} eval-func-before)
+              (eval-with-deps {:lang "y1" :name "12"} eval-func-now))]
+   (-> ws :ms (get "y1:12") :cache :ps) => {:before ["6" "2" "3" "1"]
+                                            :now ["12" "4"]}))
