@@ -103,6 +103,33 @@ is not called the second time around.
    (-> ws :mg nodes) => #{"y1:foo"}))
 
 ```
+### Example Dependency Graph
+
+In order to create examples in this doc, we will use the following `load`
+function. It assumes the `:name` of a module is a decimal integer and adds
+`:deps` that correspond to all the dividers of this integer.
+```clojure
+(defn- load-dividers [{:keys [name lang] :as m}]
+  (let [n (Integer/parseInt name)]
+    (loop [k (dec n)
+           deps nil
+           stop #{}]
+      (if (= k 0)
+        (assoc m :deps deps)
+        (cond
+          (->> stop (filter #(= (mod % k) 0)) seq) (recur (dec k) deps stop)  
+          (= (mod n k) 0) (recur (dec k) 
+                                 (conj deps {:lang lang :name (str k)}) 
+                                 (conj stop k)) 
+          :else (recur (dec k) deps stop))))))
+
+(fact
+ (load-dividers {:lang "y1" :name "12"}) => {:lang "y1"
+                                             :name "12"
+                                             :deps [{:lang "y1" :name "4"}
+                                                    {:lang "y1" :name "6"}]})
+
+```
 ## Caching
 
 The workspace uses caching of evaluation state to facilitate fast response to
