@@ -1,4 +1,4 @@
-(ns y0.language-stylesheet
+(ns y0lsp.language-stylesheet
   (:require [y0.explanation :refer [explanation-to-str]]
             [clojure.string :as str]
             [clojure.set :as set]

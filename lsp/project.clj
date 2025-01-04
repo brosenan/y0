@@ -11,5 +11,5 @@
                  [aysylu/loom "1.0.2"]
                  [hiccup "2.0.0-RC3"]]
   :profiles {:dev {:dependencies [[midje "1.10.10"]]}}
-  :plugins [[lein-midje "3.2.2"]])
-  
+  :plugins [[lein-midje "3.2.2"]]
+  :source-paths ["src" "../src"])

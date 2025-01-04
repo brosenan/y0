@@ -1,6 +1,6 @@
-(ns y0.language-stylesheet-test
+(ns y0lsp.language-stylesheet-test
   (:require [midje.sweet :refer [fact =>]]
-            [y0.language-stylesheet :refer :all]))
+            [y0lsp.language-stylesheet :refer :all]))
 
 ;; # Language Stylesheet
 

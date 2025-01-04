@@ -1,13 +1,7 @@
-* [Language Stylesheet](#language-stylesheet)
-  * [Selectors](#selectors)
-    * [Matched Predicates](#matched-predicates)
-  * [The Language](#the-language)
-    * [Stylesheet Rules](#stylesheet-rules)
-    * [Attribute Value Language](#attribute-value-language)
 ```clojure
-(ns y0.language-stylesheet-test
+(ns y0lsp.language-stylesheet-test
   (:require [midje.sweet :refer [fact =>]]
-            [y0.language-stylesheet :refer :all]))
+            [y0lsp.language-stylesheet :refer :all]))
 
 ```
 # Language Stylesheet
