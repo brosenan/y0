@@ -24,9 +24,15 @@
                          (add-module dep load)
                          (add-dep dep m)))))))
 
+(defn- loaded? [{:keys [ms]} m]
+  (let [mid (module-id m)]
+    (contains? ms mid)))
+
 (defn add-module [ws m load]
-  (let [m (load m)
-        ws (add-deps ws m load)
-        mid (module-id m)]
-   {:ms (assoc (:ms ws) mid m)
-    :mg (add-nodes (:mg ws) mid)}))
+  (if (loaded? ws m)
+    ws
+    (let [m (load m)
+          ws (add-deps ws m load)
+          mid (module-id m)]
+      {:ms (assoc (:ms ws) mid m)
+       :mg (add-nodes (:mg ws) mid)})))

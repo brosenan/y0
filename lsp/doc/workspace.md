@@ -83,5 +83,23 @@ If a module has dependencies, they are added as edges in the graph.
    (-> ws :ms keys set) => #{"y1:foo" "y1:bar" "y1:baz"}
    (-> ws :mg nodes) => #{"y1:foo" "y1:bar" "y1:baz"}
    (-> ws :mg (predecessors "y1:foo")) => #{"y1:bar" "y1:baz"}))
+
+```
+If a module is already in the workspace, it is not loaded again.
+
+To demonstrate this, we take an empty workspace and call `add-module` twice,
+once with the `identity` function as `load`, and once with a function that
+throws an exception. The exception is not thrown because the `load` function
+is not called the second time around.
+```clojure
+(fact
+ (let [ws (-> (new-workspace)
+              (add-module {:lang "y1" :name "foo"} identity)
+              (add-module {:lang "y1" :name "foo"}
+                          #(throw (Exception.
+                                   (str "this should not have been called: "
+                                        %1)))))]
+   (:ms ws) => {"y1:foo" {:lang "y1" :name "foo"}}
+   (nodes (:mg ws)) => #{"y1:foo"}))
 ```
 
