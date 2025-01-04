@@ -100,6 +100,38 @@ is not called the second time around.
                                    (str "this should not have been called: "
                                         %1)))))]
    (:ms ws) => {"y1:foo" {:lang "y1" :name "foo"}}
-   (nodes (:mg ws)) => #{"y1:foo"}))
-```
+   (-> ws :mg nodes) => #{"y1:foo"}))
 
+```
+## Caching
+
+The workspace uses caching of evaluation state to facilitate fast response to
+file updates. Ideally, if the dependencies of a module did not change, we
+don't need to reevaluate them, just re-evaluate the module itself. If some
+dependencies were added or removed, however, the evaluation state needs to be
+recomputed. But still, some state can still be reused so that recomputation
+does not have to take place from the very beginning.
+
+In this section we discuss how caching works, and in particular, how we make
+sure that cached data is up-to-date.
+
+### Background
+
+Before we dive into the caching mechanism, a bit of background. $y_0$
+evaluation state is modeled as a [Predstore](../../doc/predstore.md), or `ps`
+for short. This is a data structure that contains all the definitions that
+are in effect at a certain point of the evaluation.
+
+A module _evaluation_ is a process that starts with the parse-tree of a given
+module and the `ps` prior to its evaluation (this should already have to
+include all its dependencies), and results in an updated `ps`, which
+typically encodes all the definitions made by the module.
+
+This process requires a total order of modules to be selected. While the
+modules lay out a general DAG (dependency graph), their evaluation is made in
+a chain, where each module has at most one module directly preceding it and
+at most one module directly succeeding it.
+
+This chain is required to be a [topological
+sort](https://en.wikipedia.org/wiki/Topological_sorting) of the dependency
+graph.
