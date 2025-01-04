@@ -176,7 +176,7 @@ To demonstrate this we take the [example graph](#example-dependency-graph)
 of `12` and evauate the `6` node. The evaluation function simply adds the
 modules it "evaluates" to a list named `:modules` in the `ps`.
 
-We check that both `6` and all of its dependencies (we check `3` as an
+We check that both `6` and all of its dependencies (we check `2` as an
 example) have a `:cache` entry, but `12` doesn't.
 ```clojure
 (fact
@@ -189,10 +189,10 @@ example) have a `:cache` entry, but `12` doesn't.
    {:pre-ps {:modules ["2" "3" "1"]}
     :ps {:modules ["6" "2" "3" "1"]}
     :all-deps #{"y1:1" "y1:2" "y1:3" "y1:6"}}
-   (-> ws :ms (get "y1:3") :cache) =>
-   {:pre-ps {:modules ["1"]}
-    :ps {:modules ["3" "1"]}
-    :all-deps #{"y1:1" "y1:3"}}
+   (-> ws :ms (get "y1:2") :cache) =>
+   {:pre-ps {:modules ["3" "1"]}
+    :ps {:modules ["2" "3" "1"]}
+    :all-deps #{"y1:1" "y1:2" "y1:3"}}
    (-> ws :ms (get "y1:12") :cache) => nil?))
 
 ```
@@ -200,3 +200,9 @@ The cache consists of the following keys:
 
 * `:pre-ps` captures the evaluation state before the module.
 * `:ps` captures the evaluation state after the module.
+* `:all-deps` captures all the modules that contributed to `:ps`, whether
+  they are recursive dependencies or not.
+
+In the previous example, `y1:3` was a member of `:all-deps` for `y1:2`
+despite not being a dependency, because `y1:3` precedes `y1:2` in the
+topological sort.
