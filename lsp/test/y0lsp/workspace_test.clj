@@ -116,7 +116,10 @@
  (load-dividers {:lang "y1" :name "12"}) => {:lang "y1"
                                              :name "12"
                                              :deps [{:lang "y1" :name "4"}
-                                                    {:lang "y1" :name "6"}]})
+                                                    {:lang "y1" :name "6"}]}
+ (let [ws (-> (new-workspace)
+              (add-module {:lang "y1" :name "12"} load-dividers))]
+   (-> ws :mg nodes) => #{"y1:1" "y1:2" "y1:3" "y1:4" "y1:6" "y1:12"}))
 
 ;; ## Caching
 
@@ -150,3 +153,36 @@
 ;; This chain is required to be a [topological
 ;; sort](https://en.wikipedia.org/wiki/Topological_sorting) of the dependency
 ;; graph.
+
+;; ### Evaluation and Caching
+
+;; The function `eval-with-deps` takes a workspace, a module and an evaluation
+;; function and returns the updated workspace, populating `:cache` entries in
+;; the module and its dependencies.
+
+;; To demonstrate this we take the [example graph](#example-dependency-graph)
+;; of `12` and evauate the `6` node. The evaluation function simply adds the
+;; modules it "evaluates" to a list named `:modules` in the `ps`.
+
+;; We check that both `6` and all of its dependencies (we check `3` as an
+;; example) have a `:cache` entry, but `12` doesn't.
+(fact
+ (let [eval-func (fn [ps {:keys [name]}]
+                   (update ps :modules #(conj % name)))
+       ws (-> (new-workspace)
+              (add-module {:lang "y1" :name "12"} load-dividers)
+              (eval-with-deps {:lang "y1" :name "6"} eval-func))]
+   (-> ws :ms (get "y1:6") :cache) =>
+   {:pre-ps {:modules ["2" "3" "1"]}
+    :ps {:modules ["6" "2" "3" "1"]}
+    :all-deps #{"y1:1" "y1:2" "y1:3" "y1:6"}}
+   (-> ws :ms (get "y1:3") :cache) =>
+   {:pre-ps {:modules ["1"]}
+    :ps {:modules ["3" "1"]}
+    :all-deps #{"y1:1" "y1:3"}}
+   (-> ws :ms (get "y1:12") :cache) => nil?))
+
+;; The cache consists of the following keys:
+
+;; * `:pre-ps` captures the evaluation state before the module.
+;; * `:ps` captures the evaluation state after the module.
