@@ -1,7 +1,7 @@
 (ns y0lsp.workspace-test
   (:require [midje.sweet :refer [fact =>]]
             [y0lsp.workspace :refer :all]
-            [loom.graph :refer [graph? directed?]]))
+            [loom.graph :refer [graph? directed? nodes predecessors]]))
 
 ;; # Workspace
 
@@ -42,3 +42,37 @@
    (:ms ws) => {}
    (:mg ws) => graph?
    (:mg ws) => directed?))
+
+;; The keys in `:ms` are _module keys_, strings of the form `lang:name`. These
+;; same keys act as nodes in `:mg`.
+
+;; ## Adding a Module
+
+;; `add-module` takes a workspace, a
+;; [module](../../doc/polyglot_loader.md#module-and-language-representation),
+;; and a `load` function to [load the
+;; module](../../doc/polyglot_loader.md#loading-a-single-module), and returns
+;; the workspace with this module added.
+
+;; In the following example we take an empty environment and add a simple module
+;; to it. We will use the `identity` function as the `load` function, since we
+;; do not need to add anything to the module for this example. Specifically, we
+;; do not add any `:deps` at this point. The result will be that the module will
+;; be added to the `:ms` as a value and to the `:mg` as a node.
+(fact
+ (let [ws (-> (new-workspace)
+              (add-module {:lang "y1" :name "foo"} identity))]
+   (:ms ws) => {"y1:foo" {:lang "y1" :name "foo"}}
+   (nodes (:mg ws)) => #{"y1:foo"}))
+
+;; If a module has dependencies, they are added as edges in the graph.
+(fact
+ (let [load (fn [m] (if (= (:name m) "foo")
+                      (assoc m :deps [{:lang "y1" :name "bar"}
+                                      {:lang "y1" :name "baz"}])
+                      m))
+       ws (-> (new-workspace)
+              (add-module {:lang "y1" :name "foo"} load))]
+   (-> ws :ms keys set) => #{"y1:foo" "y1:bar" "y1:baz"}
+   (-> ws :mg nodes) => #{"y1:foo" "y1:bar" "y1:baz"}
+   (-> ws :mg (predecessors "y1:foo")) => #{"y1:bar" "y1:baz"}))
