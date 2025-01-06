@@ -13,6 +13,14 @@
                    (merge m {:matches (atom {})
                              :refs (atom nil)})) tree))
 
+(defn- find-lang [lang-map path]
+  (let [lang (first (for [[lang {:keys [match]}] lang-map
+                          :when (not (nil? (re-matches match path)))]
+                      lang))]
+    (if (seq lang)
+      {:ok lang}
+      {:err ["Could not find a language to match" path]})))
+
 (defn load-module [module lang-map]
   (let [{:keys [lang]} module]
     (if (contains? lang-map lang)
@@ -33,7 +41,8 @@
           (contains? module :name) (let-s [path (resolve (:name module))
                                            module (ok module assoc :path path)]
                                           (recur module lang-map))))
-      {:err ["Language" lang "is not supported"]})))
+      (let-s [lang (find-lang lang-map (:path module))]
+             (recur (assoc module :lang lang) lang-map)))))
 
 (defn module-id [{:keys [lang name]}]
   (str lang ":" name))

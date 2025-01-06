@@ -55,13 +55,15 @@
   (str "the contents of " path))
 (defn- my-read2 [path]
   (str "the other contents of " path))
-(def lang-map {"y1" {:resolve (constantly (ok "some/path"))
+(def lang-map {"y1" {:match #".*\.y1$"
+                     :resolve (constantly (ok "some/path"))
                      :read my-read1
                      :parse (fn [name _path text]
                               (ok [(with-meta `[parsing ~text] {:foo :bar})
                                    [{:lang "y1"
                                      :name (str name 2)}]]))}
-               "y2" {:resolve #(ok % assoc :path "some/other/path")
+               "y2" {:match #".*\.y2$"
+                     :resolve #(ok % assoc :path "some/other/path")
                      :read my-read2
                      :parse (fn [name _path text]
                               (ok [`[something-else ~text]
@@ -88,7 +90,7 @@
           :deps [{:lang "y1"
                   :name "foo2"}]}})
 
-;; If `:text` is not present but `:path` is, `slurp` is called to read the
+;; If `:text` is not present but `:path` is, `:read` is called to read the
 ;; text, followed by `:parse` to parse it.
 (fact
  (load-module {:lang "y1"
@@ -102,8 +104,21 @@
           :deps [{:lang "y1"
                   :name "foo2"}]}})
 
+;; If `:path` exists but `:lang` does not, the language is identified by
+;; matching the path against all the regular expressions in the `lang-map`.
+(fact
+ (load-module {:path "path/to/foo.y1"} lang-map)
+ => {:ok {:lang "y1"
+          :path "path/to/foo.y1"
+          :text "the contents of path/to/foo.y1"
+          :statements `[parsing "the contents of path/to/foo.y1"]
+          :deps [{:lang "y1"
+                  :name "2"}]}})
+
 ;; If `:path` is not provided, but `:name` is, `:resolve` is called to resolve
 ;; the path.
+
+;; Note: This is deprecated.
 (fact
  (load-module {:lang "y1"
                :name "foo"} lang-map)
