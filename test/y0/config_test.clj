@@ -130,7 +130,7 @@
                      ;; The file extension for the source files
                      :file-ext "y1"
                      ;; The modules that define the language's semantics
-                     :extra-modules [{:lang "y0" :name "y1"}]
+                     :extra-modules ["/path/to/y1.y0"]
                      ;; The prefix list comes from an environment variable...
                      :path-prefixes :from-env
                      ;; ...named Y0-PATH
@@ -144,10 +144,15 @@
    (def lang-map1 (language-map-from-config config)) => #'lang-map1)
    ;; Now we can use parse and see if it works
  (let [{:keys [parse read resolve]} (get lang-map1 "y1")
-       parsed (parse "my.module" "/my/module.y1" "(ns my.module (:require [bar])) defn a b")]
-   parsed => {:ok '[(y1.core/defn my.module/a my.module/b)
-                    ({:lang "y1" :name "bar"}
-                     {:lang "y0" :name "y1"})]}
+       parsed (parse "my.module"
+                     "/my/module.y1"
+                     "(ns my.module (:require [bar])) defn a b"
+                     #(str "/" (str/replace % #"\." "/") ".y1"))]
+   parsed => {:ok [[(symbol "y1.core" "defn")
+                    (symbol "/my/module.y1" "a")
+                    (symbol "/my/module.y1" "b")]
+                   ["/bar.y1"
+                    "/path/to/y1.y0"]]}
      ;; Because we asked to `:decorate`, `:decorate` is `true` in the
      ;; `lang-map`.
    (-> lang-map1 (get "y1") :decorate) => true

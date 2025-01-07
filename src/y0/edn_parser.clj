@@ -22,20 +22,21 @@
 (defn fold- [[m1 n1 r1] [m2 n2 r2]]
   [(concat m1 m2) (merge n1 n2) (merge r1 r2)])
 
-(defn- handle-directive [args]
+(defn- handle-directive [args resolve]
   (let [[name & {:keys [as refer]}] args
-        name (str name)]
-    [[name]
+        name (str name)
+        path (resolve name)]
+    [[path]
      (if (nil? as)
        {}
-       {(str as) name})
+       {(str as) path})
      (if (nil? refer)
        {}
        (->> refer
-            (map (fn [sym] [(str sym) name]))
+            (map (fn [sym] [(str sym) path]))
             (into {})))]))
 
-(defn- handle-require [vecs]
+(defn- handle-require [vecs resolve]
   (loop [vecs vecs
          res [[] {} {}]]
     (if (empty? vecs)
@@ -43,16 +44,19 @@
       (let [[args & vecs] vecs]
         (recur vecs
                (fold- res
-                      (handle-directive args)))))))
+                      (handle-directive args resolve)))))))
 
-(defn parse-ns-decl [[_ns module-name & directives]]
-  (let [module-name (str module-name)
-        fold (fn [[m1 n1 r1] [m2 n2 r2]]
-               [(concat m1 m2) (merge n1 n2) (merge r1 r2)])]
-    (->> (for [[directive & args] directives]
-           (cond
-             (= directive ':require) (handle-require args)))
-         (reduce fold [[] {nil module-name} {}]))))
+(defn parse-ns-decl
+  ([[_ns module-name & directives] resolve]
+   (let [module-name (str module-name)
+         fold (fn [[m1 n1 r1] [m2 n2 r2]]
+                [(concat m1 m2) (merge n1 n2) (merge r1 r2)])]
+     (->> (for [[directive & args] directives]
+            (cond
+              (= directive ':require) (handle-require args resolve)))
+          (reduce fold [[] {nil (resolve module-name)} {}]))))
+  ([ns-decl]
+   (parse-ns-decl ns-decl identity)))
 
 (defn convert-location [loc]
   (let [{:keys [col row end-col end-row]} loc]
@@ -66,23 +70,24 @@
     (:obj m)))
 
 (defn edn-parser [root-refer-map lang extra-modules]
-  (fn [module path text]
-    (try
-      (let [[ns-decl & statements] (parse-string-all text
-                                                     {:postprocess #(annotate-location % path)})
-            [module-list ns-map refer-map] (parse-ns-decl ns-decl)
-            refer-map (merge refer-map root-refer-map)
-            statements (for [statement statements]
-                         (convert-ns statement ns-map refer-map))]
-        (if (= module (get ns-map nil))
-          (ok [statements (concat (for [module module-list]
-                                    {:lang lang
-                                     :name module})
-                                  extra-modules)])
-          {:err ["Module" module "has wrong name" (get ns-map nil)
-                 "in ns declaration"]}))
-      (catch Exception e
-        {:err {:error (.getMessage e)}}))))
+  (fn parse
+    ([module path text]
+     (parse module path text identity))
+    ([module path text resolve]
+     (try
+       (let [[ns-decl & statements] (parse-string-all text
+                                                      {:postprocess #(annotate-location % path)})
+             [paths ns-map refer-map] (parse-ns-decl ns-decl resolve)
+             refer-map (merge refer-map root-refer-map)
+             statements (for [statement statements]
+                          (convert-ns statement ns-map refer-map))]
+         (if (= path (get ns-map nil))
+           (ok [statements (concat paths
+                                   extra-modules)])
+           {:err ["Module" module "has wrong name" (get ns-map nil)
+                  "in ns declaration"]}))
+       (catch Exception e
+         {:err {:error (.getMessage e)}})))))
 
 (defn root-module-symbols [syms ns]
   (->> (for [sym syms]
