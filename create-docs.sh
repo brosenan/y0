@@ -3,7 +3,7 @@ set -e
 
 basedir=$(dirname $0)
 docdir=$basedir/doc
-clj_test_files=$(find $basedir -name "*_test.clj")
+clj_test_files=$(find $basedir/test -name "*_test.clj")
 y0_files=$(find $basedir/y0_test -name "*.y0")
 awkfile=$basedir/clj-to-md.awk
 
