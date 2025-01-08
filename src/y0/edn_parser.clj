@@ -73,7 +73,7 @@
   (fn parse
     ([module path text]
      (parse module path text identity))
-    ([module path text resolve]
+    ([_module path text resolve]
      (try
        (let [[ns-decl & statements] (parse-string-all text
                                                       {:postprocess #(annotate-location % path)})
@@ -84,8 +84,8 @@
          (if (= path (get ns-map nil))
            (ok [statements (concat paths
                                    extra-modules)])
-           {:err ["Module" module "has wrong name" (get ns-map nil)
-                  "in ns declaration"]}))
+           {:err ["The module name in the ns declaration in" path
+                  "resolved to the wrong path" (get ns-map nil)]}))
        (catch Exception e
          {:err {:error (.getMessage e)}})))))
 
