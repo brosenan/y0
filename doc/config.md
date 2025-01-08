@@ -11,6 +11,7 @@
             [y0.config :refer :all]
             [y0.resolvers :refer [exists? getenv]]
             [y0.location-util :refer [encode-file-pos]]
+            [y0.status :refer [unwrap-status]]
             [clojure.java.io :as io]
             [clojure.string :as str]))
 
@@ -217,19 +218,23 @@ The following example language configuration uses an Instaparse-based parser.
                      :resolver :prefix-list
                      :relative-path-resolution :dots
                      :file-ext "c0"
-                     :extra-modules [{:lang "y0" :name "c0"}]
+                     :extra-modules ["/path/to/c0.y0"]
                      :path-prefixes :from-env
                      :path-prefixes-env "C0-PATH"
                      :reader :slurp}}]
    (def lang-map1 (language-map-from-config config)) => #'lang-map1)
  ;; Now we can use parse and see if it works
- (let [{:keys [parse _resolve]} (get lang-map1 "c0")]
-   (parse "my.module" "/my/module.c0" "import foo; a = 1; b = 2.3;") =>
-   {:ok '[[[:import [:dep my.module/foo]]
-           [:statement [:assign my.module/a [:expr [:int 1]]]]
-           [:statement [:assign my.module/b [:expr [:float 2.3]]]]]
-          [{:lang "c0" :name "foo"}
-           {:lang "y0" :name "c0"}]]})
+ (let [{:keys [parse resolve]} (get lang-map1 "c0")]
+   (parse "my.module" "/my/module.c0" "import foo; a = 1; b = 2.3;" #(str (unwrap-status (resolve %)))) =>
+   {:ok [[[:import [:dep (symbol "/my/module.c0" "/base/foo.c0")]]
+          [:statement [:assign (symbol "/my/module.c0" "a") [:expr [:int 1]]]]
+          [:statement [:assign (symbol "/my/module.c0" "b") [:expr [:float 2.3]]]]]
+         ["/base/foo.c0"
+          "/path/to/c0.y0"]]}
+   (provided
+    (exists? (java.io.File. "/base/foo.c0")) => true
+    (getenv "C0-PATH") => "/base:/dirs"))
+
  ;; Because we did not set `:decorate`, `:decorate` is `false` in the
  ;; `lang-map`.
  (-> lang-map1 (get "c0") :decorate) => false)

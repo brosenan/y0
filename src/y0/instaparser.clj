@@ -49,15 +49,19 @@
          node))
      node)))
 
-(defn extract-deps [node coll-atom kw ns]
-  (if (vector? node)
-    (let [[kw' module] node]
-      (if (= kw' kw)
-        (do (check-form node)
-            (swap! coll-atom conj module)
-            [kw (symbol ns module)])
-        node))
-    node))
+(defn extract-deps
+  ([node coll-atom kw ns]
+   (extract-deps node coll-atom kw ns identity))
+  ([node coll-atom kw ns resolve]
+   (if (vector? node)
+     (let [[kw' module] node]
+       (if (= kw' kw)
+         (let [path (resolve module)]
+           (check-form node)
+           (swap! coll-atom conj path)
+           [kw (symbol ns path)])
+         node))
+     node)))
 
 (defn convert-int-node [node]
   (if (vector? node)
@@ -83,21 +87,23 @@
     (catch Exception e {:err [(.getMessage e)]})))
 
 (defn instaparser [lang grammar id-kws dep-kw extra-deps]
-  (fn [module path text]
-    (let-s [parser (ok (instaparse-grammar grammar))
-            parse-tree (wrap-parse parser text)]
-           (let [statements (drop 1 parse-tree)
-                 deps-atom (atom nil)
-                 statements (add-locations statements path)
-                 statements (vec (postwalk-with-meta
-                                  #(-> %
-                                       (symbolize module id-kws)
-                                       (extract-deps deps-atom dep-kw module)
-                                       convert-int-node
-                                       convert-float-node) statements))
-                 deps (-> (for [dep @deps-atom]
-                            {:lang lang
-                             :name dep})
-                          (concat extra-deps)
-                          vec)]
-             (ok [statements deps])))))
+  (fn parse
+    ([_module path text]
+     (parse _module path text identity))
+    ([_module path text resolve]
+     (let-s [parser (ok (instaparse-grammar grammar))
+             parse-tree (wrap-parse parser text)]
+            (let [statements (drop 1 parse-tree)
+                  deps-atom (atom nil)
+                  statements (add-locations statements path)
+                  statements (vec (postwalk-with-meta
+                                   #(-> %
+                                        (symbolize path id-kws)
+                                        (extract-deps deps-atom dep-kw
+                                                      path resolve)
+                                        convert-int-node
+                                        convert-float-node) statements))
+                  deps (-> @deps-atom
+                           (concat extra-deps)
+                           vec)]
+              (ok [statements deps]))))))

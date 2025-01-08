@@ -1,6 +1,7 @@
 (ns y0.instaparser-test
   (:require [midje.sweet :refer [fact => throws]]
-            [y0.instaparser :refer :all]))
+            [y0.instaparser :refer :all]
+            [clojure.string :as str]))
 
 ;; # Instaparse Parser
 
@@ -114,9 +115,10 @@
 ;; untouched, if the node is not an identifier.
 (fact
  (symbolize [:identifier "bar"]
-            "my.ns" #{:identifier}) => [:identifier 'my.ns/bar]
+            "/my/ns.foo" #{:identifier}) => [:identifier 
+                                             (symbol "/my/ns.foo" "bar")]
  (symbolize [:foo [:identifier "bar"] [:identifier "baz"]]
-            "my.ns" #{:identifier}) =>
+            "/my/ns.foo" #{:identifier}) =>
  [:foo [:identifier "bar"] [:identifier "baz"]])
 
 ;; As can be seen, the namespace is added as the second element to an identifier
@@ -126,14 +128,14 @@
 ;; exception is raised.
 (fact
  (symbolize [:identifier "bar" "baz"]
-            "my.ns" #{:identifier}) =>
+            "/my/ns.foo" #{:identifier}) =>
  (throws ":identifier node should contain one element but has 2"))
 
 ;; Likewise, if the one element after the keyword is not a string, an exception
 ;; is thrown as well.
 (fact
  (symbolize [:identifier [:foo "bar"]]
-            "my.ns" #{:identifier}) =>
+            "/my/ns.foo" #{:identifier}) =>
  (throws ":identifier node should contain a single string. Found: [:foo \"bar\"]"))
 
 ;; We allow for a set of identifier keywords because some languages have more
@@ -145,12 +147,12 @@
 ;; replacing the string within the node, the symbol replaces the entire node.
 (fact
  (symbolize [:identifier "bar"]
-            "my.ns" :identifier) => 'my.ns/bar)
+            "/my/ns.foo" :identifier) => (symbol "/my/ns.foo" "bar"))
 
 ;; When replacing the node with a symbol, the symbol is given the node's meta.
 (fact
  (meta (symbolize (with-meta [:identifier "bar"] {:foo :bar})
-                  "my.ns" :identifier)) => {:foo :bar})
+                  "/my/ns.foo" :identifier)) => {:foo :bar})
 
 ;; ### Collecting Dependencies
 
@@ -160,30 +162,35 @@
 ;; Like identifiers, the names of the dependent modules should be identified
 ;; in a node with a single element -- a string containing the node's name.
 
-;; `extract-deps` takes a node, an atom holding a collection (typically, it will
-;; be empty upon calling the function), the designated keyword for marking
-;; dependencies and the name of the enclosing module. If the node is a
-;; dependency, it adds the module name to the collection and replaces the string
-;; (dependency module name) with a symbol.
+;; `extract-deps` takes a node, an atom holding a collection, the designated
+;; keyword for marking dependencies, the absolute path of the enclosing module
+;; and a `resolve` function that resolves module names to absolute paths. If the
+;; node is a dependency, it adds the module's absolute path to the collection
+;; and replaces the string (dependency module name) with a symbol, where the
+;; namespace is the path of the enclosing module and the name is the path of the
+;; dependency.
 (fact
- (let [a (atom nil)]
+ (let [a (atom nil)
+       resolve (fn [m] (str "/" (str/replace m #"\." "/") ".foo"))]
    ;; This does not add a dependency to the collection.
    (extract-deps [:import [:dep "some.module"] [:identifier "somemod"]]
-                 a :dep "foo.bar") =>
+                 a :dep "/foo/bar.baz" resolve) =>
    [:import [:dep "some.module"] [:identifier "somemod"]]
    @a => nil
    ;; But this does...
-   (extract-deps [:dep "some.module"] a :dep "foo.bar") =>
-   [:dep 'foo.bar/some.module]
-   @a => ["some.module"]))
+   (extract-deps [:dep "some.module"] a :dep "/foo/bar.baz" resolve) =>
+   [:dep (symbol "/foo/bar.baz" "/some/module.foo")]
+   @a => ["/some/module.foo"]))
 
 ;; If the dependency node contains a different number of elements than one, or
 ;; that one element is not a string, exceptions are thrown.
 (fact
- (let [a (atom nil)]
-   (extract-deps [:dep "some.module" "some.other.module"] a :dep "foo.bar") =>
+ (let [a (atom nil)
+       resolve (fn [m] (str "/" (str/replace m #"\." "/") ".foo"))]
+   (extract-deps [:dep "some.module" "some.other.module"]
+                 a :dep "foo.bar" resolve) =>
    (throws ":dep node should contain one element but has 2")
-   (extract-deps [:dep [:qname "some" "module"]] a :dep "foo.bar") =>
+   (extract-deps [:dep [:qname "some" "module"]] a :dep "foo.bar" resolve) =>
    (throws ":dep node should contain a single string. Found: [:qname \"some\" \"module\"]")))
 
 ;; ### Numeric Literals
@@ -235,7 +242,7 @@
                               grammar
                               :identifier
                               :dep
-                              [{:lang "y0" :name "y7"}])) =>
+                              ["/path/to/y7.y0"])) =>
    #'my-parser)
  my-parser => fn?)
 
@@ -253,21 +260,20 @@
                     a = -3;
                     b = 5.7;
                     x = a;")
- (let [
-       status (my-parser "my.module" "/path/to/my-module.y7" sample-text1)
+ (let [resolve (fn [m] (str "/" (str/replace m #"\." "/") ".y7"))
+       status (my-parser "my.module" "/path/to/my-module.y7" sample-text1 resolve)
        {:keys [ok]} status
        [statements deps] ok]
    statements =>
-   [[:import [:dep 'my.module/foo.core]]
-    [:import [:dep 'my.module/bar.core]]
-    [:statement [:assign 'my.module/a [:expr [:int -3]]]]
-    [:statement [:assign 'my.module/b [:expr [:float 5.7]]]]
+   [[:import [:dep (symbol "/path/to/my-module.y7" "/foo/core.y7")]]
+    [:import [:dep (symbol "/path/to/my-module.y7" "/bar/core.y7")]]
+    [:statement [:assign (symbol "/path/to/my-module.y7" "a") [:expr [:int -3]]]]
+    [:statement [:assign (symbol "/path/to/my-module.y7" "b") [:expr [:float 5.7]]]]
     [:statement
-     [:assign 'my.module/x [:expr 'my.module/a]]]]
+     [:assign (symbol "/path/to/my-module.y7" "x")
+      [:expr (symbol "/path/to/my-module.y7" "a")]]]]
    ;; Location of the `a` in `a = -3`
    (-> statements (nth 2) second second meta) => {:path "/path/to/my-module.y7"
                                                   :start 2000037
                                                   :end 4000022}
-   deps => [{:lang "y7" :name "bar.core"}
-            {:lang "y7" :name "foo.core"}
-            {:lang "y0" :name "y7"}]))
+   deps => ["/bar/core.y7" "/foo/core.y7" "/path/to/y7.y0"]))
