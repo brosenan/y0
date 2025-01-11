@@ -2,7 +2,7 @@
   (:require [instaparse.core :as insta]
             [clojure.string :as str]
             [y0.term-utils :refer [postwalk-meta postwalk-with-meta]]
-            [y0.status :refer [ok let-s]]))
+            [y0.status :refer [ok let-s ok?]]))
 
 (def layout-separator "--layout--")
 
@@ -51,12 +51,17 @@
 
 (defn extract-deps
   ([node coll-atom kw ns]
-   (extract-deps node coll-atom kw ns identity))
-  ([node coll-atom kw ns resolve]
+   (extract-deps node coll-atom kw ns identity nil))
+  ([node coll-atom kw ns resolve errs]
    (if (vector? node)
      (let [[kw' module] node]
        (if (= kw' kw)
-         (let [path (resolve module)]
+         (let [status (resolve module)
+               path (if (ok? status)
+                      (str (:ok status))
+                      (do
+                        (swap! errs conj (:err status))
+                        module))]
            (check-form node)
            (swap! coll-atom conj path)
            [kw (symbol ns path)])
@@ -95,15 +100,18 @@
              parse-tree (wrap-parse parser text)]
             (let [statements (drop 1 parse-tree)
                   deps-atom (atom nil)
+                  errs (atom [])
                   statements (add-locations statements path)
                   statements (vec (postwalk-with-meta
                                    #(-> %
                                         (symbolize path id-kws)
                                         (extract-deps deps-atom dep-kw
-                                                      path resolve)
+                                                      path resolve errs)
                                         convert-int-node
                                         convert-float-node) statements))
                   deps (-> @deps-atom
                            (concat extra-deps)
                            vec)]
-              (ok [statements deps]))))))
+              (if (seq @errs)
+                {:err (first @errs)}
+                (ok [statements deps])))))))

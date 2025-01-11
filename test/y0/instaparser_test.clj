@@ -1,6 +1,7 @@
 (ns y0.instaparser-test
   (:require [midje.sweet :refer [fact => throws]]
             [y0.instaparser :refer :all]
+            [y0.status :refer [ok]]
             [clojure.string :as str]))
 
 ;; # Instaparse Parser
@@ -162,23 +163,29 @@
 ;; Like identifiers, the names of the dependent modules should be identified
 ;; in a node with a single element -- a string containing the node's name.
 
-;; `extract-deps` takes a node, an atom holding a collection, the designated
-;; keyword for marking dependencies, the absolute path of the enclosing module
-;; and a `resolve` function that resolves module names to absolute paths. If the
-;; node is a dependency, it adds the module's absolute path to the collection
-;; and replaces the string (dependency module name) with a symbol, where the
-;; namespace is the path of the enclosing module and the name is the path of the
-;; dependency.
+;; `extract-deps` takes:
+;; * a node,
+;; * an atom holding a collection, to be populated with dependencies,
+;; * the designated keyword for marking dependencies,
+;; * the absolute path of the enclosing module,
+;; * a `resolve` function that resolves module names to absolute paths and
+;; * an atom holding a collection of errors, if any.
+;;
+;; If the node is a dependency, it adds the module's absolute path to the
+;; collection and replaces the string (dependency module name) with a symbol,
+;; where the namespace is the path of the enclosing module and the name is the
+;; path of the dependency.
 (fact
  (let [a (atom nil)
-       resolve (fn [m] (str "/" (str/replace m #"\." "/") ".foo"))]
+       resolve (fn [m] (ok (java.io.File.
+                            (str "/" (str/replace m #"\." "/") ".foo"))))]
    ;; This does not add a dependency to the collection.
    (extract-deps [:import [:dep "some.module"] [:identifier "somemod"]]
-                 a :dep "/foo/bar.baz" resolve) =>
+                 a :dep "/foo/bar.baz" resolve (atom nil)) =>
    [:import [:dep "some.module"] [:identifier "somemod"]]
    @a => nil
    ;; But this does...
-   (extract-deps [:dep "some.module"] a :dep "/foo/bar.baz" resolve) =>
+   (extract-deps [:dep "some.module"] a :dep "/foo/bar.baz" resolve (atom nil)) =>
    [:dep (symbol "/foo/bar.baz" "/some/module.foo")]
    @a => ["/some/module.foo"]))
 
@@ -186,12 +193,23 @@
 ;; that one element is not a string, exceptions are thrown.
 (fact
  (let [a (atom nil)
-       resolve (fn [m] (str "/" (str/replace m #"\." "/") ".foo"))]
+       resolve (fn [m] (ok (java.io.File.
+                            (str "/" (str/replace m #"\." "/") ".foo"))))]
    (extract-deps [:dep "some.module" "some.other.module"]
-                 a :dep "foo.bar" resolve) =>
+                 a :dep "foo.bar" resolve (atom nil)) =>
    (throws ":dep node should contain one element but has 2")
-   (extract-deps [:dep [:qname "some" "module"]] a :dep "foo.bar" resolve) =>
+   (extract-deps [:dep [:qname "some" "module"]] a :dep "foo.bar" resolve (atom nil)) =>
    (throws ":dep node should contain a single string. Found: [:qname \"some\" \"module\"]")))
+
+;; If `resolve` fails to resolve the module, the error it returns is added to
+;; the errors atom.
+(fact
+ (let [a (atom nil)
+       resolve (fn [m] {:err ["Failed to resolve module" m]})
+       errs (atom nil)]
+   (extract-deps [:dep "some.module"] a :dep "/foo/bar.baz" resolve errs) =>
+   [:dep (symbol "/foo/bar.baz" "some.module")]
+   @errs => [["Failed to resolve module" "some.module"]]))
 
 ;; ### Numeric Literals
 
@@ -260,7 +278,8 @@
                     a = -3;
                     b = 5.7;
                     x = a;")
- (let [resolve (fn [m] (str "/" (str/replace m #"\." "/") ".y7"))
+ (let [resolve (fn [m] (ok (java.io.File.
+                            (str "/" (str/replace m #"\." "/") ".y7"))))
        status (my-parser "my.module" "/path/to/my-module.y7" sample-text1 resolve)
        {:keys [ok]} status
        [statements deps] ok]
@@ -277,3 +296,9 @@
                                                   :start 2000037
                                                   :end 4000022}
    deps => ["/bar/core.y7" "/foo/core.y7" "/path/to/y7.y0"]))
+
+;; If a dependency cannot be resolved, the error is propagated as the status.
+(fact
+ (let [resolve (fn [m] {:err ["Failed to resolve module" m]})
+       status (my-parser "my.module" "/path/to/my-module.y7" sample-text1 resolve)]
+   status => {:err ["Failed to resolve module" "foo.core"]}))

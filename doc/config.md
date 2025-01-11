@@ -227,7 +227,7 @@ The following example language configuration uses an Instaparse-based parser.
    (def lang-map1 (language-map-from-config config)) => #'lang-map1)
  ;; Now we can use parse and see if it works
  (let [{:keys [parse resolve]} (get lang-map1 "c0")]
-   (parse "my.module" "/my/module.c0" "import foo; a = 1; b = 2.3;" #(str (unwrap-status (resolve %)))) =>
+   (parse "my.module" "/my/module.c0" "import foo; a = 1; b = 2.3;" resolve) =>
    {:ok [[[:import [:dep (symbol "/my/module.c0" "/base/foo.c0")]]
           [:statement [:assign (symbol "/my/module.c0" "a") [:expr [:int 1]]]]
           [:statement [:assign (symbol "/my/module.c0" "b") [:expr [:float 2.3]]]]]
