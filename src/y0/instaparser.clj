@@ -49,24 +49,21 @@
          node))
      node)))
 
-(defn extract-deps
-  ([node coll-atom kw ns]
-   (extract-deps node coll-atom kw ns identity nil))
-  ([node coll-atom kw ns resolve errs]
-   (if (vector? node)
-     (let [[kw' module] node]
-       (if (= kw' kw)
-         (let [status (resolve module)
-               path (if (ok? status)
-                      (str (:ok status))
-                      (do
-                        (swap! errs conj (:err status))
-                        module))]
-           (check-form node)
-           (swap! coll-atom conj path)
-           [kw (symbol ns path)])
-         node))
-     node)))
+(defn extract-deps [node coll-atom kw ns resolve errs]
+  (if (vector? node)
+    (let [[kw' module] node]
+      (if (= kw' kw)
+        (let [status (resolve module)
+              path (if (ok? status)
+                     (str (:ok status))
+                     (do
+                       (swap! errs conj (:err status))
+                       module))]
+          (check-form node)
+          (swap! coll-atom conj path)
+          [kw (symbol ns path)])
+        node))
+    node))
 
 (defn convert-int-node [node]
   (if (vector? node)
@@ -92,26 +89,23 @@
     (catch Exception e {:err [(.getMessage e)]})))
 
 (defn instaparser [lang grammar id-kws dep-kw extra-deps]
-  (fn parse
-    ([_module path text]
-     (parse _module path text identity))
-    ([_module path text resolve]
-     (let-s [parser (ok (instaparse-grammar grammar))
-             parse-tree (wrap-parse parser text)]
-            (let [statements (drop 1 parse-tree)
-                  deps-atom (atom nil)
-                  errs (atom [])
-                  statements (add-locations statements path)
-                  statements (vec (postwalk-with-meta
-                                   #(-> %
-                                        (symbolize path id-kws)
-                                        (extract-deps deps-atom dep-kw
-                                                      path resolve errs)
-                                        convert-int-node
-                                        convert-float-node) statements))
-                  deps (-> @deps-atom
-                           (concat extra-deps)
-                           vec)]
-              (if (seq @errs)
-                {:err (first @errs)}
-                (ok [statements deps])))))))
+  (fn parse [_module path text resolve]
+    (let-s [parser (ok (instaparse-grammar grammar))
+            parse-tree (wrap-parse parser text)]
+           (let [statements (drop 1 parse-tree)
+                 deps-atom (atom nil)
+                 errs (atom [])
+                 statements (add-locations statements path)
+                 statements (vec (postwalk-with-meta
+                                  #(-> %
+                                       (symbolize path id-kws)
+                                       (extract-deps deps-atom dep-kw
+                                                     path resolve errs)
+                                       convert-int-node
+                                       convert-float-node) statements))
+                 deps (-> @deps-atom
+                          (concat extra-deps)
+                          vec)]
+             (if (seq @errs)
+               {:err (first @errs)}
+               (ok [statements deps]))))))

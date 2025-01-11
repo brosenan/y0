@@ -181,9 +181,10 @@ In case of a parsing error, an `:err` status is returned.
  (let [root-symbols '[foo bar baz]
        root-refer-map (into {} (for [sym root-symbols]
                                  [(name sym) "mylang.core"]))
-       parse (edn-parser root-refer-map "y7" [{:lang "y0" :name "y7.semantics"}])
+       parse (edn-parser root-refer-map "y7" ["/path/to/y7.y0"])
        status (parse "boo" "/path/to/boo"
-                     "(ns boo (:require [some.module]))\na foo goes into a bar (")
+                     "(ns boo (:require [some.module]))\na foo goes into a bar ("
+                     dummy-resolve)
        {:keys [ok err]} status
        {:keys [error]} err]
    ok => nil?

@@ -73,8 +73,6 @@
 
 (defn edn-parser [root-refer-map lang extra-modules]
   (fn parse
-    ([module path text]
-     (parse module path text identity))
     ([_module path text resolve]
      (try
        (let-s [[ns-decl & statements] (ok (parse-string-all text
