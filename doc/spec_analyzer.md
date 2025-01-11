@@ -409,7 +409,7 @@ is present, and exception is raised.
 (defn mock-parse [name path text])
 (fact
  (process-lang-spec {:state :init
-                     :langmap {"y4" {:parse (fn [name path text]
+                     :langmap {"y4" {:parse (fn [name path text _resolve]
                                               (mock-parse name path text))}}
                      :lang "y4"}
                     ["Some unrelated line"
@@ -429,7 +429,7 @@ is thrown.
 ```clojure
 (fact
  (process-lang-spec {:state :init
-                     :langmap {"y4" {:parse (fn [name path text]
+                     :langmap {"y4" {:parse (fn [name path text _resolve]
                                               (mock-parse name path text))}}
                      :lang "y4"}
                     ["Some unrelated line"
@@ -457,7 +457,7 @@ state is incremented.
                                  (Exception. (str "resolve should not have been called: " %)))
                       :read #(throw
                               (Exception. (str "read should not have been called: " %)))
-                      :parse (fn [name path text]
+                      :parse (fn [name path text _resolve]
                                (mock-parse name path text))}}]
    (process-lang-spec {:state :init
                        :lang "y4"
@@ -487,7 +487,7 @@ incremented.
 (fact
  (let [langmap {"y4" {;; :resolve and :read are not used and can therefore be
                       ;; omitted here
-                      :parse (fn [name path text]
+                      :parse (fn [name path text _resolve]
                                (mock-parse name path text))}}]
    (process-lang-spec {:state :init
                        :langmap langmap
@@ -522,7 +522,7 @@ If the code block fails to evaluate, producing the expected text, the test
 succeeds.
 ```clojure
 (fact
- (let [langmap {"y4" {:parse (fn [name path text]
+ (let [langmap {"y4" {:parse (fn [name path text _resolve]
                                (mock-parse name path text))
                       }}]
    (process-lang-spec {:state :init
@@ -550,7 +550,7 @@ succeeds.
 If the evaluation succeeds, the test fails.
 ```clojure
 (fact
- (let [langmap {"y4" {:parse (fn [name path text]
+ (let [langmap {"y4" {:parse (fn [name path text _resolve]
                                (mock-parse name path text))}}]
    (process-lang-spec {:state :init
                        :langmap langmap
@@ -578,7 +578,7 @@ If the evaluation fails, but provides a different explanation (error
 message), the test fails.
 ```clojure
 (fact
- (let [langmap {"y4" {:parse (fn [name path text]
+ (let [langmap {"y4" {:parse (fn [name path text _resolve]
                                (mock-parse name path text))}}]
    (process-lang-spec {:state :init
                        :langmap langmap
@@ -615,8 +615,9 @@ from a positive example. The `:parse` function is called twice, first for the
 example and then for the module.
 ```clojure
 (fact
- (let [langmap {"y4" {:parse (fn [name path text]
-                               (mock-parse name path text))}}]
+ (let [langmap {"y4" {:parse (fn [name path text _resolve]
+                               (mock-parse name path text))
+                      :match (constantly true)}}]
    (process-lang-spec {:state :init
                        :lang "y4"
                        :langmap langmap
@@ -642,8 +643,8 @@ example and then for the module.
        :success 1}
    (provided
     (mock-parse "example" "example" "#include \"foo.h\"\nvoid main() {\n}") =>
-    (ok [[] [{:lang "y4" :name "foo"}]])
-    (mock-parse "foo" "foo" "struct Foo {};") => (ok [[] []]))))
+    (ok [[] ["foo"]])
+    (mock-parse nil "foo" "struct Foo {};") => (ok [[] []]))))
 
 ```
 ### Code Location in Errors
@@ -652,7 +653,7 @@ The errors produced by code examples have code-locations that point to the
 spec (`.md` file) with the correct line number.
 ```clojure
  (fact
-  (let [langmap {"y4" {:parse (fn [name path text]
+  (let [langmap {"y4" {:parse (fn [name path text _resolve]
                                 (mock-parse name path text))}}]
     (def pos-example-err-status (process-lang-spec {:state :init
                                                     :langmap langmap
@@ -705,8 +706,9 @@ blocks updated. Other behavior does not change, so that `:errors` and
 (fact
  (let [langmap {"y4" {;; :resolve and :read are not used and can therefore be
                       ;; omitted here
-                      :parse (fn [name path text]
-                               (mock-parse name path text))}}]
+                      :parse (fn [name path text _resolve]
+                               (mock-parse name path text))
+                      :match (constantly true)}}]
    (process-lang-spec {:state :init
                        :langmap langmap
                        :path "path/to/spec.md"

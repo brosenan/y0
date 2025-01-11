@@ -30,22 +30,20 @@
           (contains? module :statements) (ok module)
           (contains? module :text) (let-s [[statements deps] (parse (:name module)
                                                                     (:path module)
-                                                                    (:text module))
+                                                                    (:text module)
+                                                                    resolve)
                                            statements (ok (if decorate
                                                             (decorate-tree statements)
                                                             statements))]
                                           (ok (-> module
                                                   (assoc :statements statements)
                                                   (assoc :deps deps))))
-          (contains? module :path) (->s (slurp-text module read) (recur lang-map))
-          (contains? module :name) (let-s [path (resolve (:name module))
-                                           module (ok module assoc :path path)]
-                                          (recur module lang-map))))
+          (contains? module :path) (->s (slurp-text module read) (recur lang-map))))
       (let-s [lang (find-lang lang-map (:path module))]
              (recur (assoc module :lang lang) lang-map)))))
 
-(defn module-id [{:keys [lang name]}]
-  (str lang ":" name))
+(defn module-id [m]
+  (:path m))
 
 (defn- mark-as-main [ms]
   (map #(assoc % :is-main true) ms))
@@ -58,8 +56,11 @@
       (let [[m & ms] ms]
         (if (contains? mstore (module-id m))
           (recur ms mstore)
-          (let-s [m (load-module m lang-map)]
-                 (recur (concat ms (:deps m))
+          (let-s [m (load-module m lang-map)
+                  deps (ok (:deps m))
+                  dep-modules (ok (for [path deps]
+                                    {:path path}))]
+                 (recur (concat ms dep-modules)
                         (assoc mstore (module-id m) m))))))))
 
 (defn mstore-sources [mstore]
@@ -73,7 +74,7 @@
                   (into {}))]
     (->> (for [[mid m] mstore
                dep (:deps m)]
-           {(module-id dep) #{mid}})
+           {dep #{mid}})
          (reduce (partial merge-with union) base))))
 
 (defn mstore-toposort [mstore]
