@@ -9,7 +9,8 @@
 (ns y0.polyglot-loader-test
   (:require [midje.sweet :refer [fact => throws provided]]
             [y0.polyglot-loader :refer :all]
-            [y0.status :refer [ok unwrap-status ->s let-s]]))
+            [y0.status :refer [ok unwrap-status ->s let-s]]
+            [clojure.string :as str]))
 
 ```
 # A Polyglot Module Loader
@@ -65,14 +66,14 @@ For the following examples, let us use the following language-map:
   (str "the y1 contents of " path))
 (defn- my-read2 [path]
   (str "the y2 contents of " path))
-(def lang-map {"y1" {:match #".*\.y1$"
+(def lang-map {"y1" {:match #(str/ends-with? % ".y1")
                      :resolve (constantly (ok "some/path"))
                      :read my-read1
                      :parse (fn [name _path text]
                               (ok [(with-meta `[parsing ~text] {:foo :bar})
                                    [{:lang "y1"
                                      :name (str name 2)}]]))}
-               "y2" {:match #".*\.y2$"
+               "y2" {:match #(str/ends-with? % ".y2")
                      :resolve #(ok % assoc :path "some/other/path")
                      :read my-read2
                      :parse (fn [name _path text]
@@ -106,7 +107,7 @@ If `:statements` is not present, but `:text` is, `:parse` is called.
 
 ```
 If `:path` exists but `:lang` does not, the language is identified by
-matching the path against all the regular expressions in the `lang-map`. The
+matching the path against all `:match` functions in the `lang-map`. The
 text is then read by using the appropriate `:read`er,
 ```clojure
 (fact

@@ -15,7 +15,7 @@
 
 (defn- find-lang [lang-map path]
   (let [lang (first (for [[lang {:keys [match]}] lang-map
-                          :when (not (nil? (re-matches match path)))]
+                          :when (match path)]
                       lang))]
     (if (seq lang)
       {:ok lang}
