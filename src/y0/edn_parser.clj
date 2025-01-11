@@ -1,7 +1,7 @@
 (ns y0.edn-parser
   (:require [edamame.core :as e :refer [parse-string-all]]
             [y0.term-utils :refer [postwalk-with-meta]]
-            [y0.status :refer [ok]]))
+            [y0.status :refer [ok let-s]]))
 
 (defn convert-ns [expr ns-map refer-map]
   (postwalk-with-meta
@@ -19,44 +19,46 @@
                 expr))
    expr))
 
-(defn fold- [[m1 n1 r1] [m2 n2 r2]]
-  [(concat m1 m2) (merge n1 n2) (merge r1 r2)])
-
-(defn- handle-directive [args resolve]
+(defn- handle-normal-directive [args [paths ns-map refer-map] resolve]
   (let [[name & {:keys [as refer]}] args
-        name (str name)
-        path (resolve name)]
-    [[path]
-     (if (nil? as)
-       {}
-       {(str as) path})
-     (if (nil? refer)
-       {}
-       (->> refer
-            (map (fn [sym] [(str sym) path]))
-            (into {})))]))
+        name (str name)]
+    (let-s [path (resolve name)
+            path (ok (str path))]
+           (ok [(conj paths path)
+                (if (nil? as)
+                  ns-map
+                  (assoc ns-map (str as) path))
+                (if (nil? refer)
+                  refer-map
+                  (merge refer-map (->> refer
+                                        (map (fn [sym] [(str sym) path]))
+                                        (into {}))))]))))
 
-(defn- handle-require [vecs resolve]
+(defn- handle-require [vecs res resolve]
   (loop [vecs vecs
-         res [[] {} {}]]
+         res res]
     (if (empty? vecs)
-      res
-      (let [[args & vecs] vecs]
-        (recur vecs
-               (fold- res
-                      (handle-directive args resolve)))))))
+      (ok res)
+      (let-s [[args & vecs] (ok vecs)
+              res (handle-normal-directive args res resolve)]
+             (recur vecs res)))))
 
-(defn parse-ns-decl
-  ([[_ns module-name & directives] resolve]
-   (let [module-name (str module-name)
-         fold (fn [[m1 n1 r1] [m2 n2 r2]]
-                [(concat m1 m2) (merge n1 n2) (merge r1 r2)])]
-     (->> (for [[directive & args] directives]
-            (cond
-              (= directive ':require) (handle-require args resolve)))
-          (reduce fold [[] {nil (resolve module-name)} {}]))))
-  ([ns-decl]
-   (parse-ns-decl ns-decl identity)))
+(defn- handle-directive [[name & vecs] res resolve]
+  (cond
+    (= name :require) (handle-require vecs res resolve)
+    :else {:err ["Invalid ns directive" name]}))
+
+(defn parse-ns-decl [[_ns module-name & directives] resolve]
+  (let-s [module-name (ok (str module-name))
+          module-path (resolve module-name)
+          module-path (ok (str module-path))]
+         (loop [directives directives
+                res [[] {nil module-path} {}]]
+           (if (empty? directives)
+             (ok res)
+             (let-s [[directive & directives] (ok directives)
+                     res (handle-directive directive res resolve)]
+                    (recur directives res))))))
 
 (defn convert-location [loc]
   (let [{:keys [col row end-col end-row]} loc]
@@ -75,17 +77,17 @@
      (parse module path text identity))
     ([_module path text resolve]
      (try
-       (let [[ns-decl & statements] (parse-string-all text
-                                                      {:postprocess #(annotate-location % path)})
-             [paths ns-map refer-map] (parse-ns-decl ns-decl resolve)
-             refer-map (merge refer-map root-refer-map)
-             statements (for [statement statements]
-                          (convert-ns statement ns-map refer-map))]
-         (if (= path (get ns-map nil))
-           (ok [statements (concat paths
-                                   extra-modules)])
-           {:err ["The module name in the ns declaration in" path
-                  "resolved to the wrong path" (get ns-map nil)]}))
+       (let-s [[ns-decl & statements] (ok (parse-string-all text
+                                                            {:postprocess #(annotate-location % path)}))
+               [paths ns-map refer-map] (parse-ns-decl ns-decl resolve)
+               refer-map (ok (merge refer-map root-refer-map))
+               statements (ok (for [statement statements]
+                                (convert-ns statement ns-map refer-map)))]
+              (if (= path (get ns-map nil))
+                (ok [statements (concat paths
+                                        extra-modules)])
+                {:err ["The module name in the ns declaration in" path
+                       "resolved to the wrong path" (get ns-map nil)]}))
        (catch Exception e
          {:err {:error (.getMessage e)}})))))
 

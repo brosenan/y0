@@ -75,10 +75,10 @@
 ;; extension). In actuality, this has to be an actual resolution function which
 ;; resolves a name of a module into an absolute path.
 (defn- dummy-resolve [name]
-  (str "/" (str/replace name #"\." "/") ".y0"))
+  (ok (str "/" (str/replace name #"\." "/") ".y0")))
 
 (fact
- (parse-ns-decl '(ns foo.bar) dummy-resolve) => [[] {nil "/foo/bar.y0"} {}])
+ (parse-ns-decl '(ns foo.bar) dummy-resolve) => {:ok [[] {nil "/foo/bar.y0"} {}]})
 
 ;; The module name is followed by a sequence of directives. The `require` directive instructs the module system
 ;; to load another module and assigns an alias to it.
@@ -90,14 +90,14 @@
                              [baz.puux :refer [x]]
                              [baz.y0ux :as muux :refer [a b c]]))
                 dummy-resolve) =>
- [["/baz/quux.y0" "/baz/puux.y0" "/baz/y0ux.y0"]
-  {nil "/foo/bar.y0"
-   "quux" "/baz/quux.y0"
-   "muux" "/baz/y0ux.y0"}
-  {"a" "/baz/y0ux.y0"
-   "b" "/baz/y0ux.y0"
-   "c" "/baz/y0ux.y0"
-   "x" "/baz/puux.y0"}])
+ {:ok [["/baz/quux.y0" "/baz/puux.y0" "/baz/y0ux.y0"]
+       {nil "/foo/bar.y0"
+        "quux" "/baz/quux.y0"
+        "muux" "/baz/y0ux.y0"}
+       {"a" "/baz/y0ux.y0"
+        "b" "/baz/y0ux.y0"
+        "c" "/baz/y0ux.y0"
+        "x" "/baz/puux.y0"}]})
 
 ;; ## Converting Code Locations
 

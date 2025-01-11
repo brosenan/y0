@@ -143,26 +143,28 @@
                      ;; is expected to understand.
                      :decorate :true}}]
    (def lang-map1 (language-map-from-config config)) => #'lang-map1)
-   ;; Now we can use parse and see if it works
- (let [{:keys [parse read resolve]} (get lang-map1 "y1")
-       parsed (parse "my.module"
-                     "/my/module.y1"
-                     "(ns my.module (:require [bar])) defn a b"
-                     #(str "/" (str/replace % #"\." "/") ".y1"))]
-   parsed => {:ok [[(symbol "y1.core" "defn")
-                    (symbol "/my/module.y1" "a")
-                    (symbol "/my/module.y1" "b")]
-                   ["/bar.y1"
-                    "/path/to/y1.y0"]]}
+   ;; Now we can use parse and see if it works. parse uses resolve, so we get to
+   ;; also see it in action.
+ (let [path1 (io/file "/foo/my/module.y1")
+       path2 (io/file "/foo/bar.y1")
+       path3 (io/file "/bar/bar.y1")
+       {:keys [parse read resolve]} (get lang-map1 "y1")]
+   (parse "my.module"
+          "/foo/my/module.y1"
+          "(ns my.module (:require [bar])) defn a b"
+          resolve) => {:ok [[(symbol "y1.core" "defn")
+                             (symbol "/foo/my/module.y1" "a")
+                             (symbol "/foo/my/module.y1" "b")]
+                            ["/bar/bar.y1"
+                             "/path/to/y1.y0"]]}
+   (provided
+    (exists? path1) => true
+    (exists? path2) => false
+    (exists? path3) => true
+    (getenv "Y1-PATH") => "/foo:/bar")
      ;; Because we asked to `:decorate`, `:decorate` is `true` in the
      ;; `lang-map`.
    (-> lang-map1 (get "y1") :decorate) => true
-     ;; Checking that we got the resolver we wanted
-   (let [path (io/file "./a/b/c.y1")]
-     (resolve "a.b.c") => {:ok path}
-     (provided
-      (exists? path) => true
-      (getenv "Y1-PATH") => ".:/foo:/bar"))
      ;; :read is a function that actually (tries to) reads files
    (read "a-path-that-does-not-exist") => (throws java.io.FileNotFoundException)))
 
