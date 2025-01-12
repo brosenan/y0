@@ -41,16 +41,15 @@ keys:
    the file from disk.
 4. `:statements`, containing a sequence of parsed statements (parse-tree
    fragments).
-5. `:deps`, containing a collection of modules (with at least`:lang` and
-   `:name`), representing the module's dependencies.
+5. `:deps`, containing a collection of paths of the dependencies.
 
 A language is also represented as a map, with the following keys, each
 holding a function:
-* `:resolve` takes the value of a module's `:name` and returns the value of
-  its `:path`.
+* `:resolve` takes a module name and returns the a `java.io.File`
+  representing its `:path`.
 * `:read` takes the value of a module's `:path` and returns its `:text`.
-* `:parse` takes `:name`, `:path` and `:text` and returns the values of
-  `:statements` and `:deps`, as a tuple.
+* `:parse` takes `nil` (deprecated), `:path` and `:text` and returns the
+  values of `:statements` and `:deps`, as a tuple.
 
 The collection of all supported languages is contained in a _language map_,
 which maps a language name (string) to its representation.
@@ -69,17 +68,15 @@ For the following examples, let us use the following language-map:
 (def lang-map {"y1" {:match #(str/ends-with? % ".y1")
                      :resolve (constantly (ok "some/path"))
                      :read my-read1
-                     :parse (fn [name _path text resolve]
+                     :parse (fn [_name path text _resolve]
                               (ok [(with-meta `[parsing ~text] {:foo :bar})
-                                   [{:lang "y1"
-                                     :name (str name 2)}]]))}
+                                   [(str path 2)]]))}
                "y2" {:match #(str/ends-with? % ".y2")
                      :resolve #(ok % assoc :path "some/other/path")
                      :read my-read2
-                     :parse (fn [name _path text resolve]
+                     :parse (fn [_name path text _resolve]
                               (ok [`[something-else ~text]
-                                   [{:lang "y2"
-                                     :name (str name 3)}]]))}})
+                                   [(str path 3)]]))}})
 
 ```
 If it contains `:statements`, it does nothing.
@@ -94,16 +91,13 @@ If `:statements` is not present, but `:text` is, `:parse` is called.
 ```clojure
 (fact
  (load-module {:lang "y1"
-               :name "foo"
                :path "/path/to/foo.y1"
                :text "text inside foo.y1"} lang-map)
  => {:ok {:lang "y1"
-          :name "foo"
           :path "/path/to/foo.y1"
           :text "text inside foo.y1"
           :statements `[parsing "text inside foo.y1"]
-          :deps [{:lang "y1"
-                  :name "foo2"}]}})
+          :deps ["/path/to/foo.y12"]}})
 
 ```
 If `:path` exists but `:lang` does not, the language is identified by
@@ -116,8 +110,7 @@ text is then read by using the appropriate `:read`er,
           :path "/path/to/foo.y1"
           :text "the y1 contents of /path/to/foo.y1"
           :statements `[parsing "the y1 contents of /path/to/foo.y1"]
-          :deps [{:lang "y1"
-                  :name "2"}]}})
+          :deps ["/path/to/foo.y12"]}})
 
 ```
 ### Optional Decoration
@@ -144,7 +137,6 @@ First, let us see that by default we get no decorations.
 ```clojure
 (fact
  (let-s [m (load-module {:lang "y1"
-                         :name "foo"
                          :path "/path/to/foo.y1"
                          :text "text inside foo.y1"} lang-map)]
         (do
@@ -158,7 +150,6 @@ for language `y1`, `:decorate` would be `true`.
 (fact
  (let-s [lang-map (ok (update lang-map "y1" #(assoc % :decorate true)))
          m (load-module {:lang "y1"
-                         :name "foo"
                          :path "/path/to/foo.y1"
                          :text "text inside foo.y1"} lang-map)]
         (do
@@ -182,7 +173,6 @@ the symbol `parsing` inside the top-level list.
 (fact
  (let-s [lang-map (ok (update lang-map "y1" #(assoc % :decorate true)))
          m (load-module {:lang "y1"
-                         :name "foo"
                          :path "/path/to/foo.y1"
                          :text "text inside foo.y1"} lang-map)]
         (do

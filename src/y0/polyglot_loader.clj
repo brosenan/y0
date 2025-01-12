@@ -28,7 +28,7 @@
             {:keys [parse read resolve decorate]} lang-def]
         (cond
           (contains? module :statements) (ok module)
-          (contains? module :text) (let-s [[statements deps] (parse (:name module)
+          (contains? module :text) (let-s [[statements deps] (parse nil
                                                                     (:path module)
                                                                     (:text module)
                                                                     resolve)

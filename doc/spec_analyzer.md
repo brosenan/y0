@@ -477,7 +477,7 @@ state is incremented.
        :path "path/to/spec.md"
        :success 1}
    (provided
-    (mock-parse "example" "example" "void main() {\n}") => (ok [[] []]))))
+    (mock-parse nil "example" "void main() {\n}") => (ok [[] []]))))
 
 ```
 In case of an error, the explanation, along with the line-number of the block
@@ -509,7 +509,7 @@ incremented.
                  `(this-is-not-supported)
                  "and therefore it does not have any meaning"]]}
    (provided
-    (mock-parse "example" "example" "void main() {\n}") =>
+    (mock-parse nil "example" "void main() {\n}") =>
     (ok [[`(this-is-not-supported)] []]))))
 
 ```
@@ -543,7 +543,7 @@ succeeds.
        :path "path/to/spec.md"
        :success 1}
    (provided
-    (mock-parse "example" "example" "void main() {\n}") =>
+    (mock-parse nil "example" "void main() {\n}") =>
     (ok [[`(this-is-not-supported)] []]))))
 
 ```
@@ -570,7 +570,7 @@ If the evaluation succeeds, the test fails.
        :path "path/to/spec.md"
        :errors [["The example should have produced an error, but did not"]]}
    (provided
-    (mock-parse "example" "example" "void main() {\n}") =>
+    (mock-parse nil "example" "void main() {\n}") =>
     (ok [[] []]))))
 
 ```
@@ -601,7 +601,7 @@ message), the test fails.
                  `(this-is-unexpected)
                  "and therefore it does not have any meaning"]]}
    (provided
-    (mock-parse "example" "example" "void main() {\n}") =>
+    (mock-parse nil "example" "void main() {\n}") =>
     (ok [[`(this-is-unexpected)] []])))
 
 ```
@@ -642,7 +642,7 @@ example and then for the module.
        :modules {"foo" ["struct Foo {};"]}
        :success 1}
    (provided
-    (mock-parse "example" "example" "#include \"foo.h\"\nvoid main() {\n}") =>
+    (mock-parse nil "example" "#include \"foo.h\"\nvoid main() {\n}") =>
     (ok [[] ["foo"]])
     (mock-parse nil "foo" "struct Foo {};") => (ok [[] []]))))
 
@@ -668,7 +668,7 @@ spec (`.md` file) with the correct line number.
                                                     "```"]))) =>
   #'pos-example-err-status
   (provided
-   (mock-parse "example" "example" "void main() {\n}") =>
+   (mock-parse nil "example" "void main() {\n}") =>
    (ok [[(with-meta `(this-is-not-supported) {:path "example"
                                               :start 1000005
                                               :end 1000007})] []]))
@@ -760,9 +760,9 @@ blocks updated. Other behavior does not change, so that `:errors` and
                    "Success"
                    "```"]}
    (provided
-    (mock-parse "example" "example" "void main() {\n  something_wrong;\n}") =>
+    (mock-parse nil "example" "void main() {\n  something_wrong;\n}") =>
     (ok [[`(this-is-not-supported)] []])
-    (mock-parse "example" "example" "void main() {\n  something_correct;\n}") =>
+    (mock-parse nil "example" "void main() {\n  something_correct;\n}") =>
     (ok [[] []]))))  
 ```
 
