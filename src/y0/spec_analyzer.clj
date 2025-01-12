@@ -61,7 +61,6 @@
                                                    (->> (get modules name)
                                                         (join "\n"))))))]
     (let-s [mstore (load-with-deps [{:lang lang
-                                     :name "example"
                                      :path "example"
                                      :text (join "\n" current-block)}]
                                    langmap)

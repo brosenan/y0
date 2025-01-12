@@ -68,13 +68,13 @@ For the following examples, let us use the following language-map:
 (def lang-map {"y1" {:match #(str/ends-with? % ".y1")
                      :resolve (constantly (ok "some/path"))
                      :read my-read1
-                     :parse (fn [_name path text _resolve]
+                     :parse (fn [path text _resolve]
                               (ok [(with-meta `[parsing ~text] {:foo :bar})
                                    [(str path 2)]]))}
                "y2" {:match #(str/ends-with? % ".y2")
                      :resolve #(ok % assoc :path "some/other/path")
                      :read my-read2
-                     :parse (fn [_name path text _resolve]
+                     :parse (fn [path text _resolve]
                               (ok [`[something-else ~text]
                                    [(str path 3)]]))}})
 
@@ -228,7 +228,7 @@ dependencies from `my-deps`.
                     (ok (str "/" name ".y2")))
          :read (fn [path]
                  (str "text in " path))
-         :parse (fn [name path text resolve]
+         :parse (fn [path text resolve]
                   (ok [[path text]
                        (for [dep (my-deps path)]
                          (-> dep resolve unwrap-status str))]))

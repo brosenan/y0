@@ -149,8 +149,7 @@
        path2 (io/file "/foo/bar.y1")
        path3 (io/file "/bar/bar.y1")
        {:keys [parse read resolve]} (get lang-map1 "y1")]
-   (parse "my.module"
-          "/foo/my/module.y1"
+   (parse "/foo/my/module.y1"
           "(ns my.module (:require [bar])) defn a b"
           resolve) => {:ok [[(symbol "y1.core" "defn")
                              (symbol "/foo/my/module.y1" "a")
@@ -203,7 +202,7 @@
    (def lang-map1 (language-map-from-config config)) => #'lang-map1)
  ;; Now we can use parse and see if it works
  (let [{:keys [parse resolve]} (get lang-map1 "c0")]
-   (parse "my.module" "/my/module.c0" "import foo; a = 1; b = 2.3;" resolve) =>
+   (parse "/my/module.c0" "import foo; a = 1; b = 2.3;" resolve) =>
    {:ok [[[:import [:dep (symbol "/my/module.c0" "/base/foo.c0")]]
           [:statement [:assign (symbol "/my/module.c0" "a") [:expr [:int 1]]]]
           [:statement [:assign (symbol "/my/module.c0" "b") [:expr [:float 2.3]]]]]

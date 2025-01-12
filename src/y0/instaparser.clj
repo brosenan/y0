@@ -89,7 +89,7 @@
     (catch Exception e {:err [(.getMessage e)]})))
 
 (defn instaparser [lang grammar id-kws dep-kw extra-deps]
-  (fn parse [_module path text resolve]
+  (fn parse [path text resolve]
     (let-s [parser (ok (instaparse-grammar grammar))
             parse-tree (wrap-parse parser text)]
            (let [statements (drop 1 parse-tree)

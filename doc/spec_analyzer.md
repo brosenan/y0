@@ -406,11 +406,11 @@ The status block should only contain a single line, requiring either success
 or an error, as explained in the following subsections. If a different line
 is present, and exception is raised.
 ```clojure
-(defn mock-parse [name path text])
+(defn mock-parse [path text])
 (fact
  (process-lang-spec {:state :init
-                     :langmap {"y4" {:parse (fn [name path text _resolve]
-                                              (mock-parse name path text))}}
+                     :langmap {"y4" {:parse (fn [path text _resolve]
+                                              (mock-parse path text))}}
                      :lang "y4"}
                     ["Some unrelated line"
                      "```c++"
@@ -429,8 +429,8 @@ is thrown.
 ```clojure
 (fact
  (process-lang-spec {:state :init
-                     :langmap {"y4" {:parse (fn [name path text _resolve]
-                                              (mock-parse name path text))}}
+                     :langmap {"y4" {:parse (fn [path text _resolve]
+                                              (mock-parse path text))}}
                      :lang "y4"}
                     ["Some unrelated line"
                      "```c++"
@@ -457,8 +457,8 @@ state is incremented.
                                  (Exception. (str "resolve should not have been called: " %)))
                       :read #(throw
                               (Exception. (str "read should not have been called: " %)))
-                      :parse (fn [name path text _resolve]
-                               (mock-parse name path text))}}]
+                      :parse (fn [path text _resolve]
+                               (mock-parse path text))}}]
    (process-lang-spec {:state :init
                        :lang "y4"
                        :langmap langmap
@@ -477,7 +477,7 @@ state is incremented.
        :path "path/to/spec.md"
        :success 1}
    (provided
-    (mock-parse nil "example" "void main() {\n}") => (ok [[] []]))))
+    (mock-parse "example" "void main() {\n}") => (ok [[] []]))))
 
 ```
 In case of an error, the explanation, along with the line-number of the block
@@ -487,8 +487,8 @@ incremented.
 (fact
  (let [langmap {"y4" {;; :resolve and :read are not used and can therefore be
                       ;; omitted here
-                      :parse (fn [name path text _resolve]
-                               (mock-parse name path text))}}]
+                      :parse (fn [path text _resolve]
+                               (mock-parse path text))}}]
    (process-lang-spec {:state :init
                        :langmap langmap
                        :path "path/to/spec.md"}
@@ -509,7 +509,7 @@ incremented.
                  `(this-is-not-supported)
                  "and therefore it does not have any meaning"]]}
    (provided
-    (mock-parse nil "example" "void main() {\n}") =>
+    (mock-parse "example" "void main() {\n}") =>
     (ok [[`(this-is-not-supported)] []]))))
 
 ```
@@ -522,8 +522,8 @@ If the code block fails to evaluate, producing the expected text, the test
 succeeds.
 ```clojure
 (fact
- (let [langmap {"y4" {:parse (fn [name path text _resolve]
-                               (mock-parse name path text))
+ (let [langmap {"y4" {:parse (fn [path text _resolve]
+                               (mock-parse path text))
                       }}]
    (process-lang-spec {:state :init
                        :langmap langmap
@@ -543,15 +543,15 @@ succeeds.
        :path "path/to/spec.md"
        :success 1}
    (provided
-    (mock-parse nil "example" "void main() {\n}") =>
+    (mock-parse "example" "void main() {\n}") =>
     (ok [[`(this-is-not-supported)] []]))))
 
 ```
 If the evaluation succeeds, the test fails.
 ```clojure
 (fact
- (let [langmap {"y4" {:parse (fn [name path text _resolve]
-                               (mock-parse name path text))}}]
+ (let [langmap {"y4" {:parse (fn [path text _resolve]
+                               (mock-parse path text))}}]
    (process-lang-spec {:state :init
                        :langmap langmap
                        :path "path/to/spec.md"}
@@ -570,7 +570,7 @@ If the evaluation succeeds, the test fails.
        :path "path/to/spec.md"
        :errors [["The example should have produced an error, but did not"]]}
    (provided
-    (mock-parse nil "example" "void main() {\n}") =>
+    (mock-parse "example" "void main() {\n}") =>
     (ok [[] []]))))
 
 ```
@@ -578,8 +578,8 @@ If the evaluation fails, but provides a different explanation (error
 message), the test fails.
 ```clojure
 (fact
- (let [langmap {"y4" {:parse (fn [name path text _resolve]
-                               (mock-parse name path text))}}]
+ (let [langmap {"y4" {:parse (fn [path text _resolve]
+                               (mock-parse path text))}}]
    (process-lang-spec {:state :init
                        :langmap langmap
                        :path "path/to/spec.md"}
@@ -601,7 +601,7 @@ message), the test fails.
                  `(this-is-unexpected)
                  "and therefore it does not have any meaning"]]}
    (provided
-    (mock-parse nil "example" "void main() {\n}") =>
+    (mock-parse "example" "void main() {\n}") =>
     (ok [[`(this-is-unexpected)] []])))
 
 ```
@@ -615,8 +615,8 @@ from a positive example. The `:parse` function is called twice, first for the
 example and then for the module.
 ```clojure
 (fact
- (let [langmap {"y4" {:parse (fn [name path text _resolve]
-                               (mock-parse name path text))
+ (let [langmap {"y4" {:parse (fn [path text _resolve]
+                               (mock-parse path text))
                       :match (constantly true)}}]
    (process-lang-spec {:state :init
                        :lang "y4"
@@ -642,9 +642,9 @@ example and then for the module.
        :modules {"foo" ["struct Foo {};"]}
        :success 1}
    (provided
-    (mock-parse nil "example" "#include \"foo.h\"\nvoid main() {\n}") =>
+    (mock-parse "example" "#include \"foo.h\"\nvoid main() {\n}") =>
     (ok [[] ["foo"]])
-    (mock-parse nil "foo" "struct Foo {};") => (ok [[] []]))))
+    (mock-parse "foo" "struct Foo {};") => (ok [[] []]))))
 
 ```
 ### Code Location in Errors
@@ -653,8 +653,8 @@ The errors produced by code examples have code-locations that point to the
 spec (`.md` file) with the correct line number.
 ```clojure
  (fact
-  (let [langmap {"y4" {:parse (fn [name path text _resolve]
-                                (mock-parse name path text))}}]
+  (let [langmap {"y4" {:parse (fn [path text _resolve]
+                                (mock-parse path text))}}]
     (def pos-example-err-status (process-lang-spec {:state :init
                                                     :langmap langmap
                                                     :path "path/to/spec.md"}
@@ -668,7 +668,7 @@ spec (`.md` file) with the correct line number.
                                                     "```"]))) =>
   #'pos-example-err-status
   (provided
-   (mock-parse nil "example" "void main() {\n}") =>
+   (mock-parse "example" "void main() {\n}") =>
    (ok [[(with-meta `(this-is-not-supported) {:path "example"
                                               :start 1000005
                                               :end 1000007})] []]))
@@ -706,8 +706,8 @@ blocks updated. Other behavior does not change, so that `:errors` and
 (fact
  (let [langmap {"y4" {;; :resolve and :read are not used and can therefore be
                       ;; omitted here
-                      :parse (fn [name path text _resolve]
-                               (mock-parse name path text))
+                      :parse (fn [path text _resolve]
+                               (mock-parse path text))
                       :match (constantly true)}}]
    (process-lang-spec {:state :init
                        :langmap langmap
@@ -760,9 +760,9 @@ blocks updated. Other behavior does not change, so that `:errors` and
                    "Success"
                    "```"]}
    (provided
-    (mock-parse nil "example" "void main() {\n  something_wrong;\n}") =>
+    (mock-parse "example" "void main() {\n  something_wrong;\n}") =>
     (ok [[`(this-is-not-supported)] []])
-    (mock-parse nil "example" "void main() {\n  something_correct;\n}") =>
+    (mock-parse "example" "void main() {\n  something_correct;\n}") =>
     (ok [[] []]))))  
 ```
 

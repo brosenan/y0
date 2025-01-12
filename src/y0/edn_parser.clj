@@ -73,7 +73,7 @@
 
 (defn edn-parser [root-refer-map lang extra-modules]
   (fn parse
-    ([_module path text resolve]
+    ([path text resolve]
      (try
        (let-s [[ns-decl & statements] (ok (parse-string-all text
                                                             {:postprocess #(annotate-location % path)}))

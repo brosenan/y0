@@ -319,7 +319,7 @@ parse-tree is given a location.
                     x = a;")
  (let [resolve (fn [m] (ok (java.io.File.
                             (str "/" (str/replace m #"\." "/") ".y7"))))
-       status (my-parser "my.module" "/path/to/my-module.y7" sample-text1 resolve)
+       status (my-parser "/path/to/my-module.y7" sample-text1 resolve)
        {:keys [ok]} status
        [statements deps] ok]
    statements =>
@@ -341,7 +341,7 @@ If a dependency cannot be resolved, the error is propagated as the status.
 ```clojure
 (fact
  (let [resolve (fn [m] {:err ["Failed to resolve module" m]})
-       status (my-parser "my.module" "/path/to/my-module.y7" sample-text1 resolve)]
+       status (my-parser "/path/to/my-module.y7" sample-text1 resolve)]
    status => {:err ["Failed to resolve module" "foo.core"]}))
 ```
 
