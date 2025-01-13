@@ -3,7 +3,8 @@
             [y0.explanation :refer [explanation-expr-to-str extract-expr-text]]
             [y0.instaparser :refer [instaparser]]
             [y0.resolvers :refer [path-prefixes-from-env prefix-list-resolver
-                                  qname-to-rel-path-resolver]]))
+                                  qname-to-rel-path-resolver]]
+            [clojure.string :as str]))
 
 (defn- get-or-throw
   ([m key name optional? optional-ret]
@@ -51,7 +52,10 @@
    :decorate {:default {:func (constantly false)
                         :args []}
               :true {:func (constantly true)
-                     :args []}}})
+                     :args []}}
+   :matcher {:default {:func (fn [file-ext]
+                               #(str/ends-with? % (str "." file-ext)))
+                       :args [:file-ext]}}})
 
 (defn language-map-from-config [config]
   (->> (for [[lang conf] config]
@@ -60,5 +64,6 @@
                   :read (resolve-config-val lang-config-spec conf :reader)
                   :resolve (resolve-config-val lang-config-spec conf :resolver)
                   :stringify-expr (resolve-config-val lang-config-spec conf :expr-stringifier)
-                  :decorate (resolve-config-val lang-config-spec conf :decorate)}]))
+                  :decorate (resolve-config-val lang-config-spec conf :decorate)
+                  :match (resolve-config-val lang-config-spec conf :matcher)}]))
        (into {})))

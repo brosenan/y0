@@ -13,7 +13,8 @@
 ;; 1. A name for the language.
 ;; 2. A parser for the new language.
 ;; 3. A [resolver](resolvers.md) for the language's module system.
-;; 4. [optionally] A &y_0& module defining its semantics.
+;; 4. A matcher to identify modules in the language by their path.
+;; 5. [optionally] A &y_0& module defining its semantics.
 
 ;; This module defines functions for parsing an EDN-based configuration language
 ;; for defining languages for &y_0&.
@@ -143,12 +144,12 @@
                      ;; is expected to understand.
                      :decorate :true}}]
    (def lang-map1 (language-map-from-config config)) => #'lang-map1)
-   ;; Now we can use parse and see if it works. parse uses resolve, so we get to
-   ;; also see it in action.
+ ;; Now we can use parse and see if it works. parse uses resolve, so we get to
+ ;; also see it in action.
  (let [path1 (io/file "/foo/my/module.y1")
        path2 (io/file "/foo/bar.y1")
        path3 (io/file "/bar/bar.y1")
-       {:keys [parse read resolve]} (get lang-map1 "y1")]
+       {:keys [parse read resolve match]} (get lang-map1 "y1")]
    (parse "/foo/my/module.y1"
           "(ns my.module (:require [bar])) defn a b"
           resolve) => {:ok [[(symbol "y1.core" "defn")
@@ -161,11 +162,14 @@
     (exists? path2) => false
     (exists? path3) => true
     (getenv "Y1-PATH") => "/foo:/bar")
-     ;; Because we asked to `:decorate`, `:decorate` is `true` in the
-     ;; `lang-map`.
+   ;; Because we asked to `:decorate`, `:decorate` is `true` in the
+   ;; `lang-map`.
    (-> lang-map1 (get "y1") :decorate) => true
-     ;; :read is a function that actually (tries to) reads files
-   (read "a-path-that-does-not-exist") => (throws java.io.FileNotFoundException)))
+   ;; :read is a function that actually (tries to) reads files
+   (read "a-path-that-does-not-exist") => (throws java.io.FileNotFoundException)
+   ;; :match returns true for paths that end with .y1, and false for anything else.
+   (match "/path/to/foo/bar.y1") => true
+   (match "/path/to/foo/bar.y2") => false))
 
 ;; ### Instaparse-Based Language Config
 
