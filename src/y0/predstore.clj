@@ -129,7 +129,14 @@
 (defn store-rule [ps head body]
   (update-with-status ps (pred-key head) #(pd-store-rule % head body)
                       (fn [err {:keys [name arity]}]
-                        (concat err ["in predicate" name "with arity" arity]))))
+                        (let [last-slash (.lastIndexOf name "/")
+                              ns (if (> last-slash 0)
+                                   (.substring name 0 last-slash)
+                                   nil)
+                              n (if (> last-slash 0)
+                                  (.substring name (inc last-slash))
+                                  name)]
+                         (concat err ["in predicate" (symbol ns n) "with arity" arity])))))
 
 (defn- get-or-err [m k err]
   (let [v (get m k)]

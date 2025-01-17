@@ -55,7 +55,7 @@
       (let [[m & ms] ms]
         (if (contains? mstore (module-id m))
           (recur ms mstore)
-          (let-s [m (load-module m lang-map)
+           (let-s [m (load-module m lang-map)
                   deps (ok (:deps m))
                   dep-modules (ok (for [path deps]
                                     {:path path}))]

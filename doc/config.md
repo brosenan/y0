@@ -7,11 +7,10 @@
     * [Controlling Explanation Output](#controlling-explanation-output)
 ```clojure
 (ns y0.config-test
-  (:require [midje.sweet :refer [fact => throws provided anything]]
+  (:require [midje.sweet :refer [fact => throws provided]]
             [y0.config :refer :all]
             [y0.resolvers :refer [exists? getenv]]
             [y0.location-util :refer [encode-file-pos]]
-            [y0.status :refer [unwrap-status]]
             [clojure.java.io :as io]
             [clojure.string :as str]))
 
@@ -154,7 +153,7 @@ environment variable `Y1_PATH`.
                      ;; The file extension for the source files
                      :file-ext "y1"
                      ;; The modules that define the language's semantics
-                     :extra-modules ["/path/to/y1.y0"]
+                     :y0-modules ["y1"]
                      ;; The prefix list comes from an environment variable...
                      :path-prefixes :from-env
                      ;; ...named Y0-PATH
@@ -165,7 +164,8 @@ environment variable `Y1_PATH`.
                      ;; This should only be set for languages that the end-user
                      ;; is expected to understand.
                      :decorate :true}}]
-   (def lang-map1 (language-map-from-config config)) => #'lang-map1)
+   (binding [*y0-path* [(java.io.File. "/path/to/y0")]]
+     (def lang-map1 (language-map-from-config config))) => #'lang-map1)
  ;; Now we can use parse and see if it works. parse uses resolve, so we get to
  ;; also see it in action.
  (let [path1 (io/file "/foo/my/module.y1")
@@ -178,11 +178,12 @@ environment variable `Y1_PATH`.
                              (symbol "/foo/my/module.y1" "a")
                              (symbol "/foo/my/module.y1" "b")]
                             ["/bar/bar.y1"
-                             "/path/to/y1.y0"]]}
+                             "/path/to/y0/y1.y0"]]}
    (provided
     (exists? path1) => true
     (exists? path2) => false
     (exists? path3) => true
+    (exists? (java.io.File. "/path/to/y0/y1.y0")) => true
     (getenv "Y1-PATH") => "/foo:/bar")
    ;; Because we asked to `:decorate`, `:decorate` is `true` in the
    ;; `lang-map`.
@@ -223,11 +224,12 @@ The following example language configuration uses an Instaparse-based parser.
                      :resolver :prefix-list
                      :relative-path-resolution :dots
                      :file-ext "c0"
-                     :extra-modules ["/path/to/c0.y0"]
+                     :y0-modules ["c0"]
                      :path-prefixes :from-env
                      :path-prefixes-env "C0-PATH"
                      :reader :slurp}}]
-   (def lang-map1 (language-map-from-config config)) => #'lang-map1)
+   (binding [*y0-path* [(java.io.File. "/path/to/y0")]]
+     (def lang-map1 (language-map-from-config config))) => #'lang-map1)
  ;; Now we can use parse and see if it works
  (let [{:keys [parse resolve]} (get lang-map1 "c0")]
    (parse "/my/module.c0" "import foo; a = 1; b = 2.3;" resolve) =>
@@ -235,9 +237,10 @@ The following example language configuration uses an Instaparse-based parser.
           [:statement [:assign (symbol "/my/module.c0" "a") [:expr [:int 1]]]]
           [:statement [:assign (symbol "/my/module.c0" "b") [:expr [:float 2.3]]]]]
          ["/base/foo.c0"
-          "/path/to/c0.y0"]]}
+          "/path/to/y0/c0.y0"]]}
    (provided
     (exists? (java.io.File. "/base/foo.c0")) => true
+    (exists? (java.io.File. "/path/to/y0/c0.y0")) => true
     (getenv "C0-PATH") => "/base:/dirs"))
 
  ;; Because we did not set `:decorate`, `:decorate` is `false` in the
@@ -263,7 +266,7 @@ is used.
                      :resolver :prefix-list
                      :relative-path-resolution :dots
                      :file-ext "y1"
-                     :extra-modules [{:lang "y0" :name "y1"}]
+                     :y0-modules ["y1"]
                      :path-prefixes :from-env
                      :path-prefixes-env "Y1-PATH"
                      :reader :slurp}}
@@ -294,7 +297,7 @@ the text underlying the parse-tree node. Setting `:expr-stringifier` to
                        :resolver :prefix-list
                        :relative-path-resolution :dots
                        :file-ext "y1"
-                       :extra-modules [{:lang "y0" :name "y1"}]
+                       :y0-modules ["y1"]
                        :path-prefixes :from-env
                        :path-prefixes-env "Y1-PATH"
                        :reader :slurp

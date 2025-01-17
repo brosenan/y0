@@ -59,7 +59,9 @@
                                           (assoc :read 
                                                  (fn [name]
                                                    (->> (get modules name)
-                                                        (join "\n"))))))]
+                                                        (join "\n"))))
+                                          (assoc :match
+                                                 (constantly true))))]
     (let-s [mstore (load-with-deps [{:lang lang
                                      :path "example"
                                      :text (join "\n" current-block)}]

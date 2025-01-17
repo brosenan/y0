@@ -1196,7 +1196,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: The rule for (option-is-covered v) conflicts with a previous rule defining (option-is-covered v) in predicate c0/option-is-covered with arity 1
+ERROR: The rule for (option-is-covered v) conflicts with a previous rule defining (option-is-covered v) in predicate option-is-covered with arity 1
 ```
 
 **TODO**: Improve this error message.

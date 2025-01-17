@@ -22,7 +22,7 @@
           (let [[path & paths] paths
                 candidate (io/file path suffix)]
             (if (exists? candidate)
-              (ok candidate)
+              (-> candidate .getAbsolutePath java.io.File. ok)
               (recur paths))))))))
 
 (defn getenv [env]

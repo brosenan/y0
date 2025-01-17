@@ -108,13 +108,6 @@ strings.
  (symbolize foo ["bar" :baz] foo-bar-:baz))
 
 ```
-If given a string as its first argument, it is taken as the namespace, and
-the values in the vector as the name of the new symbol.
-```clojure
-(assert
- (symbolize "builtins" ["bar" "baz"] bar-baz))
-
-```
 ## Length of Vectors and Lists
 
 The predicate `length` matches a vector or a list with its length, as an

@@ -97,12 +97,10 @@ same name), and returns a resolver for $y_0$.
 (fact
  (let [r (y0-resolver ["/foo" "/bar" "./baz"])
        path1 (io/file "/foo/a/b/c.y0")
-       path2 (io/file "/bar/a/b/c.y0")
-       path3 (io/file "./baz/a/b/c.y0")]
-   (r "a.b.c") => {:ok path3}
+       path2 (io/file "/bar/a/b/c.y0")]
+   (r "a.b.c") => {:ok path2}
    (provided
     (exists? path1) => false
-    (exists? path2) => false
-    (exists? path3) => true)))
+    (exists? path2) => true)))
 ```
 

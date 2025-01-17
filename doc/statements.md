@@ -370,16 +370,19 @@ namespace alias.
 ```
 An `import` statement can be used to instantiate `export` statements and thus
 make words defined in a different module available in the current namespace.
+
+<!-- TODO: This test is broken due to the path-takeover cahnge. -->
 ```clojure
 (assert
  (given (import example-words)
         (word hello)
         (word world)))
-
 ```
+
 An `import` statement can be given a why-not explanation, which will be used
 if the import fails (i.e., if the module name does not reference an existing
 module).
+
 ```clojure
 (assert
  (given (import wrong-module-name ! "Could not load my module")
@@ -414,17 +417,21 @@ on here.
 The `import` statement takes an optional key, which can be used to filter the
 exports that are imported. In the following example we use the `:fruit` key
 to only import fruit from the example module.
+
+<!-- TODO: This test is broken due to the path-takeover cahnge. -->
 ```clojure
 (assert
  (given (import fruit-veg-example :fruit)
         (fruit banana)
         (vegetable tomato)
         ! tomato "is not a vegetable"))
-
 ```
+
 A key can be either a keyword (as above), or a symbol. For symbols only the
 name is used, such that they can be used across modules. We use a keyword to
 import a specific vegetable.
+
+<!-- TODO: This test is broken due to the path-takeover cahnge. -->
 ```clojure
 (assert
  (given (import fruit-veg-example tomato)
@@ -432,4 +439,3 @@ import a specific vegetable.
         (vegetable cucumber)
         ! cucumber "is not a vegetable"))
 ```
-

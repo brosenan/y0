@@ -14,7 +14,7 @@
        ;; The file extension for the source files
        :file-ext "y1"
        ;; The modules that define the language's semantics
-       :extra-modules [{:lang "y0" :name "y1"}]
+       :y0-modules ["y1"]
        ;; The prefix list comes from an environment variable...
        :path-prefixes :from-env
        ;; ...named Y0-PATH
@@ -138,7 +138,7 @@
        ;; The file extension for the source files
        :file-ext "c0"
        ;; The modules that define the language's semantics
-       :extra-modules [{:lang "y0" :name "c0"}]
+       :y0-modules ["c0"]
        ;; The prefix list comes from an environment variable...
        :path-prefixes :from-env
        ;; ...named C0-PATH

@@ -1,10 +1,16 @@
 (ns y0.config
-  (:require [y0.edn-parser :refer [edn-parser root-module-symbols]]
-            [y0.explanation :refer [explanation-expr-to-str extract-expr-text]]
-            [y0.instaparser :refer [instaparser]]
-            [y0.resolvers :refer [path-prefixes-from-env prefix-list-resolver
-                                  qname-to-rel-path-resolver]]
-            [clojure.string :as str]))
+  (:require
+   [clojure.string :as str]
+   [y0.edn-parser :refer [edn-parser root-module-symbols]]
+   [y0.explanation :refer [explanation-expr-to-str extract-expr-text]]
+   [y0.instaparser :refer [instaparser]]
+   [y0.resolvers :refer [path-prefixes-from-env prefix-list-resolver
+                         qname-to-rel-path-resolver y0-resolver]]
+   [y0.status :refer [unwrap-status]]
+   [y0.core :refer [y0-symbols]]))
+
+(def ^:dynamic *y0-langdef* nil)
+(def ^:dynamic *y0-path* nil)
 
 (defn- get-or-throw
   ([m key name optional? optional-ret]
@@ -39,6 +45,12 @@
                                    :relative-path-resolution]}}
    :reader {:slurp {:func (constantly slurp)
                     :args []}}
+   :extra-modules {:default {:func (fn [y0-modules]
+                                     (if (seq *y0-langdef*)
+                                       (let [{:keys [resolve]} *y0-langdef*]
+                                         (map #(-> % resolve unwrap-status str) y0-modules))
+                                       y0-modules))
+                             :args [:y0-modules]}}
    :root-refer-map {:root-symbols {:func root-module-symbols
                                    :args [:root-symbols :root-namespace]}}
    :relative-path-resolution {:dots {:func qname-to-rel-path-resolver
@@ -57,13 +69,24 @@
                                #(str/ends-with? % (str "." file-ext)))
                        :args [:file-ext]}}})
 
+(defn- lang-from-config [conf lang]
+  (let [conf (assoc conf :lang lang)]
+    [lang {:parse (resolve-config-val lang-config-spec conf :parser)
+           :read (resolve-config-val lang-config-spec conf :reader)
+           :resolve (resolve-config-val lang-config-spec conf :resolver)
+           :stringify-expr (resolve-config-val lang-config-spec conf :expr-stringifier)
+           :decorate (resolve-config-val lang-config-spec conf :decorate)
+           :match (resolve-config-val lang-config-spec conf :matcher)}]))
+
 (defn language-map-from-config [config]
-  (->> (for [[lang conf] config]
-         (let [conf (assoc conf :lang lang)]
-           [lang {:parse (resolve-config-val lang-config-spec conf :parser)
-                  :read (resolve-config-val lang-config-spec conf :reader)
-                  :resolve (resolve-config-val lang-config-spec conf :resolver)
-                  :stringify-expr (resolve-config-val lang-config-spec conf :expr-stringifier)
-                  :decorate (resolve-config-val lang-config-spec conf :decorate)
-                  :match (resolve-config-val lang-config-spec conf :matcher)}]))
-       (into {})))
+  (let [y0-def {:parse (edn-parser
+                        (root-module-symbols y0-symbols "y0.core")
+                        "y0"
+                        [])
+                :read slurp
+                :resolve (y0-resolver *y0-path*)
+                :match #(str/ends-with? % ".y0")}]
+    (binding [*y0-langdef* y0-def]
+      (->> (for [[lang conf] config]
+             (lang-from-config conf lang))
+           (into {"y0" y0-def})))))

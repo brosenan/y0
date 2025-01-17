@@ -72,22 +72,21 @@
     (:obj m)))
 
 (defn edn-parser [root-refer-map lang extra-modules]
-  (fn parse
-    ([path text resolve]
-     (try
-       (let-s [[ns-decl & statements] (ok (parse-string-all text
-                                                            {:postprocess #(annotate-location % path)}))
-               [paths ns-map refer-map] (parse-ns-decl ns-decl resolve)
-               refer-map (ok (merge refer-map root-refer-map))
-               statements (ok (for [statement statements]
-                                (convert-ns statement ns-map refer-map)))]
-              (if (= path (get ns-map nil))
-                (ok [statements (concat paths
-                                        extra-modules)])
-                {:err ["The module name in the ns declaration in" path
-                       "resolved to the wrong path" (get ns-map nil)]}))
-       (catch Exception e
-         {:err {:error (.getMessage e)}})))))
+  (fn parse [path text resolve]
+    (try
+      (let-s [[ns-decl & statements] (ok (parse-string-all text
+                                                           {:postprocess #(annotate-location % path)}))
+              [paths ns-map refer-map] (parse-ns-decl ns-decl resolve)
+              refer-map (ok (merge refer-map root-refer-map))
+              statements (ok (for [statement statements]
+                               (convert-ns statement ns-map refer-map)))]
+             (if (= path (get ns-map nil))
+               (ok [statements (concat paths
+                                       extra-modules)])
+               {:err ["The module name in the ns declaration in" path
+                      "resolved to the wrong path" (get ns-map nil)]}))
+      (catch Exception e
+        {:err {:error (.getMessage e)}}))))
 
 (defn root-module-symbols [syms ns]
   (->> (for [sym syms]
