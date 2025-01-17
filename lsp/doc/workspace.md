@@ -233,7 +233,6 @@ the first evaluation, while `12` and `4` come from the new evaluation.
               (eval-with-deps {:path "/6.y1"} eval-func-before)
               (eval-with-deps {:path "/12.y1"} eval-func-now))]
    (-> ws :ms (get "/12.y1") :cache :ps) =>
-   {:before ["/6.y1" "/3.y1" "/2.y1" "/1.y1"] :now ["/12.y1" "/4.y1"]}
-))
+   {:before ["/6.y1" "/3.y1" "/2.y1" "/1.y1"] :now ["/12.y1" "/4.y1"]}))
 ```
 
