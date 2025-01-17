@@ -68,10 +68,8 @@ eitehr `0` or `1`:
 (all [x]
      (bit x ! "Expected a bit, received" x))
 ;; Accept 0 and 1
-(all []
-     (bit 0))
-(all []
-     (bit 1))
+(fact (bit 0))
+(fact (bit 1))
 ```
 
 The first thing to notice in this example is the fact that $y_0$'s syntax is
@@ -85,17 +83,17 @@ for your favorite editor. It accomplishes two goals at once: allowing you to
 better understand nesting level of your expressions and at the same time making
 the code more colorful and therefore more cheerful.
 
-Having gone pased that, the code-snippet above contains three rules (starting
-with the `all` keyword, followed by a vector (`[]`) of free variables). The
-first is a "catch all" rule that matches the free variable `x` and rejects
-(using the `!` symbol) everything, providing an explanation (`"Expected a bit,
-received" x`).
+Having gone pased that, the code-snippet above contains a _rule_ (starting with
+the `all` keyword, followed by a vector (`[]`) of free variables) and two
+_facts_ (starting with the keyword `fact`). The rule is a "catch all" rule that
+matches everything (because `x` could be anything) and rejects (using the `!`
+symbol) them, providing an explanation (`"Expected a bit, received" x`).
 
-It is followed by two rules that each accepts one value (either `0` or `1`).
+It is followed by two facts that state that both `0` and `1` are valid bits.
 
-This works because $y_0$ chooses the _most specific rule_ when matching an input
-tree. Therefore, `0` or `1` will be matched by their dedicated rules, while
-anything else will be matched by the catch-all rule.
+This works as expected because $y_0$ chooses the _most specific rule_ when
+matching an input tree. Therefore, `0` or `1` will be matched by their dedicated
+facts, while anything else will be matched by the catch-all rule.
 
 ### Deduction Rules
 
@@ -104,16 +102,17 @@ numbers](https://en.wikipedia.org/wiki/Peano_axioms):
 
 ```clojure
 (all [x] (peano x ! x "is not a Peano number"))
-(all [] (peano z))
+(fact (peano z))
 (all [n]
      (peano (s n)) <- (peano n))
 ```
 
-As before, the first rule rejects all non-Peano values. The second rule accepts
-`z` (zero), and the thrid rule accepts anything of the form `(s n)`, for any `n`
-that is a Peano number by itself.
+As before, the first statement is a rule that rejects all non-Peano values. The
+second statement is a fact that accepts `z` (zero), and the thrid is a
+_deduction rule_, which accepts anything of the form `(s n)`, for any `n` that
+is a Peano number by itself.
 
-The last bit is done using a _deduction rule_, with the `<-` operator, which
+The last bit is done using the `<-` operator (the deduction operator), which
 means that the term written to its left (`(peano (s n))`) holds if the terms
 written to its right (`(peano n)`) hold.
 
@@ -130,52 +129,51 @@ As usual, we begin with a catch-all rule.
      (lambda-expr x ! x "is not a lambda-calulus expression"))
 ```
 
-Then, we define a [translation rule](doc/statements.md) that defines `defconst`
+Then, we define a [translation rule](doc/statements.md) that defines `def`
 _statements_.
 
 ```clojure
-(all [var expr]
-     (defconst var expr) =>
-       (assert (lambda-expr expr))
-       (all [] (lambda-expr var)))
+(all [v x]
+     (def v x) =>
+       (assert (lambda-expr x))
+       (fact (lambda-expr v)))
 ```
 
 Statements are top-level elements of the parse-tree. Translation rules translate
-them into other statements, including rules (`all`) or assertions (`assert`). In
-this case, a `defconst` statement is translated to an `assert` block which
-verifies that the value assigned to the constant is a valid Lambda expression,
-followed by a rule that defines the constant (`var`) as a valid expression.
+them into other statements, including rules (`all`), facts or assertions
+(`assert`). In this case, a `def` statement is translated to an `assert` block
+which verifies that `x` is a valid Lambda expression, followed by a fact that
+defines states that `v` is now a valid lambda expression.
 
-Next we define a rule for _lambda application_, an expression of the form `(fun
-arg)`, where both `func` and `arg` are Lambda expressions.
+Next we define a rule for _lambda application_, an expression of the form `(f
+x)`, where both `f` and `x` are Lambda expressions.
 
 ```clojure
-(all [func arg]
-     (lambda-expr (func arg)) <-
-     (lambda-expr func)
-     (lambda-expr arg))
+(all [f x]
+     (lambda-expr (f x)) <-
+     (lambda-expr f)
+     (lambda-expr x))
 ```
 
 This is a deduction rule with two terms on its right-hand side.
 
 Finally, we get to the most difficult piece to define in the Lambda Calculus,
-the Lambda abstraction, of the form `(lambda var expr)`, where `var` is a symbol
-and `expr` is an expression. The challenge here is that `expr` _may include
-`var`_, so `var` needs to be defined as a valid Lambda expression _within_
-`expr`, but nowhere else.
+the Lambda abstraction, of the form `(lambda v x)`, where `v` is a symbol and
+`x` is an expression. The challenge here is that `x` _may include `v`_, so `v`
+needs to be defined as a valid Lambda expression _within_ `x`, but nowhere else.
 
 We do this as follows:
 
 ```clojure
-(all [var expr]
-     (lambda-expr (lambda var expr)) <-
-     (given (all [] (lambda-expr var))
-            (lambda-expr expr)))
+(all [v x]
+     (lambda-expr (lambda v x)) <-
+     (given (fact (lambda-expr v))
+            (lambda-expr x)))
 ```
 
-The `given` keyword does the trick. It introduces the rule
-`(all [] (lambda-expr var))` locally, in the scope of checking that `expr` is a
-Lambda expression, and only there.
+The `given` keyword does the trick. It introduces the fact `(fact (lambda-expr
+v))` locally, in the scope of checking that `x` is a Lambda expression, and only
+there.
 
 The entire example, with tests, can be found
 [here](doc/conditions.md#example-the-lambda-calculus).
