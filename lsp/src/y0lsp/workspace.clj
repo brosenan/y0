@@ -22,8 +22,8 @@
        ws
        (let [[dep & deps] deps]
          (recur deps (-> ws
-                         (add-module dep load)
-                         (add-dep dep m)))))))
+                         (add-module {:path dep} load)
+                         (add-dep {:path dep} m)))))))
 
 (defn- loaded? [{:keys [ms]} m]
   (let [mid (module-id m)]

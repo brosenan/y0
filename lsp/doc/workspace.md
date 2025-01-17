@@ -47,8 +47,8 @@ _module graph_, a [loom](https://cljdoc.org/d/aysylu/loom/1.0.2/doc/readme)
    (:mg ws) => directed?))
 
 ```
-The keys in `:ms` are _module keys_, strings of the form `lang:name`. These
-same keys act as nodes in `:mg`.
+The keys in `:ms` are full paths to modules files. These same keys act as
+nodes in `:mg`.
 
 ## Adding a Module
 
@@ -66,23 +66,23 @@ be added to the `:ms` as a value and to the `:mg` as a node.
 ```clojure
 (fact
  (let [ws (-> (new-workspace)
-              (add-module {:lang "y1" :name "foo"} identity))]
-   (:ms ws) => {"y1:foo" {:lang "y1" :name "foo"}}
-   (nodes (:mg ws)) => #{"y1:foo"}))
+              (add-module {:path "/foo.y1"} identity))]
+   (:ms ws) => {"/foo.y1" {:path "/foo.y1"}}
+   (nodes (:mg ws)) => #{"/foo.y1"}))
 
 ```
 If a module has dependencies, they are added as edges in the graph.
 ```clojure
 (fact
- (let [load (fn [m] (if (= (:name m) "foo")
-                      (assoc m :deps [{:lang "y1" :name "bar"}
-                                      {:lang "y1" :name "baz"}])
+ (let [load (fn [m] (if (= (:path m) "/foo.y1")
+                      (assoc m :deps ["/bar.y1"
+                                      "/baz.y1"])
                       m))
        ws (-> (new-workspace)
-              (add-module {:lang "y1" :name "foo"} load))]
-   (-> ws :ms keys set) => #{"y1:foo" "y1:bar" "y1:baz"}
-   (-> ws :mg nodes) => #{"y1:foo" "y1:bar" "y1:baz"}
-   (-> ws :mg (predecessors "y1:foo")) => #{"y1:bar" "y1:baz"}))
+              (add-module {:path "/foo.y1"} load))]
+   (-> ws :ms keys set) => #{"/foo.y1" "/bar.y1" "/baz.y1"}
+   (-> ws :mg nodes) => #{"/foo.y1" "/bar.y1" "/baz.y1"}
+   (-> ws :mg (predecessors "/foo.y1")) => #{"/bar.y1" "/baz.y1"}))
 
 ```
 If a module is already in the workspace, it is not loaded again.
@@ -94,23 +94,25 @@ is not called the second time around.
 ```clojure
 (fact
  (let [ws (-> (new-workspace)
-              (add-module {:lang "y1" :name "foo"} identity)
-              (add-module {:lang "y1" :name "foo"}
+              (add-module {:path "/foo.y1"} identity)
+              (add-module {:path "/foo.y1"}
                           #(throw (Exception.
                                    (str "this should not have been called: "
                                         %1)))))]
-   (:ms ws) => {"y1:foo" {:lang "y1" :name "foo"}}
-   (-> ws :mg nodes) => #{"y1:foo"}))
+   (:ms ws) => {"/foo.y1" {:path "/foo.y1"}}
+   (-> ws :mg nodes) => #{"/foo.y1"}))
 
 ```
 ### Example Dependency Graph
 
 In order to create examples in this doc, we will use the following `load`
-function. It assumes the `:name` of a module is a decimal integer and adds
-`:deps` that correspond to all the dividers of this integer.
+function. It assumes the `:path` of a module is of the form `/n.y1', where
+`n` is a decimal integer and adds `:deps` that correspond to all the dividers
+of this integer.
 ```clojure
-(defn- load-dividers [{:keys [name lang] :as m}]
-  (let [n (Integer/parseInt name)]
+(defn- load-dividers [{:keys [path] :as m}]
+  (let [[_ num] (re-matches #"/(\d+).y1" path)
+        n (Integer/parseInt num)]
     (loop [k (dec n)
            deps nil
            stop #{}]
@@ -119,18 +121,16 @@ function. It assumes the `:name` of a module is a decimal integer and adds
         (cond
           (->> stop (filter #(= (mod % k) 0)) seq) (recur (dec k) deps stop)  
           (= (mod n k) 0) (recur (dec k) 
-                                 (conj deps {:lang lang :name (str k)}) 
+                                 (conj deps (str "/" k ".y1")) 
                                  (conj stop k)) 
           :else (recur (dec k) deps stop))))))
 
 (fact
- (load-dividers {:lang "y1" :name "12"}) => {:lang "y1"
-                                             :name "12"
-                                             :deps [{:lang "y1" :name "4"}
-                                                    {:lang "y1" :name "6"}]}
+ (load-dividers {:path "/12.y1"}) => {:path "/12.y1"
+                                      :deps ["/4.y1" "/6.y1"]}
  (let [ws (-> (new-workspace)
-              (add-module {:lang "y1" :name "12"} load-dividers))]
-   (-> ws :mg nodes) => #{"y1:1" "y1:2" "y1:3" "y1:4" "y1:6" "y1:12"}))
+              (add-module {:path "/12.y1"} load-dividers))]
+   (-> ws :mg nodes) => #{"/1.y1" "/2.y1" "/3.y1" "/4.y1" "/6.y1" "/12.y1"}))
 
 ```
 ## Caching
@@ -180,19 +180,19 @@ We check that both `6` and all of its dependencies (we check `2` as an
 example) have a `:cache` entry, but `12` doesn't.
 ```clojure
 (fact
- (let [eval-func (fn [ps {:keys [name]}]
-                   (update ps :modules #(conj % name)))
+ (let [eval-func (fn [ps {:keys [path]}]
+                   (update ps :modules #(conj % path)))
        ws (-> (new-workspace)
-              (add-module {:lang "y1" :name "12"} load-dividers)
-              (eval-with-deps {:lang "y1" :name "6"} eval-func))]
-   (-> ws :ms (get "y1:6") :cache) =>
-   {:pre-ps {:modules ["2" "3" "1"]}
-    :ps {:modules ["6" "2" "3" "1"]}
-    :all-deps #{"y1:1" "y1:2" "y1:3" "y1:6"}}
-   (-> ws :ms (get "y1:2") :cache) =>
-   {:pre-ps {:modules ["3" "1"]}
-    :ps {:modules ["2" "3" "1"]}
-    :all-deps #{"y1:1" "y1:2" "y1:3"}}
+              (add-module {:path "/12.y1"} load-dividers)
+              (eval-with-deps {:path "/6.y1"} eval-func))]
+   (-> ws :ms (get "/6.y1") :cache) =>
+   {:pre-ps {:modules ["/3.y1" "/2.y1" "/1.y1"]}
+    :ps {:modules ["/6.y1" "/3.y1" "/2.y1" "/1.y1"]}
+    :all-deps #{"/1.y1" "/2.y1" "/3.y1" "/6.y1"}}
+   (-> ws :ms (get "/3.y1") :cache) =>
+   {:all-deps #{"/1.y1" "/2.y1" "/3.y1"}
+    :pre-ps {:modules ["/2.y1" "/1.y1"]}
+    :ps {:modules ["/3.y1" "/2.y1" "/1.y1"]}}
    (-> ws :ms (get "y1:12") :cache) => nil?))
 
 ```
@@ -203,8 +203,8 @@ The cache consists of the following keys:
 * `:all-deps` captures all the modules that contributed to `:ps`, whether
   they are recursive dependencies or not.
 
-In the previous example, `y1:3` was a member of `:all-deps` for `y1:2`
-despite not being a dependency, because `y1:3` precedes `y1:2` in the
+In the previous example, `/2.y1` was a member of `:all-deps` for `/3.y1`
+despite not being a dependency, because `/2.y1` precedes `/3.y1` in the
 topological sort.
 
 ### Incremental Updates
@@ -224,15 +224,16 @@ evaluation function. We notice how `6` and its dependencies are reused from
 the first evaluation, while `12` and `4` come from the new evaluation.
 ```clojure
 (fact
- (let [eval-func-before (fn [ps {:keys [name]}]
-                          (update ps :before #(conj % name)))
-       eval-func-now (fn [ps {:keys [name]}]
-                       (update ps :now #(conj % name)))
+ (let [eval-func-before (fn [ps {:keys [path]}]
+                          (update ps :before #(conj % path)))
+       eval-func-now (fn [ps {:keys [path]}]
+                       (update ps :now #(conj % path)))
        ws (-> (new-workspace)
-              (add-module {:lang "y1" :name "12"} load-dividers)
-              (eval-with-deps {:lang "y1" :name "6"} eval-func-before)
-              (eval-with-deps {:lang "y1" :name "12"} eval-func-now))]
-   (-> ws :ms (get "y1:12") :cache :ps) => {:before ["6" "2" "3" "1"]
-                                            :now ["12" "4"]}))
+              (add-module {:path "/12.y1"} load-dividers)
+              (eval-with-deps {:path "/6.y1"} eval-func-before)
+              (eval-with-deps {:path "/12.y1"} eval-func-now))]
+   (-> ws :ms (get "/12.y1") :cache :ps) =>
+   {:before ["/6.y1" "/3.y1" "/2.y1" "/1.y1"] :now ["/12.y1" "/4.y1"]}
+))
 ```
 
