@@ -43,6 +43,13 @@
        (filter #(-> ms (get %) (contains? :cache)))
        first))
 
+(defn- update-refs [ms deps mid]
+  (if (empty? deps)
+    ms
+    (let [[dep & deps] deps
+          ms (update-in ms [dep :cache :refs] conj mid)]
+      (recur ms deps mid))))
+
 (defn eval-with-deps [{:keys [mg ms] :as ws} m eval-module]
   (let [mid (module-id m)
         mg' (transpose mg)
@@ -68,5 +75,7 @@
               ms (update ms (module-id m)
                          #(assoc % :cache {:pre-ps pre-ps
                                            :ps ps
-                                           :all-deps all-deps}))]
+                                           :all-deps all-deps
+                                           :refs #{}}))
+              ms (update-refs ms (seq all-deps) (module-id m))]
           (recur mids ms ps all-deps))))))

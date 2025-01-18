@@ -188,11 +188,13 @@ example) have a `:cache` entry, but `12` doesn't.
    (-> ws :ms (get "/6.y1") :cache) =>
    {:pre-ps {:modules ["/3.y1" "/2.y1" "/1.y1"]}
     :ps {:modules ["/6.y1" "/3.y1" "/2.y1" "/1.y1"]}
-    :all-deps #{"/1.y1" "/2.y1" "/3.y1" "/6.y1"}}
+    :all-deps #{"/1.y1" "/2.y1" "/3.y1" "/6.y1"}
+    :refs #{"/6.y1"}}
    (-> ws :ms (get "/3.y1") :cache) =>
    {:all-deps #{"/1.y1" "/2.y1" "/3.y1"}
     :pre-ps {:modules ["/2.y1" "/1.y1"]}
-    :ps {:modules ["/3.y1" "/2.y1" "/1.y1"]}}
+    :ps {:modules ["/3.y1" "/2.y1" "/1.y1"]}
+    :refs #{"/3.y1" "/6.y1"}}
    (-> ws :ms (get "y1:12") :cache) => nil?))
 
 ```
@@ -202,6 +204,8 @@ The cache consists of the following keys:
 * `:ps` captures the evaluation state after the module.
 * `:all-deps` captures all the modules that contributed to `:ps`, whether
   they are recursive dependencies or not.
+* `:refs` are the reciprocal of `:all-deps` such that if `x` is in
+  `:all-deps` of `y`, `y` is in the `:refs` of `x`.
 
 In the previous example, `/2.y1` was a member of `:all-deps` for `/3.y1`
 despite not being a dependency, because `/2.y1` precedes `/3.y1` in the
