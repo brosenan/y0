@@ -226,3 +226,34 @@
               (eval-with-deps {:path "/12.y1"}))]
    (-> ws :ms (get "/12.y1") :cache :ps) =>
    {:before ["/6.y1" "/3.y1" "/2.y1" "/1.y1"] :now ["/12.y1" "/4.y1"]}))
+
+;; ### Invalidation
+
+;; When a module is updated, its cache, along with the cache of any other module
+;; that had it as a predecessor (whether it was a dependency or not), needs to
+;; be invalidated (deleted).
+
+;; The function `invalidate-module` takes a workspace and a module ID and
+;; deletes its `:cache` along with that of all its successors.
+
+;; In the following example we create a workspace and load and evaluate
+;; `/12.y1` and all its dependencies. As before, we use the `:ps` key to
+;; demonstrate the order of evaluation. Then we invalidate `/6.y1`, which is a
+;; successor of both `/12.y1` and `/4.y1` (despite not being a dependency of
+;; `/4.y1`). Then we check that only the other modules are left with a cache.
+(fact
+ (let [eval-func (fn [ps {:keys [path]}]
+                   (update ps :modules #(conj % path)))
+       ws (-> (new-workspace load-dividers eval-func)
+              (add-module {:path "/12.y1"})
+              (eval-with-deps {:path "/12.y1"}))]
+   (-> ws :ms (get "/12.y1") :cache :ps) =>
+   {:modules ["/12.y1" "/4.y1" "/6.y1" "/3.y1" "/2.y1" "/1.y1"]}
+   (set (for [[mid m] (:ms ws)
+              :when (contains? m :cache)]
+          mid)) => #{"/12.y1" "/4.y1" "/6.y1" "/3.y1" "/2.y1" "/1.y1"}
+   (let [ws (-> ws
+                (invalidate-module "/6.y1"))]
+     (set (for [[mid m] (:ms ws)
+                :when (contains? m :cache)]
+            mid)) => #{"/3.y1" "/2.y1" "/1.y1"})))

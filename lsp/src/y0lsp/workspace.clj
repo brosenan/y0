@@ -86,3 +86,14 @@
                                            :refs #{}}))
               ms (update-refs ms (seq all-deps) (module-id m))]
           (recur mids ms ps all-deps))))))
+
+(defn- remove-cache-from [ws refs]
+  (if (empty? refs)
+    ws
+    (let [[ref & refs] refs
+          ws (update-in ws [:ms ref] dissoc :cache)]
+      (recur ws refs))))
+
+(defn invalidate-module [ws mid]
+  (let [{:keys [refs]} (-> ws :ms (get mid) :cache)]
+    (remove-cache-from ws (seq refs))))
