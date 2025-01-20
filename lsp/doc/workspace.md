@@ -38,13 +38,17 @@ store](../../doc/polyglot_loader.md#module-store), and `:mg`, holding a
 _module graph_, a [loom](https://cljdoc.org/d/aysylu/loom/1.0.2/doc/readme)
 `digraph` containing the dependencies.
 
-`new-workspace` returns a new (empty) workspace.
+`new-workspace` takes two functions (`load-module` and `eval-module`) and
+returns a new (empty) workspace. In the following example we provide keywords
+instead of actual functions.
 ```clojure
 (fact
- (let [ws (new-workspace)]
+ (let [ws (new-workspace :load :eval)]
    (:ms ws) => {}
    (:mg ws) => graph?
-   (:mg ws) => directed?))
+   (:mg ws) => directed?
+   (:load-module ws) => :load
+   (:eval-module ws) => :eval))
 
 ```
 The keys in `:ms` are full paths to modules files. These same keys act as
@@ -52,11 +56,9 @@ nodes in `:mg`.
 
 ## Adding a Module
 
-`add-module` takes a workspace, a
+`add-module` takes a workspace and a
 [module](../../doc/polyglot_loader.md#module-and-language-representation),
-and a `load` function to [load the
-module](../../doc/polyglot_loader.md#loading-a-single-module), and returns
-the workspace with this module added.
+and returns the workspace with this module added.
 
 In the following example we take an empty environment and add a simple module
 to it. We will use the `identity` function as the `load` function, since we
@@ -65,8 +67,8 @@ do not add any `:deps` at this point. The result will be that the module will
 be added to the `:ms` as a value and to the `:mg` as a node.
 ```clojure
 (fact
- (let [ws (-> (new-workspace)
-              (add-module {:path "/foo.y1"} identity))]
+ (let [ws (-> (new-workspace identity identity)
+              (add-module {:path "/foo.y1"}))]
    (:ms ws) => {"/foo.y1" {:path "/foo.y1"}}
    (nodes (:mg ws)) => #{"/foo.y1"}))
 
@@ -78,8 +80,8 @@ If a module has dependencies, they are added as edges in the graph.
                       (assoc m :deps ["/bar.y1"
                                       "/baz.y1"])
                       m))
-       ws (-> (new-workspace)
-              (add-module {:path "/foo.y1"} load))]
+       ws (-> (new-workspace load identity)
+              (add-module {:path "/foo.y1"}))]
    (-> ws :ms keys set) => #{"/foo.y1" "/bar.y1" "/baz.y1"}
    (-> ws :mg nodes) => #{"/foo.y1" "/bar.y1" "/baz.y1"}
    (-> ws :mg (predecessors "/foo.y1")) => #{"/bar.y1" "/baz.y1"}))
@@ -93,12 +95,12 @@ throws an exception. The exception is not thrown because the `load` function
 is not called the second time around.
 ```clojure
 (fact
- (let [ws (-> (new-workspace)
-              (add-module {:path "/foo.y1"} identity)
-              (add-module {:path "/foo.y1"}
-                          #(throw (Exception.
-                                   (str "this should not have been called: "
-                                        %1)))))]
+ (let [ws (-> (new-workspace identity identity)
+              (add-module {:path "/foo.y1"})
+              (assoc :load-module #(throw (Exception.
+                                           (str "this should not have been called: "
+                                                %1))))
+              (add-module {:path "/foo.y1"}))]
    (:ms ws) => {"/foo.y1" {:path "/foo.y1"}}
    (-> ws :mg nodes) => #{"/foo.y1"}))
 
@@ -128,8 +130,8 @@ of this integer.
 (fact
  (load-dividers {:path "/12.y1"}) => {:path "/12.y1"
                                       :deps ["/4.y1" "/6.y1"]}
- (let [ws (-> (new-workspace)
-              (add-module {:path "/12.y1"} load-dividers))]
+ (let [ws (-> (new-workspace load-dividers identity)
+              (add-module {:path "/12.y1"}))]
    (-> ws :mg nodes) => #{"/1.y1" "/2.y1" "/3.y1" "/4.y1" "/6.y1" "/12.y1"}))
 
 ```
@@ -182,9 +184,9 @@ example) have a `:cache` entry, but `12` doesn't.
 (fact
  (let [eval-func (fn [ps {:keys [path]}]
                    (update ps :modules #(conj % path)))
-       ws (-> (new-workspace)
-              (add-module {:path "/12.y1"} load-dividers)
-              (eval-with-deps {:path "/6.y1"} eval-func))]
+       ws (-> (new-workspace load-dividers eval-func)
+              (add-module {:path "/12.y1"})
+              (eval-with-deps {:path "/6.y1"}))]
    (-> ws :ms (get "/6.y1") :cache) =>
    {:pre-ps {:modules ["/3.y1" "/2.y1" "/1.y1"]}
     :ps {:modules ["/6.y1" "/3.y1" "/2.y1" "/1.y1"]}
@@ -232,10 +234,11 @@ the first evaluation, while `12` and `4` come from the new evaluation.
                           (update ps :before #(conj % path)))
        eval-func-now (fn [ps {:keys [path]}]
                        (update ps :now #(conj % path)))
-       ws (-> (new-workspace)
-              (add-module {:path "/12.y1"} load-dividers)
-              (eval-with-deps {:path "/6.y1"} eval-func-before)
-              (eval-with-deps {:path "/12.y1"} eval-func-now))]
+       ws (-> (new-workspace load-dividers eval-func-before)
+              (add-module {:path "/12.y1"})
+              (eval-with-deps {:path "/6.y1"})
+              (assoc :eval-module eval-func-now)
+              (eval-with-deps {:path "/12.y1"}))]
    (-> ws :ms (get "/12.y1") :cache :ps) =>
    {:before ["/6.y1" "/3.y1" "/2.y1" "/1.y1"] :now ["/12.y1" "/4.y1"]}))
 ```

@@ -5,38 +5,45 @@
 
 (declare add-module)
 
-(defn new-workspace []
+(defn new-workspace [load-fn eval-fn]
   {:ms {}
-   :mg (digraph)})
+   :mg (digraph)
+   :load-module load-fn
+   :eval-module eval-fn})
 
-(defn- add-dep [{:keys [ms mg]} m1 m2]
+(defn- add-dep [{:keys [ms mg] :as ws} m1 m2]
   (let [mid1 (module-id m1)
         mid2 (module-id m2)
         mg (add-edges mg [mid1 mid2])]
-    {:ms ms :mg mg}))
+    (-> ws
+        (assoc :ms ms)
+        (assoc :mg mg))))
 
-(defn- add-deps [ws m load]
+(defn- add-deps [ws m]
   (loop [deps (:deps m)
           ws ws]
      (if (empty? deps)
        ws
        (let [[dep & deps] deps]
          (recur deps (-> ws
-                         (add-module {:path dep} load)
+                         (add-module {:path dep})
                          (add-dep {:path dep} m)))))))
 
 (defn- loaded? [{:keys [ms]} m]
   (let [mid (module-id m)]
     (contains? ms mid)))
 
-(defn add-module [ws m load]
+(defn add-module [{:keys [load-module] :as ws} m]
   (if (loaded? ws m)
     ws
-    (let [m (load m)
-          ws (add-deps ws m load)
-          mid (module-id m)]
-      {:ms (assoc (:ms ws) mid m)
-       :mg (add-nodes (:mg ws) mid)})))
+    (let [m (load-module m)
+          ws (add-deps ws m)
+          mid (module-id m)
+          ms (assoc (:ms ws) mid m)
+          mg (add-nodes (:mg ws) mid)]
+      (-> ws
+          (assoc :ms ms)
+          (assoc :mg mg)))))
 
 (defn- find-pivot [keys ms]
   (->> keys
@@ -50,7 +57,7 @@
           ms (update-in ms [dep :cache :refs] conj mid)]
       (recur ms deps mid))))
 
-(defn eval-with-deps [{:keys [mg ms] :as ws} m eval-module]
+(defn eval-with-deps [{:keys [mg ms eval-module] :as ws} m]
   (let [mid (module-id m)
         mg' (transpose mg)
         rec-deps (bf-traverse mg' mid)
