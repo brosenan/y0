@@ -97,3 +97,15 @@
 (defn invalidate-module [ws mid]
   (let [{:keys [refs]} (-> ws :ms (get mid) :cache)]
     (remove-cache-from ws (seq refs))))
+
+;; TODO: Optimize so that if no new dependencies are introduced, evaluation
+;; starts with :pre-ps.
+(defn update-module [{:keys [load-module] :as ws} mid]
+  (if (-> ws :ms (contains? mid))
+    (-> ws
+        (invalidate-module mid)
+        (update-in [:ms mid] load-module)
+        (eval-with-deps {:path mid}))
+    (-> ws
+        (add-module {:path mid})
+        (eval-with-deps {:path mid}))))

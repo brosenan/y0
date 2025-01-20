@@ -170,7 +170,7 @@
 ;; example) have a `:cache` entry, but `12` doesn't.
 (fact
  (let [eval-func (fn [ps {:keys [path]}]
-                   (update ps :modules #(conj % path)))
+                   (update ps :modules conj path))
        ws (-> (new-workspace load-dividers eval-func)
               (add-module {:path "/12.y1"})
               (eval-with-deps {:path "/6.y1"}))]
@@ -216,9 +216,9 @@
 ;; the first evaluation, while `12` and `4` come from the new evaluation.
 (fact
  (let [eval-func-before (fn [ps {:keys [path]}]
-                          (update ps :before #(conj % path)))
+                          (update ps :before conj path))
        eval-func-now (fn [ps {:keys [path]}]
-                       (update ps :now #(conj % path)))
+                       (update ps :now conj path))
        ws (-> (new-workspace load-dividers eval-func-before)
               (add-module {:path "/12.y1"})
               (eval-with-deps {:path "/6.y1"})
@@ -243,7 +243,7 @@
 ;; `/4.y1`). Then we check that only the other modules are left with a cache.
 (fact
  (let [eval-func (fn [ps {:keys [path]}]
-                   (update ps :modules #(conj % path)))
+                   (update ps :modules conj path))
        ws (-> (new-workspace load-dividers eval-func)
               (add-module {:path "/12.y1"})
               (eval-with-deps {:path "/12.y1"}))]
@@ -257,3 +257,69 @@
      (set (for [[mid m] (:ms ws)
                 :when (contains? m :cache)]
             mid)) => #{"/3.y1" "/2.y1" "/1.y1"})))
+
+;; ## Module Updates
+
+;; A language server can register to notifications on file updates. When a
+;; notification is received, the server is expected to re-read the updated file
+;; and update its internal state to account for the new contents. This includes
+;; both the state of the module itself as well as the status of all dependent
+;; modules, which may need to be reevaluated.
+
+;; `update-module` takes a workspace and a module ID (absolute path) as
+;; parameters and returns the updated workspace.
+
+;; If the module does not pre-exist in the workspace, it is added and evaluated.
+(fact
+ (let [eval-func (fn [ps {:keys [path]}]
+                   (update ps :modules conj path))
+       ws (-> (new-workspace load-dividers eval-func)
+              (update-module "/12.y1"))]
+   (-> ws :ms keys set) => #{"/12.y1" "/6.y1" "/4.y1" "/3.y1" "/2.y1" "/1.y1"}
+   (-> ws :ms (get "/12.y1") :cache :ps)
+   => {:modules ["/12.y1" "/4.y1" "/6.y1" "/3.y1" "/2.y1" "/1.y1"]}))
+
+;; If the module already exists, it is reloaded and reevaluated, but its
+;; dependencies may not be, given that they are already loaded.
+
+;; We demonstrate this by updating module `/12.y1` twice, first with one set of
+;; load and evaluate functions, and then with another set. The second load
+;; function throws an exception if a module other than `/12.y1` is loaded. The
+;; second evaluate function writes to a different key in the `:ps`.
+(fact
+ (let [eval-func (fn [ps {:keys [path]}]
+                   (update ps :old conj path))
+       ws (-> (new-workspace load-dividers eval-func)
+              (update-module "/12.y1")
+              (assoc :load-module #(if (= (:path %) "/12.y1")
+                                     {:path "/12.y1"
+                                      :dep ["/6.y1"]
+                                      :statements ["This is new"]}
+                                     (throw
+                                      (Exception.
+                                       (str "Trying to load wrong module "
+                                            %)))))
+              (assoc :eval-module (fn [ps {:keys [path]}]
+                                    (when (not= path "/12.y1")
+                                      (throw
+                                       (Exception.
+                                        (str "Trying to eval wrong module "
+                                             path))))
+                                    (update ps :new conj path)))
+              (update-module "/12.y1"))]
+   (-> ws :ms (get "/12.y1") :statements) => ["This is new"]
+   (-> ws :ms (get "/12.y1") :cache :ps) =>
+   {:old ["/4.y1" "/6.y1" "/3.y1" "/2.y1" "/1.y1"]
+    :new ["/12.y1"]}))
+
+;; If the updated module has `:refs` (i.e., it was used when evaluating some
+;; other module), the chaches of all modules referring it is invalidated.
+(fact
+ (let [eval-func (fn [ps {:keys [path]}]
+                   (update ps :old conj path))
+       ws (-> (new-workspace load-dividers eval-func)
+              (update-module "/12.y1")
+              (update-module "/6.y1"))]
+   ;; /4.y1 comes before /6.y1 in the sort order despite not being a dependency.
+   (-> ws :ms (get "/4.y1") (contains? :cache)) => false
+   (-> ws :ms (get "/3.y1") (contains? :cache)) => true))
