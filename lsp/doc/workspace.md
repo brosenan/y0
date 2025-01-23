@@ -314,7 +314,7 @@ second evaluate function writes to a different key in the `:ps`.
               (update-module "/12.y1")
               (assoc :load-module #(if (= (:path %) "/12.y1")
                                      {:path "/12.y1"
-                                      :dep ["/6.y1"]
+                                      :deps ["/6.y1" "/4.y1"]
                                       :statements ["This is new"]}
                                      (throw
                                       (Exception.
@@ -346,5 +346,33 @@ other module), the chaches of all modules referring it is invalidated.
    ;; /4.y1 comes before /6.y1 in the sort order despite not being a dependency.
    (-> ws :ms (get "/4.y1") (contains? :cache)) => false
    (-> ws :ms (get "/3.y1") (contains? :cache)) => true))
+
+```
+### Graph Updates
+
+When a module is updated, it is possible that its dependencies change. The
+change in depdendencies should be reflected in the graph.
+
+In the following example we update module `/12.y1` twice. First with the
+regular `:load-module` function, and then with a function that updates the
+dependencies to `/6.y1`, which is already a dependency and `/10.y1`, which is
+new. We show that the predecessors of node `/12.y1` in the graph are now
+`/6.y1` and `/10.y1`, and that `/5.y1`, a dependency of `/10.y1`, is also
+added to the workspace.
+```clojure
+(fact
+ (let [eval-func (fn [ps {:keys [path]}]
+                   (update ps :modules conj path))
+       ws (-> (new-workspace load-dividers eval-func)
+              (update-module "/12.y1")
+              (assoc :load-module #(if (= (:path %) "/12.y1")
+                                     {:path "/12.y1"
+                                      :deps ["/6.y1" "/10.y1"]
+                                      :statements ["This is new"]}
+                                     (load-dividers %)))
+              (update-module "/12.y1"))]
+   (-> ws :mg (predecessors "/12.y1")) => #{"/6.y1" "/10.y1"}
+   (-> ws :mg (predecessors "/10.y1")) => #{"/2.y1" "/5.y1"}
+   (-> ws :ms (contains? "/5.y1")) => true))
 ```
 
