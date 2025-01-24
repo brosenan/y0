@@ -192,19 +192,22 @@ nodes in between them.
 ## Indexing
 
 To provide quick mapping from a source position to a tree node, we would like
-to build an index for each parse-tree. The index is a map from line number
-(zero-based) to a sequence of nodes that are contained in that line. These
-nodes are disjoint and are ordered by their location in the source.
+to build an index for each parse-tree. The index is a map from line number to
+a sequence of nodes that are contained in that line. These nodes are disjoint
+and are ordered by their location in the source.
 
 As a first step towards a full index, the function `index-single-node` takes
 a single parse-tree node with location information and returns a partial
 index, just for this node.
 ```clojure
 (fact
- (let [[[node]] (pos-in-tree "(ns foo)\n(this\n(is the)\nnode)$")]
-   (index-single-node node) => '{1 [x/this]
-                                 2 [[x/is x/the]]
-                                 3 [x/node]}))
+ (let [[[node]] (pos-in-tree (str "(ns foo)\n"
+                                  "(this\n"
+                                  "(is the)\n"
+                                  "node)$"))]
+   (index-single-node node) => '{2 [x/this]
+                                 3 [[x/is x/the]]
+                                 4 [x/node]}))
 
 ```
 To index a complete file, `index-nodes` goes through a sequence of nodes,
@@ -218,11 +221,45 @@ running `index-single-node` on each and merging the results.
                                  "this\n"
                                  "(is the)\n"
                                  "second node)$"))]
-   (index-nodes nodes) => '{1 [x/this]
-                            2 [[x/is x/the]]
-                            3 [x/first x/node x/and]
-                            4 [x/this]
-                            5 [[x/is x/the]]
-                            6 [x/second x/node]}))
+   (index-nodes nodes) => '{2 [x/this]
+                            3 [[x/is x/the]]
+                            4 [x/first x/node x/and]
+                            5 [x/this]
+                            6 [[x/is x/the]]
+                            7 [x/second x/node]}))
+
+```
+## Querying Node for Location
+
+Now that we can build an index, our next step would be to use this index to
+find a node in a tree based on its source location.
+
+`find-node` takes an index and a position and returns a single node, found in
+that position.
+```clojure
+(fact
+ (let [[nodes pos] (pos-in-tree (str "(ns foo)\n"
+                                     "(this\n"
+                                     "(is the)\n"
+                                     "first node) (and\n"
+                                     "this\n"
+                                     "(is $the)\n"
+                                     "second node)"))
+       idx (index-nodes nodes)]
+   (find-node idx pos) => 'x/the))
+
+```
+If the position is not on any node, `nil` is returned.
+```clojure
+(fact
+ (let [[nodes pos] (pos-in-tree (str "(ns foo)\n"
+                                     "(this\n"
+                                     "(is the)\n"
+                                     "first node) (and\n"
+                                     "this\n"
+                                     "(is the)\n"
+                                     "second node)$"))
+       idx (index-nodes nodes)]
+   (find-node idx pos) => nil))
 ```
 

@@ -70,7 +70,7 @@
         idx
         (let [start (encode-file-pos row 0)
               end (encode-file-pos (inc row) 0)
-              idx (assoc idx (dec row) (nodes-within-range [node] start end))
+              idx (assoc idx row (nodes-within-range [node] start end))
               row (inc row)]
           (recur row idx))))))
 
@@ -83,3 +83,8 @@
             idx-single (index-single-node node)
             idx (merge-with concat idx idx-single)]
         (recur nodes idx)))))
+
+(defn find-node [idx pos]
+  (let [[row _col] (decode-file-pos pos)
+        nodes (get idx row)]
+    (find-sub-node-at-pos nodes pos)))
