@@ -76,10 +76,10 @@ range defined by these markers.
  ['[[x/this x/is x/the x/position]] 2000002 2000006])
 
 ```
-## Locations and Nodes
+## Positions and Nodes
 
 Before we can index and query nodes by location, we need to develop tools to
-relate nodes and locations.
+relate nodes and code positions.
 
 Our convention for code positions and locations is described
 [elsewhere](../../doc/location_util.md).
@@ -130,5 +130,63 @@ If the position is outside the range of the node-list, `nil` is returned.
 (fact
  (let [[nodes pos] (pos-in-tree "(ns foo)\n(do\n (:this is)\n (that is not))$")]
    (find-sub-node-at-pos nodes pos) => nil))
+
+```
+### Finding Nodes for Ranges
+
+Given a range, with a start and end position, we would like to find a
+sequence of nodes in the tree that make up this range.
+
+This sequence of nodes comes from different levels in the tree, as we try to
+find the nodes that most closely align with the region.
+
+We build this functionality in steps. First, we introduce `nodes-after-pos`,
+which takes a sequence of nodes and a position and returns another list,
+which filters out nodes that are not after the position, and replaces
+a compound node at the beginning with its sub-nodes that come after the
+position. The last part repeats until we cannot break down the node anymore.
+```clojure
+(fact
+ (let [[nodes pos] (pos-in-tree "(ns foo) a b c d $e f g")]
+   (nodes-after-pos nodes pos) => '[x/e x/f x/g])
+ (let [[nodes pos] (pos-in-tree "(ns foo) a (b (c d $e) f) g")]
+   (nodes-after-pos nodes pos) => '[x/e x/f x/g])
+ (let [[nodes pos] (pos-in-tree "(ns foo) a (b (c d e$) f) g")]
+   (nodes-after-pos nodes pos) => '[x/f x/g])
+ (let [[nodes pos] (pos-in-tree "(ns foo) a (b (c :d $e) f) g")]
+   (nodes-after-pos nodes pos) => '[x/e x/f x/g])
+ (let [[nodes pos] (pos-in-tree "(ns foo) a (b (c d e$e) f) g")]
+   (nodes-after-pos nodes pos) => '[x/ee x/f x/g])
+ (let [[nodes pos] (pos-in-tree "(ns foo) a (b $ (c d e) f) g")]
+   (nodes-after-pos nodes pos) => '[[x/c x/d x/e] x/f x/g]))
+
+```
+Similarly, `nodes-before-pos` returns a list of nodes that come strictly
+_before_ the given position.
+```clojure
+(fact
+ (let [[nodes pos] (pos-in-tree "(ns foo) a b c d $e f g")]
+   (nodes-before-pos nodes pos) => '[x/a x/b x/c x/d])
+ (let [[nodes pos] (pos-in-tree "(ns foo) a (b c (d $e f)) g")]
+   (nodes-before-pos nodes pos) => '[x/a x/b x/c x/d])
+ (let [[nodes pos] (pos-in-tree "(ns foo) a (b c (d $e :f)) g")]
+   (nodes-before-pos nodes pos) => '[x/a x/b x/c x/d])
+ (let [[nodes pos] (pos-in-tree "(ns foo) a (b c (d e$e :f)) g")]
+   (nodes-before-pos nodes pos) => '[x/a x/b x/c x/d])
+ (let [[nodes pos] (pos-in-tree "(ns foo) a (b c (d e f)$) g")]
+   (nodes-before-pos nodes pos) => '[x/a x/b x/c [x/d x/e x/f]]))
+
+```
+We now combine the two functions to define `nodes-within-range`, which takes
+a sequence of nodes and a start and end positions, and returns a sequence of
+nodes in between them.
+```clojure
+(fact
+ (let [[nodes start end] (range-in-tree "(ns foo) a (b <<c (d e>> f)) g")]
+   (nodes-within-range nodes start end) => '[x/c x/d x/e])
+ (let [[nodes start end] (range-in-tree "(ns foo) a <<(b c (d e f)>>) g")]
+   (nodes-within-range nodes start end) => '[x/b x/c [x/d x/e x/f]])
+ (let [[nodes start end] (range-in-tree "(ns foo) a (b c (d <<e f)) g>>")]
+   (nodes-within-range nodes start end) => '[x/e x/f x/g]))
 ```
 
