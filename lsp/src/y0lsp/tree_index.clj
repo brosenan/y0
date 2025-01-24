@@ -64,15 +64,11 @@
   (let [{:keys [start end]} (meta node)
         [start-row _] (decode-file-pos start)
         [end-row _] (decode-file-pos end)]
-    (loop [row start-row
-           idx idx]
-      (if (> row end-row)
-        idx
-        (let [start (encode-file-pos row 0)
-              end (encode-file-pos (inc row) 0)
-              idx (update idx row concat (nodes-within-range [node] start end))
-              row (inc row)]
-          (recur row idx))))))
+    (reduce (fn [idx row]
+              (let [start (encode-file-pos row 0)
+                    end (encode-file-pos (inc row) 0)]
+                (update idx row concat (nodes-within-range [node] start end))))
+            idx (range start-row (inc end-row)))))
 
 (defn index-nodes [nodes]
   (reduce index-single-node {} nodes))
