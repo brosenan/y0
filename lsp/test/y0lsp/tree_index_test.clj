@@ -34,8 +34,7 @@
         line (->> before (filter #(= % (char 10))) count)]
     [(str before after) (+ 1000000
                            (* line 1000000)
-                           (count before)
-                           (- 0 (.lastIndexOf before "\n")))]))
+                           (- (count before) (.lastIndexOf before "\n")))]))
 
 (fact
  (extract-marker "abc$defg" "$") => ["abcdefg" 1000004]
@@ -167,3 +166,36 @@
    (nodes-within-range nodes start end) => '[x/b x/c [x/d x/e x/f]])
  (let [[nodes start end] (range-in-tree "(ns foo) a (b c (d <<e f)) g>>")]
    (nodes-within-range nodes start end) => '[x/e x/f x/g]))
+
+;; ## Indexing
+
+;; To provide quick mapping from a source position to a tree node, we would like
+;; to build an index for each parse-tree. The index is a map from line number
+;; (zero-based) to a sequence of nodes that are contained in that line. These
+;; nodes are disjoint and are ordered by their location in the source.
+
+;; As a first step towards a full index, the function `index-single-node` takes
+;; a single parse-tree node with location information and returns a partial
+;; index, just for this node.
+(fact
+ (let [[[node]] (pos-in-tree "(ns foo)\n(this\n(is the)\nnode)$")]
+   (index-single-node node) => '{1 [x/this]
+                                 2 [[x/is x/the]]
+                                 3 [x/node]}))
+
+;; To index a complete file, `index-nodes` goes through a sequence of nodes,
+;; running `index-single-node` on each and merging the results.
+(fact
+ (let [[nodes] (pos-in-tree (str "(ns foo)\n"
+                                 "(this\n"
+                                 "(is the)\n"
+                                 "first node) (and\n"
+                                 "this\n"
+                                 "(is the)\n"
+                                 "second node)$"))]
+   (index-nodes nodes) => '{1 [x/this]
+                            2 [[x/is x/the]]
+                            3 [x/first x/node x/and]
+                            4 [x/this]
+                            5 [[x/is x/the]]
+                            6 [x/second x/node]}))

@@ -1,4 +1,6 @@
-(ns y0lsp.tree-index)
+(ns y0lsp.tree-index 
+  (:require
+   [y0.location-util :refer [decode-file-pos encode-file-pos]]))
 
 (defn relate-node-to-pos [node pos]
   (let [{:keys [start end]} (meta node)]
@@ -57,3 +59,27 @@
   (-> nodes
       (nodes-after-pos start)
       (nodes-before-pos end)))
+
+(defn index-single-node [node]
+  (let [{:keys [start end]} (meta node)
+        [start-row _] (decode-file-pos start)
+        [end-row _] (decode-file-pos end)]
+    (loop [row start-row
+           idx {}]
+      (if (> row end-row)
+        idx
+        (let [start (encode-file-pos row 0)
+              end (encode-file-pos (inc row) 0)
+              idx (assoc idx (dec row) (nodes-within-range [node] start end))
+              row (inc row)]
+          (recur row idx))))))
+
+(defn index-nodes [nodes]
+  (loop [nodes nodes
+         idx {}]
+    (if (empty? nodes)
+      idx
+      (let [[node & nodes] nodes
+            idx-single (index-single-node node)
+            idx (merge-with concat idx idx-single)]
+        (recur nodes idx)))))
