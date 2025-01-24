@@ -1,7 +1,11 @@
 ```clojure
 (ns y0lsp.tree-index-test
-  (:require [midje.sweet :refer [fact =>]]
-            [y0lsp.tree-index :refer :all]))
+  (:require
+   [clojure.string :as str]
+   [midje.sweet :refer [=> fact]]
+   [y0.edn-parser :refer [edn-parser]]
+   [y0.status :refer [unwrap-status]]
+   [y0lsp.tree-index :refer :all]))
 
 ```
 # Tree Index
@@ -15,6 +19,63 @@ index_, which is a data structure which maps lines in a source file to tree
 nodes that overlap with that line. We define functions for constructing the
 index and for querying it.
 
+## Testing Utils
+
+In order to easily write tests / examples for this module, we introduce
+utilities for creating parse-trees easily and marking positions or ranges
+within them.
+
+As a first step in their implementation, we define `extract-marker`, which
+takes two strings: `text` and `marker`, with the former intended to contain
+the latter exactly once, and returns a vector consisting of `text` with the
+`marker` removed and the position of `marker` within `text`.
+```clojure
+(defn- extract-marker [text marker]
+  (let [index (str/index-of text marker)
+        before (subs text 0 index)
+        after (subs text (+ index (count marker)))
+        line (->> before (filter #(= % (char 10))) count)]
+    [(str before after) (+ 1000000
+                           (* line 1000000)
+                           (count before)
+                           (- 0 (.lastIndexOf before "\n")))]))
+
+(fact
+ (extract-marker "abc$defg" "$") => ["abcdefg" 1000004]
+ (extract-marker "ab\nc$de\nfg" "$") => ["ab\ncde\nfg" 2000002])
+
+```
+`pos-in-tree` takes a string and returns a vector containing the
+[edn](../../doc/edn-parser.md) parse-tree of this text and the position of
+the `$` marker within that text (the `$` is removed before parsing).
+```clojure
+(defn- pos-in-tree [text]
+  (let [[text pos] (extract-marker text "$")
+        parser (edn-parser {} nil [])
+        [tree _deps] (unwrap-status (parser "x" text (constantly {:ok "x"})))] 
+    [tree pos]))
+
+(fact
+ (pos-in-tree "(ns foo)\n[this $is the position]") =>
+ ['[[x/this x/is x/the x/position]] 2000007])
+
+```
+`range-in-tree` takes a string that contains the markers `<<` and `>>` and
+returns a vector containing a parse-tree and a start and end position of the
+range defined by these markers.
+```clojure
+(defn- range-in-tree [text]
+  (let [[text start] (extract-marker text "<<")
+        [text end] (extract-marker text ">>")
+        parser (edn-parser {} nil [])
+        [tree _deps] (unwrap-status (parser "x" text (constantly {:ok "x"})))]
+    [tree start end]))
+
+(fact
+ (range-in-tree "(ns foo)\n[<<this>> is the position]") =>
+ ['[[x/this x/is x/the x/position]] 2000002 2000006])
+
+```
 ## Locations and Nodes
 
 Before we can index and query nodes by location, we need to develop tools to
@@ -45,4 +106,29 @@ position.
 Note: in the above example, recall that the code location of a node is
 `[:start, :end)`, i.e., `:start` is part of the node, `:end` is the first
 position after the node.
+
+If the node does not have location information, `:dontknow` is returned.
+```clojure
+(fact
+ (relate-node-to-pos
+  'foo
+  1000004) => :dontknow)
+
+```
+`find-sub-node-at-pos` takes a list of nodes and a position and returns the
+innermost node that comtains the position.
+```clojure
+(fact
+ (let [[nodes pos] (pos-in-tree "(ns foo)\n(do\n (:this $is)\n (that is not))")]
+   (find-sub-node-at-pos nodes pos) => 'x/is)
+ (let [[nodes pos] (pos-in-tree "(ns foo)\n(do\n $(:this is)\n (that is not))")]
+   (find-sub-node-at-pos nodes pos) => '(:this x/is)))
+
+```
+If the position is outside the range of the node-list, `nil` is returned.
+```clojure
+(fact
+ (let [[nodes pos] (pos-in-tree "(ns foo)\n(do\n (:this is)\n (that is not))$")]
+   (find-sub-node-at-pos nodes pos) => nil))
+```
 

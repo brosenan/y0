@@ -97,3 +97,21 @@
 ;; `[:start, :end)`, i.e., `:start` is part of the node, `:end` is the first
 ;; position after the node.
 
+;; If the node does not have location information, `:dontknow` is returned.
+(fact
+ (relate-node-to-pos
+  'foo
+  1000004) => :dontknow)
+
+;; `find-sub-node-at-pos` takes a list of nodes and a position and returns the
+;; innermost node that comtains the position.
+(fact
+ (let [[nodes pos] (pos-in-tree "(ns foo)\n(do\n (:this $is)\n (that is not))")]
+   (find-sub-node-at-pos nodes pos) => 'x/is)
+ (let [[nodes pos] (pos-in-tree "(ns foo)\n(do\n $(:this is)\n (that is not))")]
+   (find-sub-node-at-pos nodes pos) => '(:this x/is)))
+
+;; If the position is outside the range of the node-list, `nil` is returned.
+(fact
+ (let [[nodes pos] (pos-in-tree "(ns foo)\n(do\n (:this is)\n (that is not))$")]
+   (find-sub-node-at-pos nodes pos) => nil))
