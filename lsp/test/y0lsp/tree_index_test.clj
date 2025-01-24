@@ -175,16 +175,35 @@
 ;; and are ordered by their location in the source.
 
 ;; As a first step towards a full index, the function `index-single-node` takes
-;; a single parse-tree node with location information and returns a partial
-;; index, just for this node.
+;; an initial index and a single parse-tree node with location information and
+;; returns a partial index, just for this node.
 (fact
  (let [[[node]] (pos-in-tree (str "(ns foo)\n"
                                   "(this\n"
                                   "(is the)\n"
                                   "node)$"))]
-   (index-single-node node) => '{2 [x/this]
-                                 3 [[x/is x/the]]
-                                 4 [x/node]}))
+   (index-single-node {} node) => '{2 [x/this]
+                                    3 [[x/is x/the]]
+                                    4 [x/node]}))
+
+;; If a line is alreay covered by the initial map, the values are concatenated.
+(fact
+ (let [[[node1 node2]] (pos-in-tree (str "(ns foo)\n"
+                                         "(this\n"
+                                         "(is the)\n"
+                                         "first node) (and\n"
+                                         "this\n"
+                                         "(is the)\n"
+                                         "second node)$"))
+       idx (-> {}
+               (index-single-node node1)
+               (index-single-node node2))]
+   idx => '{2 [x/this]
+            3 [[x/is x/the]]
+            4 [x/first x/node x/and]
+            5 [x/this]
+            6 [[x/is x/the]]
+            7 [x/second x/node]}))
 
 ;; To index a complete file, `index-nodes` goes through a sequence of nodes,
 ;; running `index-single-node` on each and merging the results.

@@ -60,29 +60,22 @@
       (nodes-after-pos start)
       (nodes-before-pos end)))
 
-(defn index-single-node [node]
+(defn index-single-node [idx node]
   (let [{:keys [start end]} (meta node)
         [start-row _] (decode-file-pos start)
         [end-row _] (decode-file-pos end)]
     (loop [row start-row
-           idx {}]
+           idx idx]
       (if (> row end-row)
         idx
         (let [start (encode-file-pos row 0)
               end (encode-file-pos (inc row) 0)
-              idx (assoc idx row (nodes-within-range [node] start end))
+              idx (update idx row concat (nodes-within-range [node] start end))
               row (inc row)]
           (recur row idx))))))
 
 (defn index-nodes [nodes]
-  (loop [nodes nodes
-         idx {}]
-    (if (empty? nodes)
-      idx
-      (let [[node & nodes] nodes
-            idx-single (index-single-node node)
-            idx (merge-with concat idx idx-single)]
-        (recur nodes idx)))))
+  (reduce index-single-node {} nodes))
 
 (defn find-node [idx pos]
   (let [[row _col] (decode-file-pos pos)
