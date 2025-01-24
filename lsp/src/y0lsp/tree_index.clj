@@ -66,8 +66,9 @@
         [end-row _] (decode-file-pos end)]
     (reduce (fn [idx row]
               (let [start (encode-file-pos row 0)
-                    end (encode-file-pos (inc row) 0)]
-                (update idx row concat (nodes-within-range [node] start end))))
+                    end (encode-file-pos (inc row) 0)
+                    nodes (nodes-within-range [node] start end)]
+                (update idx row concat nodes)))
             idx (range start-row (inc end-row)))))
 
 (defn index-nodes [nodes]
