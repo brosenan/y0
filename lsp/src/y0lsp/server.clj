@@ -3,7 +3,7 @@
             [lsp4clj.coercer :as coercer]
             [clojure.spec.alpha :as s]))
 
-(defn- handle-request [{:keys [req-handlers err-atom] :as ctx} key req response-spec]
+(defn handle-request [{:keys [req-handlers err-atom] :as ctx} key req response-spec]
   (let [handler (get req-handlers key)
         result (handler ctx req)]
     (let [explanation (s/explain-data response-spec result)]
