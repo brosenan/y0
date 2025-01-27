@@ -3,18 +3,22 @@
             [lsp4clj.coercer :as coercer]
             [clojure.spec.alpha :as s]))
 
+(defn- check-conformance [spec val err-atom code msg]
+  (let [explanation (s/explain-data spec val)]
+    (if (nil? explanation)
+      val
+      (let [err {:code code
+                 :message msg
+                 :data explanation}]
+        (when err-atom
+          (reset! err-atom err))
+        {:error err}))))
+
 (defn handle-request [{:keys [req-handlers err-atom] :as ctx} key req response-spec]
   (let [handler (get req-handlers key)
         result (handler ctx req)]
-    (let [explanation (s/explain-data response-spec result)]
-      (if (nil? explanation)
-        result
-        (let [err {:code 1000
-                   :message "Request output does not conform to the spec"
-                   :data explanation}]
-          (when err-atom
-            (reset! err-atom err))
-          {:error err})))))
+    (check-conformance response-spec result err-atom 1000
+                       "Request output does not conform to the spec")))
 
 (defmacro register-req [req key response-spec]
   (let [ctx-var (gensym "ctx")
@@ -22,6 +26,14 @@
         dontcare-var (gensym "_")]
     `(defmethod server/receive-request ~req [~dontcare-var ~ctx-var ~req-var]
        (handle-request ~ctx-var ~key ~req-var ~response-spec))))
+
+(defmethod server/receive-request "initialize"
+  [_ 
+   {:keys [server-capabilities client-capabilities err-atom]} 
+   req]
+  (reset! client-capabilities (:client-capabilities req))
+  {:server-capabilities server-capabilities
+   :server-info {:name "y0lsp"}})
 
 (register-req "textDocument/declaration" :text-doc-declaration
               (s/or :location ::coercer/location
