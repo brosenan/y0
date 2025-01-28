@@ -16,6 +16,26 @@
 ;; protocol, including initialization, requests and notifications. Addons can
 ;; then be added to support individual LSP features.
 
+;; ## Testing Helpers
+
+;; Before we dive into the server functionality, let us first introduce some
+;; testing helpers that will make testing a server easier.
+
+;; The function `test-server` takes a context and creates a `lsp4clj`
+;; `chan-server`. It returns a function that allows a test to interact with the
+;; server and to shut it down.
+(defn- test-server [ctx]
+  (let [input-ch (async/chan 3)
+        output-ch (async/chan 3)
+        server (server/chan-server {:output-ch output-ch
+                                    :input-ch input-ch})]
+    (server/start server ctx)
+    {:send-req (fn [msg req]
+                 (async/put! input-ch
+                             (lsp.requests/request 1 msg req))
+                 (-> output-ch async/<!! :result))
+     :shutdown (fn [] (server/shutdown server))}))
+
 ;; ## Initialization
 
 ;; An LSP connection starts with an [initialization
@@ -37,20 +57,13 @@
 (fact
  (let [ctx {:server-capabilities {:workspace {:apply-edit true}}
             :client-capabilities (atom nil)}
-       input-ch (async/chan 3)
-       output-ch (async/chan 3)
-       server (server/chan-server {:output-ch output-ch
-                                   :input-ch input-ch})]
-   (async/put! input-ch
-               (lsp.requests/request 1 "initialize"
-                                     {:client-capabilities
-                                      {:client :capabilities}}))
-   (server/start server ctx)
-   (-> output-ch async/<!! :result) =>
+       {:keys [send-req shutdown]} (test-server ctx)]
+   (send-req "initialize" {:client-capabilities
+                           {:client :capabilities}}) =>
    {:server-capabilities {:workspace {:apply-edit true}}
     :server-info {:name "y0lsp"}}
    (-> ctx :client-capabilities deref) => {:client :capabilities}
-   (server/shutdown server)))
+   (shutdown)))
 
 ;; ## Handling Requests
 
@@ -77,14 +90,9 @@
                :range {:start {:line 0 :character 12}
                        :end {:line 2 :character 0}}}
        ctx {:req-handlers {:testing-foo (constantly result)}}
-       input-ch (async/chan 3)
-       output-ch (async/chan 3)
-       server (server/chan-server {:output-ch output-ch
-                                   :input-ch input-ch})]
-   (async/put! input-ch (lsp.requests/request 1 "testing/foo" {}))
-   (server/start server ctx)
-   (-> output-ch async/<!! :result) => result
-   (server/shutdown server)))
+       {:keys [send-req shutdown]} (test-server ctx)]
+   (send-req "testing/foo" {}) => result
+   (shutdown)))
 
 ;; The result must conform to the spec given to the `register-req` macro.
 (fact
@@ -94,16 +102,11 @@
        err-atom (atom nil)
        ctx {:req-handlers {:testing-foo (constantly result)}
             :err-atom err-atom}
-       input-ch (async/chan 3)
-       output-ch (async/chan 3)
-       server (server/chan-server {:output-ch output-ch
-                                   :input-ch input-ch})]
-   (async/put! input-ch (lsp.requests/request 1 "testing/foo" {}))
-   (server/start server ctx)
-   (-> output-ch async/<!! :result) => nil
+       {:keys [send-req shutdown]} (test-server ctx)]
+   (send-req "testing/foo" {}) => nil
    (-> @err-atom :message) =>
    "Request output does not conform to the spec"
-   (server/shutdown server)))
+   (shutdown)))
 
 ;; In the above example, we add `:err-atom` to the context as a way to get the
 ;; error object out of the server. In real life, this error will be logged.
@@ -122,13 +125,8 @@
                                           (-> req
                                               (assoc :uri uri-override)))}
             :uri-override "file:///bar.baz"}
-       input-ch (async/chan 3)
-       output-ch (async/chan 3)
-       server (server/chan-server {:output-ch output-ch
-                                   :input-ch input-ch})]
-   (async/put! input-ch (lsp.requests/request 1 "testing/foo" request))
-   (server/start server ctx)
-   (-> output-ch async/<!! :result) => {:uri "file:///bar.baz"
+       {:keys [send-req shutdown]} (test-server ctx)]
+   (send-req "testing/foo" request) => {:uri "file:///bar.baz"
                                         :range {:start {:line 0 :character 12}
                                                 :end {:line 2 :character 0}}}
-   (server/shutdown server)))
+   (shutdown)))
