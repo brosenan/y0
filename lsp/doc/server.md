@@ -37,6 +37,9 @@ server and to shut it down.
                  (async/put! input-ch
                              (lsp.requests/request 1 msg req))
                  (-> output-ch async/<!! :result))
+     :notify (fn [msg notif]
+               (async/put! input-ch
+                           (lsp.requests/notification msg notif)))
      :shutdown (fn [] (server/shutdown server))}))
 
 ```
@@ -143,5 +146,38 @@ the request but overrides the `:uri` from the context.
                                         :range {:start {:line 0 :character 12}
                                                 :end {:line 2 :character 0}}}
    (shutdown)))
+
+```
+## Handling Notifications
+
+As part of the protocol, the client can send notifications to the server.
+
+To handle a notification, the notification needs to be registered using the
+`register-notification` macro, assigning a keyword to it.
+```clojure
+(register-notification "test/didFoo" :test-did-foo)
+
+```
+Then, in the context, handlers for this notifications are stored under
+`:notification-handlers` and the keyword.
+
+In the following example we create a context that contains two handlers for
+the `:test-did-foo` notification, each updating a different atom with the
+notification contents. We also add these atoms to the context. Then we send
+the notification and check that its contents is indeed stored in these atoms.
+```clojure
+(fact
+ (let [ctx {:notification-handlers
+            {:test-did-foo [(fn [ctx notif]
+                              (reset! (:notify1 ctx) notif))
+                            (fn [ctx notif]
+                              (reset! (:notify2 ctx) notif))]}
+            :notify1 (atom nil)
+            :notify2 (atom nil)}
+       {:keys [notify shutdown]} (test-server ctx)]
+   (notify "test/didFoo" {:foo :bar})
+   (shutdown)
+   (-> ctx :notify1 deref) => {:foo :bar}
+   (-> ctx :notify2 deref) => {:foo :bar}))
 ```
 

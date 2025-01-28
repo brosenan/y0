@@ -29,12 +29,24 @@
 
 (defmethod server/receive-request "initialize"
   [_ 
-   {:keys [server-capabilities client-capabilities err-atom]} 
+   {:keys [server-capabilities client-capabilities]} 
    req]
   (reset! client-capabilities (:client-capabilities req))
   {:server-capabilities server-capabilities
    :server-info {:name "y0lsp"}})
 
+(defn handle-notification [{:keys [notification-handlers] :as ctx} key notif]
+  (doseq [f (get notification-handlers key)]
+    (f ctx notif)))
+
+(defmacro register-notification [name key]
+  (let [ctx-var (gensym "ctx")
+        notif-var (gensym "notif")
+        dontcare-var (gensym "_")]
+    `(defmethod server/receive-notification ~name [~dontcare-var ~ctx-var ~notif-var]
+       (handle-notification ~ctx-var ~key ~notif-var))))
+
 (register-req "textDocument/declaration" :text-doc-declaration
               (s/or :location ::coercer/location
                     :locations ::coercer/locations))
+
