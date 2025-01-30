@@ -11,6 +11,7 @@
                  [aysylu/loom "1.0.2"]
                  [hiccup "2.0.0-RC3"]
                  [com.github.clojure-lsp/lsp4clj "1.11.0"]]
-  :profiles {:dev {:dependencies [[midje "1.10.10"]]}}
+  :profiles {:dev {:dependencies [[midje "1.10.10"]]
+                   :resource-paths ["../" "../y0_test/"]}}
   :plugins [[lein-midje "3.2.2"]]
   :source-paths ["src" "../src"])
