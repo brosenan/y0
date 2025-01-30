@@ -6,19 +6,35 @@
 
 ;; # The Initializer
 
-;; The initializer is a mechanism that bootstraps the server context. It starts
+;; The initializer is a mechanism that bootstraps the server. It starts
 ;; with a [language config](../../doc/config.md) and ends up with a running
 ;; server, ready to take client requests.
 
 ;; The initializer uses _addons_ to customize its behavior (and consequently,
-;; the behavior of the launguage server). These come in two flavors:
+;; the behavior of the launguage server). Addons are functions from the server
+;; context to itself, each making a different change (typically, adding things).
 
-;; 1. _Config addons_, which add options to the language config and is a way to
-;;    introduce new types of parsers, resolvers etc, and
-;; 2. _Feature addons_, which add support for new features (e.g., handle new
-;;    types of requests or notifications).
+;; The process goes roughly as follows:
 
-;; We give a bottom-up description of the initializer in the following sections.
+;; 1. The context is initialized with the default [config
+;;    spec](../../doc/config.md#generic-mechanism) assigned to the key
+;;    `:config-spec`.
+;; 2. Addons are applied one by one. Some addons add options to the
+;;    `:config-spec`, e.g., to introduce new types of parsers, resolvers, etc.
+;;    Others may install new `:req-handlers` and `:notification-handlers` to
+;;    implement new LSP services (this is often accompanied by updating
+;;    `:server-capabilities`).
+;; 3. The language config is read and a [language
+;;    map](../../doc/config.md#generating-a-language-map-from-config) is
+;;    generated.
+;; 4. Based on the language map, a module loader function is constructed.
+;; 5. The module loader function is used to create a [workspace](workspace.md),
+;;    that is stored in an atom under the key `:ws`.
+;; 6. A `lsp4clj` server is created and stored under `:server` in the context.
+;;    Then it is started.
+
+;; In the following sections we describe the building blocks of the
+;; initialization process, and then put it all together.
 
 ;; ## Language Map Creation
 
