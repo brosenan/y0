@@ -69,24 +69,31 @@
                                #(str/ends-with? % (str "." file-ext)))
                        :args [:file-ext]}}})
 
-(defn- lang-from-config [conf lang]
+(defn- lang-from-config [conf lang spec keys-map]
   (let [conf (assoc conf :lang lang)]
-    [lang {:parse (resolve-config-val lang-config-spec conf :parser)
-           :read (resolve-config-val lang-config-spec conf :reader)
-           :resolve (resolve-config-val lang-config-spec conf :resolver)
-           :stringify-expr (resolve-config-val lang-config-spec conf :expr-stringifier)
-           :decorate (resolve-config-val lang-config-spec conf :decorate)
-           :match (resolve-config-val lang-config-spec conf :matcher)}]))
+    [lang (->> (for [[key source] keys-map]
+                 [key (resolve-config-val spec conf source)])
+               (into {}))]))
 
-(defn language-map-from-config [config]
-  (let [y0-def {:parse (edn-parser
-                        (root-module-symbols y0-symbols "y0.core")
-                        "y0"
-                        [])
-                :read slurp
-                :resolve (y0-resolver *y0-path*)
-                :match #(str/ends-with? % ".y0")}]
-    (binding [*y0-langdef* y0-def]
-      (->> (for [[lang conf] config]
-             (lang-from-config conf lang))
-           (into {"y0" y0-def})))))
+(def keys-map {:parse :parser
+               :read :reader
+               :resolve :resolver
+               :stringify-expr :expr-stringifier
+               :decorate :decorate
+               :match :matcher})
+
+(defn language-map-from-config
+  ([config]
+   (language-map-from-config config lang-config-spec keys-map))
+  ([config spec keys-map]
+   (let [y0-def {:parse (edn-parser
+                         (root-module-symbols y0-symbols "y0.core")
+                         "y0"
+                         [])
+                 :read slurp
+                 :resolve (y0-resolver *y0-path*)
+                 :match #(str/ends-with? % ".y0")}]
+     (binding [*y0-langdef* y0-def]
+       (->> (for [[lang conf] config]
+              (lang-from-config conf lang spec keys-map))
+            (into {"y0" y0-def}))))))
