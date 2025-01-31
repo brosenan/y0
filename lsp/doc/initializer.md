@@ -1,6 +1,8 @@
 ```clojure
 (ns y0lsp.initializer-test
   (:require
+   [clojure.java.io :as io]
+   [edamame.core :refer [parse-string-all]]
    [midje.sweet :refer [fact]]
    [y0.config :refer [lang-config-spec]]
    [y0lsp.initializer :refer :all]))
@@ -47,42 +49,24 @@ the original language map with a `:lss` ([language
 stylesheet](language_stylesheet.md)), which we compile from the `:stylesheet`
 key in the config.
 
-In the following example we build a simple language config that contains a
-`:stylesheet` and translate it to a language map using the `to-language-map`
-function.
+In the following example we take our language config and override its
+`:stylesheet` attributes (for both `y1` and `c0`). Then we test that we get a
+proper language map for both languages.
 ```clojure
 (fact
- (let [config {"y1" {:parser :edn
-                     :root-refer-map :root-symbols
-                     :root-symbols '[defn deftype declfn defclass definstance]
-                     :root-namespace "y1.core"
-                     :resolver :prefix-list
-                     :relative-path-resolution :dots
-                     :file-ext "y1"
-                     :y0-modules ["y1"]
-                     :path-prefixes :from-env
-                     :path-prefixes-env "Y1-PATH"
-                     :reader :slurp
-                     :decorate :true
-                     :stylesheet [{:foo 1}]}
-               "y2" {:parser :edn
-                     :root-refer-map :root-symbols
-                     :root-symbols '[defn deftype declfn defclass definstance]
-                     :root-namespace "y2.core"
-                     :resolver :prefix-list
-                     :relative-path-resolution :dots
-                     :file-ext "y2"
-                     :y0-modules ["y2"]
-                     :path-prefixes :from-env
-                     :path-prefixes-env "Y2-PATH"
-                     :reader :slurp
-                     :decorate :true
-                     :stylesheet [{:foo 2}]}}
+ (let [config (-> "lang-conf.clj"
+                  io/resource
+                  io/file
+                  slurp
+                  parse-string-all
+                  first
+                  (update "y1" assoc :stylesheet [{:foo 1}])
+                  (update "c0" assoc :stylesheet [{:foo 2}]))
        lang-map (to-language-map lang-config-spec config)]
    (-> lang-map (get "y1") :parse) => fn?
-   (-> lang-map (get "y2") :resolve) => fn?
+   (-> lang-map (get "c0") :resolve) => fn?
    (let [f1 (-> lang-map (get "y1") :lss)
-         f2 (-> lang-map (get "y2") :lss)]
+         f2 (-> lang-map (get "c0") :lss)]
      (f1 (with-meta [:some-node] {:matches (atom {})}) :foo) => 1
      (f2 (with-meta [:some-node] {:matches (atom {})}) :foo) => 2)))
 ```

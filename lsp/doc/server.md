@@ -177,6 +177,7 @@ the notification and check that its contents is indeed stored in these atoms.
        {:keys [notify shutdown]} (test-server ctx)]
    (notify "test/didFoo" {:foo :bar})
    (shutdown)
+   (java.lang.Thread/sleep 100)
    (-> ctx :notify1 deref) => {:foo :bar}
    (-> ctx :notify2 deref) => {:foo :bar}))
 ```
