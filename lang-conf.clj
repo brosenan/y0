@@ -20,7 +20,9 @@
        ;; ...named Y0-PATH
        :path-prefixes-env "Y1-PATH"
        ;; Read files using Clojure's slurp function.
-       :reader :slurp}
+       :reader :slurp
+       ;; Empty language stylesheet
+       :stylesheet [{}]}
  "c0" {;; Use an Instaparser
        :parser :insta
        ;; The grammar with a layout section
@@ -148,4 +150,6 @@
        ;; Stringify by extracting text from the source file
        :expr-stringifier :extract-text
        ;; Decorate the tree
-       :decorate :true}}
+       :decorate :true
+       ;; Empty language stylesheet
+       :stylesheet [{}]}}
