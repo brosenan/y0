@@ -258,3 +258,25 @@
      (-> ctx :ws deref :ms (get "/path/to/module.c0")
          :cache :ps (get {:arity 3 :name (str c0ns "/function")})
          (get {:symbol "/path/to/module.c0/foo"})) => fn?)))
+
+;; ## Context Initialization
+
+;; `initialize-context` takes a language config, a `y0-path` and a sequence of
+;; addon functions, and returns an initialized context that includes a `:ws`.
+
+;; In the following example we use `initialize-context` to create a context with
+;; two addons. The first addon creates a new type of parser (the `:foo-parser`),
+;; and the other handles a `test/foo` notification.
+(fact
+ (let [add-foo-parser #(update-in % [:config-spec :parser]
+                                  assoc :foo {:func (constantly [["foo"] []])
+                                              :args []})
+       handle-foo-notification #(update-in % [:notification-handlers "test/foo"]
+                                           conj (fn [_ctx _res]
+                                                  "foo"))
+       ctx (initialize-context (read-lang-config) [(-> "y0_test/" io/resource io/file)]
+                               [add-foo-parser
+                                handle-foo-notification])]
+   (:ws ctx) => #(instance? clojure.lang.IAtom %)
+   (-> ctx :config-spec :parser :foo :func) => fn?
+   (-> ctx :notification-handlers (get "test/foo") first) => fn?))

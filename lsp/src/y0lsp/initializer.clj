@@ -1,7 +1,8 @@
 (ns y0lsp.initializer 
   (:require
    [y0.builtins :refer [add-builtins]]
-   [y0.config :refer [*y0-path* keys-map language-map-from-config]]
+   [y0.config :refer [*y0-path* keys-map lang-config-spec
+                      language-map-from-config]]
    [y0.polyglot-loader :refer [load-module]]
    [y0.rules :refer [*error-target* *skip-recoverable-assertions*
                      apply-statements]]
@@ -53,3 +54,10 @@
     (-> ctx
       (assoc :ws (atom (new-workspace (module-loader lang-map)
                                       (module-evaluator apply-statements)))))))
+
+(defn initialize-context [config y0-path addons]
+  (let [ctx {:config config
+             :config-spec lang-config-spec
+             :y0-path y0-path}
+        ctx (reduce #(%2 %1) ctx addons)]
+       (create-workspace ctx)))
