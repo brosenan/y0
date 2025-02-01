@@ -4,9 +4,9 @@
    [clojure.java.io :as io]
    [edamame.core :refer [parse-string-all]]
    [midje.sweet :refer [fact]]
-   [y0.config :refer [lang-config-spec]]
-   [y0.status :refer [ok]]
-   [y0lsp.initializer :refer :all]))
+   [y0.config :refer [*y0-path* lang-config-spec]]
+   [y0lsp.initializer :refer :all]
+   [clojure.string :as str]))
 
 ```
 # The Initializer
@@ -50,9 +50,8 @@ the original language map with a `:lss` ([language
 stylesheet](language_stylesheet.md)), which we compile from the `:stylesheet`
 key in the config.
 
-In the following example we take our language config and override its
-`:stylesheet` attributes (for both `y1` and `c0`). Then we test that we get a
-proper language map for both languages.
+To demonstrate this, we first introduce a function for reading the language
+config from the root of the `y0` repo. 
 ```clojure
 (defn read-lang-config []
   (-> "lang-conf.clj"
@@ -62,6 +61,11 @@ proper language map for both languages.
       parse-string-all
       first))
 
+```
+Next, we take our language config and override its `:stylesheet` attributes
+(for both `y1` and `c0`). Then we test that we get a proper language map for
+both languages.
+```clojure
 (fact
  (let [config (-> (read-lang-config)
                   (update "y1" assoc :stylesheet [{:foo 1}])
@@ -87,8 +91,7 @@ We need a module loader as one of the two parameters to initialize a
 
 This loader, however, is a bit different than the one provided by the
 polyglot loader. First, it does not return [status](../../doc/status.md) but
-rather always succeeds. If an error is reported by one of the operations, and
-`:err` entry is added to the module to report it.
+rather always succeeds.
 
 Second, in addition to loading the module's `:statements`, it also creates an
 `:index`, [mapping line numbers to sequences of tree nodes](tree_index.md).
@@ -98,17 +101,44 @@ The function `module-loader` takes a language-map and returns function
 complete module, adding the missing keys.
 ```clojure
 (fact
- (let [config (-> (read-lang-config)
-                  (update "c0" assoc :y0-modules []))
-       lang-map (to-language-map lang-config-spec config)
+ (let [config (read-lang-config)
+       lang-map (binding [*y0-path* [(-> "y0_test/"
+                                         io/resource
+                                         io/file)]]
+                  (to-language-map lang-config-spec config))
        lang-map (update lang-map "c0" assoc :read (constantly "void foo() {}"))
        loader (module-loader lang-map)
-       {:keys [path lang text statements deps]}
+       {:keys [path lang text statements deps index]}
        (loader {:path "/path/to/my-module.c0"})]
    path => "/path/to/my-module.c0"
    lang => "c0"
    text => "void foo() {}"
-   statements => [[:func_def [:void_type] (symbol "/path/to/my-module.c0" "foo") [:arg_defs]]]
-   deps => []))
+   statements => [[:func_def [:void_type]
+                   (symbol "/path/to/my-module.c0" "foo") [:arg_defs]]]
+   (-> deps first) => #(str/ends-with? % "/c0.y0")
+   index => {1 [[:func_def [:void_type]
+                 (symbol "/path/to/my-module.c0" "foo") [:arg_defs]]]}))
+
+```
+If an error is reported by one of the operations, and `:err` entry is added
+to the module to report it.
+
+To demonstrate this, we repeat the previous example, but we replace the
+`:parse` function in the `lang-map` with one that returns an error. We show
+that the error is captured in the returned module.
+```clojure
+(fact
+ (let [config (read-lang-config)
+       lang-map (binding [*y0-path* [(-> "y0_test/"
+                                         io/resource
+                                         io/file)]]
+                  (to-language-map lang-config-spec config))
+       lang-map (update lang-map "c0" assoc :read (constantly "void foo() {}"))
+       lang-map (update lang-map "c0" assoc :parse
+                        (constantly {:err ["Some parse error"]}))
+       loader (module-loader lang-map)
+       {:keys [err]}
+       (loader {:path "/path/to/my-module.c0"})]
+   err => ["Some parse error"]))
 ```
 

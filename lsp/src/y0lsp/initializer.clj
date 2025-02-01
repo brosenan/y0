@@ -2,8 +2,9 @@
   (:require
    [y0.config :refer [keys-map language-map-from-config]]
    [y0.polyglot-loader :refer [load-module]]
-   [y0.status :refer [unwrap-status]]
-   [y0lsp.language-stylesheet :refer [compile-stylesheet]]))
+   [y0.status :refer [ok?]]
+   [y0lsp.language-stylesheet :refer [compile-stylesheet]]
+   [y0lsp.tree-index :refer [index-nodes]]))
 
 (defn to-language-map [conf-spec lang-config]
   (language-map-from-config lang-config
@@ -13,6 +14,17 @@
                             (-> keys-map
                                 (assoc :lss :lss))))
 
+(defn- add-index [{:keys [statements] :as m}]
+  (assoc m :index (index-nodes statements)))
+
+(defn- replace-error [status m]
+  (if (ok? status)
+    (:ok status)
+    (assoc m :err (:err status))))
+
 (defn module-loader [lang-map]
   (fn [m]
-    (unwrap-status (load-module m lang-map))))
+    (-> m
+        (load-module lang-map)
+        (replace-error m)
+        add-index)))

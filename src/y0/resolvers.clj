@@ -21,6 +21,7 @@
           {:err ["Could not find path for module" module]}
           (let [[path & paths] paths
                 candidate (io/file path suffix)]
+            (println ">" candidate)
             (if (exists? candidate)
               (-> candidate .getAbsolutePath java.io.File. ok)
               (recur paths))))))))
