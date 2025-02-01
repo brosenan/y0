@@ -258,7 +258,8 @@ workspace itself.
 
 The function `create-workspace` takes a context containing `:config`,
 `:config-spec` and `:y0-path` and returns it, adding the key `:ws`,
-containing an atom containing a [workspace](workspace.md).
+containing an atom containing a [workspace](workspace.md). We then check that
+the module's `:ps` contains a `function` named `foo`.
 ```clojure
 (fact
  (let [{:keys [ws] :as ctx} (-> {:config (read-lang-config)
@@ -270,7 +271,9 @@ containing an atom containing a [workspace](workspace.md).
                          :text "void foo() {}"
                          :is-open true})
    (swap! ws eval-with-deps {:path "/path/to/module.c0"})
-   (-> ctx :ws deref :ms (get "/path/to/module.c0")
-       :cache :ps keys count) => #(> % 10)))
+   (let [c0ns (-> "y0_test/c0.y0" io/resource io/file .getAbsolutePath)]
+     (-> ctx :ws deref :ms (get "/path/to/module.c0")
+         :cache :ps (get {:arity 3 :name (str c0ns "/function")})
+         (get {:symbol "/path/to/module.c0/foo"})) => fn?)))
 ```
 
