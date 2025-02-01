@@ -5,9 +5,11 @@
    [edamame.core :refer [parse-string-all]]
    [midje.sweet :refer [fact]]
    [y0.config :refer [*y0-path* lang-config-spec]]
+   [y0.explanation :refer [explanation-to-str]]
    [y0.rules :refer [*error-target* *skip-recoverable-assertions*]]
    [y0.status :refer [ok]]
-   [y0lsp.initializer :refer :all]))
+   [y0lsp.initializer :refer :all]
+   [y0lsp.workspace :refer [add-module eval-with-deps]]))
 
 ;; # The Initializer
 
@@ -21,9 +23,10 @@
 
 ;; The process goes roughly as follows:
 
-;; 1. The context is initialized with the default [config
-;;    spec](../../doc/config.md#generic-mechanism) assigned to the key
-;;    `:config-spec`.
+;; 1. The context is initialized with `:config-spec` containing the default
+;;    [config spec](../../doc/config.md#generic-mechanism), `:y0-path`
+;;    containing a list of paths where $y_0$ files can be found and `:config`
+;;    containing the language config.
 ;; 2. Addons are applied one by one. Some addons add options to the
 ;;    `:config-spec`, e.g., to introduce new types of parsers, resolvers, etc.
 ;;    Others may install new `:req-handlers` and `:notification-handlers` to
@@ -230,3 +233,25 @@
    (eval-module ps m) => {:foo :bar}
    @(:semantic-errs m) => [["Non-recoverable error"] 
                            ["Some recoverable error"]]))
+
+;; ## Workspace Initialization
+
+;; In the previous sections we described the building blocks needed to construct
+;; a workspace in the server context. Here we use these pieces to construct the
+;; workspace itself.
+
+;; The function `create-workspace` takes a context containing `:config`,
+;; `:config-spec` and `:y0-path` and returns it, adding the key `:ws`,
+;; containing an atom containing a [workspace](workspace.md).
+(fact
+ (let [{:keys [ws] :as ctx} (-> {:config (read-lang-config)
+                                 :config-spec lang-config-spec
+                                 :y0-path [(-> "y0_test/" io/resource io/file)]}
+                                create-workspace)]
+   ws => #(instance? clojure.lang.IAtom %)
+   (swap! ws add-module {:path "/path/to/module.c0"
+                         :text "void foo() {}"
+                         :is-open true})
+   (swap! ws eval-with-deps {:path "/path/to/module.c0"})
+   (-> ctx :ws deref :ms (get "/path/to/module.c0")
+       :cache :ps keys count) => #(> % 10)))

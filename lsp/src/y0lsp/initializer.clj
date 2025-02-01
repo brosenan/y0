@@ -1,11 +1,14 @@
 (ns y0lsp.initializer 
   (:require
-   [y0.config :refer [keys-map language-map-from-config]]
+   [y0.builtins :refer [add-builtins]]
+   [y0.config :refer [*y0-path* keys-map language-map-from-config]]
    [y0.polyglot-loader :refer [load-module]]
-   [y0.rules :refer [*error-target* *skip-recoverable-assertions*]]
+   [y0.rules :refer [*error-target* *skip-recoverable-assertions*
+                     apply-statements]]
    [y0.status :refer [ok?]]
    [y0lsp.language-stylesheet :refer [compile-stylesheet]]
-   [y0lsp.tree-index :refer [index-nodes]]))
+   [y0lsp.tree-index :refer [index-nodes]]
+   [y0lsp.workspace :refer [new-workspace]]))
 
 (defn to-language-map [conf-spec lang-config]
   (language-map-from-config lang-config
@@ -32,9 +35,10 @@
         (assoc :semantic-errs (atom nil)))))
 
 (defn module-evaluator [apply-statements]
-  (fn [ps {:keys [statements semantic-errs is-open] :as m}]
+  (fn [ps {:keys [statements semantic-errs is-open]}]
     (reset! semantic-errs nil)
-    (let [status (binding [*error-target* semantic-errs
+    (let [ps (if (nil? ps) (add-builtins {}) ps)
+          status (binding [*error-target* semantic-errs
                            *skip-recoverable-assertions* (not is-open)]
                    (apply-statements statements ps {}))]
       (if (ok? status)
@@ -42,3 +46,10 @@
         (do
           (swap! semantic-errs conj (:err status))
           ps)))))
+
+(defn create-workspace [{:keys [config config-spec y0-path] :as ctx}]
+  (let [lang-map (binding [*y0-path* y0-path]
+                   (to-language-map config-spec config))]
+    (-> ctx
+      (assoc :ws (atom (new-workspace (module-loader lang-map)
+                                      (module-evaluator apply-statements)))))))
