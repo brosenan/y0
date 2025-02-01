@@ -27,4 +27,5 @@
     (-> m
         (load-module lang-map)
         (replace-error m)
-        add-index)))
+        add-index
+        (assoc :semantic-errs (atom nil)))))

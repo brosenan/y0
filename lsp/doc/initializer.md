@@ -94,7 +94,8 @@ polyglot loader. First, it does not return [status](../../doc/status.md) but
 rather always succeeds.
 
 Second, in addition to loading the module's `:statements`, it also creates an
-`:index`, [mapping line numbers to sequences of tree nodes](tree_index.md).
+`:index`, [mapping line numbers to sequences of tree nodes](tree_index.md)
+and an empty `:errs` atom, for collecting evaluation errors.
 
 The function `module-loader` takes a language-map and returns function
 (loader) that takes a partial module (could be a `:path` only) and returns a
@@ -108,7 +109,7 @@ complete module, adding the missing keys.
                   (to-language-map lang-config-spec config))
        lang-map (update lang-map "c0" assoc :read (constantly "void foo() {}"))
        loader (module-loader lang-map)
-       {:keys [path lang text statements deps index]}
+       {:keys [path lang text statements deps index semantic-errs]}
        (loader {:path "/path/to/my-module.c0"})]
    path => "/path/to/my-module.c0"
    lang => "c0"
@@ -117,11 +118,16 @@ complete module, adding the missing keys.
                    (symbol "/path/to/my-module.c0" "foo") [:arg_defs]]]
    (-> deps first) => #(str/ends-with? % "/c0.y0")
    index => {1 [[:func_def [:void_type]
-                 (symbol "/path/to/my-module.c0" "foo") [:arg_defs]]]}))
+                 (symbol "/path/to/my-module.c0" "foo") [:arg_defs]]]}
+   semantic-errs => #(instance? clojure.lang.IAtom %)))
 
 ```
 If an error is reported by one of the operations, and `:err` entry is added
 to the module to report it.
+
+Please note the difference between `:err`, which holds loading errors (e.g.,
+parsing errors) and `:semantic-errs`, which is an atom that contains
+potential evaluation errors (i.e., semantic errors).
 
 To demonstrate this, we repeat the previous example, but we replace the
 `:parse` function in the `lang-map` with one that returns an error. We show
