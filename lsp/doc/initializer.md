@@ -2,11 +2,12 @@
 (ns y0lsp.initializer-test
   (:require
    [clojure.java.io :as io]
+   [clojure.string :as str]
    [edamame.core :refer [parse-string-all]]
    [midje.sweet :refer [fact]]
    [y0.config :refer [*y0-path* lang-config-spec]]
-   [y0lsp.initializer :refer :all]
-   [clojure.string :as str]))
+   [y0.status :refer [ok]]
+   [y0lsp.initializer :refer :all]))
 
 ```
 # The Initializer
@@ -146,5 +147,32 @@ that the error is captured in the returned module.
        {:keys [err]}
        (loader {:path "/path/to/my-module.c0"})]
    err => ["Some parse error"]))
+
+```
+## Module Evaluator Creation
+
+
+`module-evaluator` takes a function that in production should be
+`y0.rules/apply-statements` as its only parameter and returns a workspace
+`eval` function that is based on it.
+
+The function returned by `module-evaluator` calls the underlying statements
+evaluation function with the module's `:statements`, the given predstore
+(`ps`) and an empty `vars` map, and, assuming that all goes well, returns the
+updated `ps`.
+```clojure
+(fact
+ (let [apply-statements (fn [stmts ps vars]
+                          (-> ps
+                              (assoc :stmts stmts)
+                              (assoc :vars vars)
+                              ok))
+       m {:statements ["These" "are" "statements"]
+          :semantic-errs (atom nil)}
+       ps {:foo :bar}
+       eval-module (module-evaluator apply-statements)]
+   (eval-module ps m) => {:foo :bar
+                          :stmts ["These" "are" "statements"]
+                          :vars {}}))
 ```
 

@@ -29,3 +29,10 @@
         (replace-error m)
         add-index
         (assoc :semantic-errs (atom nil)))))
+
+(defn module-evaluator [apply-statements]
+  (fn [ps {:keys [statements] :as m}]
+    (let [status (apply-statements statements ps {})]
+      (if (ok? status)
+        (:ok status)
+        nil))))
