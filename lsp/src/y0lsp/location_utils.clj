@@ -13,8 +13,16 @@
 (defn- uri-to-path [uri]
   (-> uri io/as-url io/file .getAbsolutePath))
 
+(defn- path-to-uri [path]
+  (str "file://" (-> path io/file .getAbsolutePath)))
+
 (defn- text-doc-to-path [{:keys [uri]}]
   (uri-to-path uri))
 
 (defn from-lsp-text-doc-pos [{:keys [text-document position]}]
   [(text-doc-to-path text-document) (from-lsp-pos position)])
+
+(defn to-lsp-location [{:keys [start end path]}]
+  {:uri (path-to-uri path)
+   :range {:start (to-lsp-pos start)
+           :end (to-lsp-pos end)}})

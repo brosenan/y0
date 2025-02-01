@@ -48,5 +48,19 @@ to a pair of an absolute path and a numeric position.
                          :position {:line 3
                                     :character 5}}) =>
  ["/path/to/module.c0" 4000006])
+
+```
+Location Conversion
+
+`to-lsp-location` takes a $y_0$ location map and returns a corresponding [LSP
+location](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#location).
+```clojure
+(fact
+ (to-lsp-location {:start 4000001
+                   :end 4000006
+                   :path "/path/to/module.c0"}) =>
+ {:uri "file:///path/to/module.c0"
+  :range {:start {:line 3 :character 0}
+          :end {:line 3 :character 5}}})
 ```
 
