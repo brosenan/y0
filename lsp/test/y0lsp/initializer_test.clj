@@ -274,7 +274,8 @@
        handle-foo-notification #(update-in % [:notification-handlers "test/foo"]
                                            conj (fn [_ctx _res]
                                                   "foo"))
-       ctx (initialize-context (read-lang-config) [(-> "y0_test/" io/resource io/file)]
+       ctx (initialize-context (read-lang-config)
+                               [(-> "y0_test/" io/resource io/file)]
                                [add-foo-parser
                                 handle-foo-notification])]
    (:ws ctx) => #(instance? clojure.lang.IAtom %)
