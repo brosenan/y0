@@ -47,20 +47,20 @@
 
 (defn- evaluate-statements [ps statements is-main]
   (binding [*skip-recoverable-assertions* (not is-main)]
-                                                (apply-statements statements ps {})))
+    (apply-statements statements ps {})))
 
-(defn- eval-modules [rpaths language lang-map]
+(defn- eval-modules [rpaths lang-map]
   (let [paths (for [rpath rpaths]
                 (let [f (java.io.File. rpath)]
                   {:path (-> f .getAbsolutePath)}))
         status (let-s [mstore (load-with-deps paths lang-map)
                        ps (ok (add-builtins {}))]
                       (eval-mstore mstore evaluate-statements ps))]
-      (if (:err status)
-        (do
-          (print-error status)
-          (System/exit 1))
-        (println (green "Success")))))
+    (if (:err status)
+      (do
+        (print-error status)
+        (System/exit 1))
+      (println (green "Success")))))
 
 (defn- process-language-specs [files lang lang-map update?]
   (if (empty? files)
@@ -78,7 +78,7 @@
       (doseq [err (:errors state)]
         (print-error {:err err}))
       (cond
-        (:errors state) (println (-> state :errors count) (red "Failed") 
+        (:errors state) (println (-> state :errors count) (red "Failed")
                                  (if (:success state)
                                    (str "but " (:success state) " succeeded")
                                    ""))
@@ -89,7 +89,7 @@
           (doseq [line (:generated state)]
             (.write w (str line (System/lineSeparator))))))
       (when (and (not update?)
-               (:errors state))
+                 (:errors state))
         (System/exit 1))
       (recur files lang lang-map update?))))
 
@@ -99,7 +99,7 @@
     (cond
       update-language-spec (process-language-specs rpaths language lang-map true)
       language-spec (process-language-specs rpaths language lang-map false)
-      :else (eval-modules rpaths language lang-map))))
+      :else (eval-modules rpaths lang-map))))
 
 (defn -main [& args]
   (let [cli (parse-opts args cli-options)]
@@ -109,7 +109,7 @@
                (println (str (red "Error") ":") err)))
         (System/exit 1))
       (let [{:keys [help] :as opts} (:options cli)
-          rpaths (:arguments cli)]
-      (cond
-        help (println (:summary cli))
-        :else (main rpaths opts))))))
+            rpaths (:arguments cli)]
+        (cond
+          help (println (:summary cli))
+          :else (main rpaths opts))))))
