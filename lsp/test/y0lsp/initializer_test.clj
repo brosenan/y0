@@ -5,6 +5,7 @@
    [edamame.core :refer [parse-string-all]]
    [midje.sweet :refer [fact]]
    [y0.config :refer [*y0-path* lang-config-spec]]
+   [y0.rules :refer [*error-target* *skip-recoverable-assertions*]]
    [y0.status :refer [ok]]
    [y0lsp.initializer :refer :all]))
 
@@ -148,10 +149,9 @@
 ;; `y0.rules/apply-statements` as its only parameter and returns a workspace
 ;; `eval` function that is based on it.
 
-;; The function returned by `module-evaluator` calls the underlying statements
-;; evaluation function with the module's `:statements`, the given predstore
-;; (`ps`) and an empty `vars` map, and, assuming that all goes well, returns the
-;; updated `ps`.
+;; The function returned by `module-evaluator` calls the `apply-statements` with
+;; the module's `:statements`, the given predstore (`ps`) and an empty `vars`
+;; map, and, assuming that all goes well, returns the updated `ps`.
 (fact
  (let [apply-statements (fn [stmts ps vars]
                           (-> ps
@@ -165,3 +165,68 @@
    (eval-module ps m) => {:foo :bar
                           :stmts ["These" "are" "statements"]
                           :vars {}}))
+
+;; ### Error Handling
+
+;; We use $y_0$'s [mechanism for recoverable
+;; errors](/doc/testing.md#recoverable-and-unrecoverable-assertions) to collect
+;; errors. To do this, the module evaluator calls its `apply-statements` after
+;; binding two parameters.
+
+;; First, `*error-target*` is set to the module's `:semantic-errs` atom, which
+;; is cleared before the call. This allows the $y_0$'s implementation to
+;; populate it with errors and move on, rather than return an error status.
+(fact
+ (let [apply-statements (fn [_stmts ps _vars]
+                          (swap! *error-target* conj ["A new error"])
+                          (-> ps (assoc :new :baz) ok))
+       m {:statements ["These" "are" "statements"]
+          :semantic-errs (atom [["Some previous error"]])}
+       ps {:foo :bar}
+       eval-module (module-evaluator apply-statements)]
+   (eval-module ps m) => {:foo :bar
+                          :new :baz}
+   @(:semantic-errs m) => [["A new error"]]))
+
+;; Second, we bind `*skip-recoverable-assertions*` to `true` unless the module
+;; is marked with `:is-open`. This is meant to distinguish between modules that
+;; are opened by the client and for which we need to provide a full account of
+;; all errors, and modules that are only dependencies of such modules, where we
+;; wish to skip unnecessary checks and only get the definitions.
+
+;; We demonstrate this by creating three modules, one with `:is-open true`, one
+;; with `:is-open false` and one without `:is-open`. The `apply-statements`
+;; function will then place the value of `*skip-recoverable-assertions*` to the
+;; predstore. We will check that in all but the first module,
+;; `*skip-recoverable-assertions*` is set to `true`.
+(fact
+ (let [apply-statements (fn [_stmts ps _vars]
+                          (-> ps
+                              (assoc :skip *skip-recoverable-assertions*)
+                              ok))
+       m1 {:is-open true
+           :semantic-errs (atom nil)}
+       m2 {:is-open false
+           :semantic-errs (atom nil)}
+       m3 {:semantic-errs (atom nil)}
+       ps {}
+       eval-module (module-evaluator apply-statements)]
+   (eval-module ps m1) => {:skip false}
+   (eval-module ps m2) => {:skip true}
+   (eval-module ps m3) => {:skip true}))
+
+;; Finally, we discuss what happens in case of an non-recoverable error. In such
+;; a case, `apply-statements` will return an `:err` status. The module evaluator
+;; function will in this case add this error to the `:semantic-errs` atom and
+;; return the original `ps`.
+(fact
+ (let [apply-statements (fn [_stmts ps _vars]
+                          (swap! *error-target* conj ["Some recoverable error"])
+                          {:err ["Non-recoverable error"]})
+       m {:statements ["These" "are" "statements"]
+          :semantic-errs (atom [["Some previous error"]])}
+       ps {:foo :bar}
+       eval-module (module-evaluator apply-statements)]
+   (eval-module ps m) => {:foo :bar}
+   @(:semantic-errs m) => [["Non-recoverable error"] 
+                           ["Some recoverable error"]]))

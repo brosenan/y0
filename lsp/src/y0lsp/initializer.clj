@@ -2,6 +2,7 @@
   (:require
    [y0.config :refer [keys-map language-map-from-config]]
    [y0.polyglot-loader :refer [load-module]]
+   [y0.rules :refer [*error-target* *skip-recoverable-assertions*]]
    [y0.status :refer [ok?]]
    [y0lsp.language-stylesheet :refer [compile-stylesheet]]
    [y0lsp.tree-index :refer [index-nodes]]))
@@ -31,8 +32,13 @@
         (assoc :semantic-errs (atom nil)))))
 
 (defn module-evaluator [apply-statements]
-  (fn [ps {:keys [statements] :as m}]
-    (let [status (apply-statements statements ps {})]
+  (fn [ps {:keys [statements semantic-errs is-open] :as m}]
+    (reset! semantic-errs nil)
+    (let [status (binding [*error-target* semantic-errs
+                           *skip-recoverable-assertions* (not is-open)]
+                   (apply-statements statements ps {}))]
       (if (ok? status)
         (:ok status)
-        nil))))
+        (do
+          (swap! semantic-errs conj (:err status))
+          ps)))))
