@@ -326,17 +326,16 @@ server](https://github.com/clojure-lsp/lsp4clj?tab=readme-ov-file#start-and-stop
        ctx (initialize-context
             (read-lang-config)
             [(-> "y0_test/" io/resource io/file)]
-            [#(assoc % :my-atom (atom nil))
+            [#(assoc % :my-promise (promise))
              #(update-in % [:notification-handlers :testing-did-foo] conj
-                         (fn [{:keys [my-atom] :as ctx} notif]
+                         (fn [{:keys [my-promise] :as ctx} notif]
                            (when (= (:server ctx) server)
-                             (reset! my-atom notif))))])
+                             (deliver my-promise notif))))])
        done (start ctx server)]
    (async/put! input-ch
                (lsp.requests/notification "test/didFoo" {:foo :bar}))
    (server/shutdown server)
-   @done
-   (java.lang.Thread/sleep 100)
-   @(:my-atom ctx) => {:foo :bar}))
+   @(:my-promise ctx) => {:foo :bar}
+   @done))
 ```
 
