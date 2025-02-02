@@ -1,15 +1,18 @@
 ```clojure
 (ns y0lsp.initializer-test
   (:require
+   [clojure.core.async :as async]
    [clojure.java.io :as io]
    [clojure.string :as str]
    [edamame.core :refer [parse-string-all]]
+   [lsp4clj.lsp.requests :as lsp.requests]
+   [lsp4clj.server :as server]
    [midje.sweet :refer [fact]]
    [y0.config :refer [*y0-path* lang-config-spec]]
-   [y0.explanation :refer [explanation-to-str]]
    [y0.rules :refer [*error-target* *skip-recoverable-assertions*]]
    [y0.status :refer [ok]]
    [y0lsp.initializer :refer :all]
+   [y0lsp.server :refer [register-notification]]
    [y0lsp.workspace :refer [add-module eval-with-deps]]))
 
 ```
@@ -300,5 +303,40 @@ and the other handles a `test/foo` notification.
    (:ws ctx) => #(instance? clojure.lang.IAtom %)
    (-> ctx :config-spec :parser :foo :func) => fn?
    (-> ctx :notification-handlers (get "test/foo") first) => fn?))
+
+```
+## Starting a Server
+
+Once a context exists, we can start a server. `start` takes a server context
+and a [lsp4clj](https://github.com/clojure-lsp/lsp4clj) server (of any type)
+and does the following:
+
+1. Adds the server as `:server` to the context.
+2. Starts the server, given the context.
+
+It returns the `done` future [returned when starting the
+server](https://github.com/clojure-lsp/lsp4clj?tab=readme-ov-file#start-and-stop-a-server).
+```clojure
+(register-notification "test/didFoo" :testing-did-foo)
+(fact
+ (let [input-ch (async/chan 3)
+       output-ch (async/chan 3)
+       server (server/chan-server {:output-ch output-ch
+                                   :input-ch input-ch})
+       ctx (initialize-context
+            (read-lang-config)
+            [(-> "y0_test/" io/resource io/file)]
+            [#(assoc % :my-atom (atom nil))
+             #(update-in % [:notification-handlers :testing-did-foo] conj
+                         (fn [{:keys [my-atom] :as ctx} notif]
+                           (when (= (:server ctx) server)
+                             (reset! my-atom notif))))])
+       done (start ctx server)]
+   (async/put! input-ch
+               (lsp.requests/notification "test/didFoo" {:foo :bar}))
+   (server/shutdown server)
+   @done
+   (java.lang.Thread/sleep 100)
+   @(:my-atom ctx) => {:foo :bar}))
 ```
 

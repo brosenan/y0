@@ -1,5 +1,6 @@
 (ns y0lsp.initializer 
   (:require
+   [lsp4clj.server :as server]
    [y0.builtins :refer [add-builtins]]
    [y0.config :refer [*y0-path* keys-map lang-config-spec
                       language-map-from-config]]
@@ -61,3 +62,8 @@
              :y0-path y0-path}
         ctx (reduce #(%2 %1) ctx addons)]
        (create-workspace ctx)))
+
+(defn start [ctx server]
+  (server/start server 
+                (-> ctx
+                    (assoc :server server))))
