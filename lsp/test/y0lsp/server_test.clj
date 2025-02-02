@@ -76,12 +76,10 @@
 ;; To handle a request, the request type needs to be registered using the
 ;; `register-req` macro. Here is an example, registering the request
 ;; `testing/foo`.
-(register-req "testing/foo"
-              :testing-foo
-              ::coercer/location)
+(register-req "testing/foo" ::coercer/location)
 
-;; `register-req` takes the request to register, its internal ID (a keyword) and
-;; a [Spec](https://clojure.org/guides/spec) for the response. For the latter,
+;; `register-req` takes the request to register and a
+;; [Spec](https://clojure.org/guides/spec) for the response. For the latter,
 ;; `lsp4clj`'s
 ;; [coercer](https://github.com/clojure-lsp/lsp4clj/blob/master/src/lsp4clj/coercer.clj)
 ;; library is a good resource.
@@ -92,7 +90,7 @@
  (let [result {:uri "file:///foo.bar"
                :range {:start {:line 0 :character 12}
                        :end {:line 2 :character 0}}}
-       ctx {:req-handlers {:testing-foo (constantly result)}}
+       ctx {:req-handlers {"testing/foo" (constantly result)}}
        {:keys [send-req shutdown]} (test-server ctx)]
    (send-req "testing/foo" {}) => result
    (shutdown)))
@@ -103,7 +101,7 @@
                :range {:start {:line 0 :character 12}
                        :end {:line 2 :character 0}}}
        err-atom (atom nil)
-       ctx {:req-handlers {:testing-foo (constantly result)}
+       ctx {:req-handlers {"testing/foo" (constantly result)}
             :err-atom err-atom}
        {:keys [send-req shutdown]} (test-server ctx)]
    (send-req "testing/foo" {}) => nil
@@ -124,9 +122,10 @@
  (let [request {:uri "file:///foo.bar"
                 :range {:start {:line 0 :character 12}
                         :end {:line 2 :character 0}}}
-       ctx {:req-handlers {:testing-foo (fn [{:keys [uri-override] :as _ctx} req]
-                                          (-> req
-                                              (assoc :uri uri-override)))}
+       ctx {:req-handlers {"testing/foo"
+                           (fn [{:keys [uri-override] :as _ctx} req]
+                             (-> req
+                                 (assoc :uri uri-override)))}
             :uri-override "file:///bar.baz"}
        {:keys [send-req shutdown]} (test-server ctx)]
    (send-req "testing/foo" request) => {:uri "file:///bar.baz"
@@ -139,19 +138,19 @@
 ;; As part of the protocol, the client can send notifications to the server.
 
 ;; To handle a notification, the notification needs to be registered using the
-;; `register-notification` macro, assigning a keyword to it.
-(register-notification "test/didFoo" :test-did-foo)
+;; `register-notification` macro.
+(register-notification "test/didFoo")
 
 ;; Then, in the context, handlers for this notifications are stored under
-;; `:notification-handlers` and the keyword.
+;; `:notification-handlers` and the notification name.
 
 ;; In the following example we create a context that contains two handlers for
-;; the `:test-did-foo` notification, each updating a different atom with the
+;; the `test/didFoo` notification, each updating a different atom with the
 ;; notification contents. We also add these atoms to the context. Then we send
 ;; the notification and check that its contents is indeed stored in these atoms.
 (fact
  (let [ctx {:notification-handlers
-            {:test-did-foo [(fn [ctx notif]
+            {"test/didFoo" [(fn [ctx notif]
                               (reset! (:notify1 ctx) notif))
                             (fn [ctx notif]
                               (reset! (:notify2 ctx) notif))]}

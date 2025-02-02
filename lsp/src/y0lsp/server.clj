@@ -20,12 +20,12 @@
     (check-conformance response-spec result err-atom 1000
                        "Request output does not conform to the spec")))
 
-(defmacro register-req [req key response-spec]
+(defmacro register-req [req response-spec]
   (let [ctx-var (gensym "ctx")
         req-var (gensym "req")
         dontcare-var (gensym "_")]
     `(defmethod server/receive-request ~req [~dontcare-var ~ctx-var ~req-var]
-       (handle-request ~ctx-var ~key ~req-var ~response-spec))))
+       (handle-request ~ctx-var ~req ~req-var ~response-spec))))
 
 (defmethod server/receive-request "initialize"
   [_ 
@@ -39,14 +39,11 @@
   (doseq [f (get notification-handlers key)]
     (f ctx notif)))
 
-(defmacro register-notification [name key]
+(defmacro register-notification [name]
   (let [ctx-var (gensym "ctx")
         notif-var (gensym "notif")
         dontcare-var (gensym "_")]
     `(defmethod server/receive-notification ~name [~dontcare-var ~ctx-var ~notif-var]
-       (handle-notification ~ctx-var ~key ~notif-var))))
+       (handle-notification ~ctx-var ~name ~notif-var))))
 
-(register-req "textDocument/declaration" :text-doc-declaration
-              (s/or :location ::coercer/location
-                    :locations ::coercer/locations))
 

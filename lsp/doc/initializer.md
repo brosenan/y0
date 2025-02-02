@@ -317,7 +317,7 @@ and does the following:
 It returns the `done` future [returned when starting the
 server](https://github.com/clojure-lsp/lsp4clj?tab=readme-ov-file#start-and-stop-a-server).
 ```clojure
-(register-notification "test/didFoo" :testing-did-foo)
+(register-notification "test/didFoo")
 (fact
  (let [input-ch (async/chan 3)
        output-ch (async/chan 3)
@@ -327,7 +327,7 @@ server](https://github.com/clojure-lsp/lsp4clj?tab=readme-ov-file#start-and-stop
             (read-lang-config)
             [(-> "y0_test/" io/resource io/file)]
             [#(assoc % :my-promise (promise))
-             #(update-in % [:notification-handlers :testing-did-foo] conj
+             #(update-in % [:notification-handlers "test/didFoo"] conj
                          (fn [{:keys [my-promise] :as ctx} notif]
                            (when (= (:server ctx) server)
                              (deliver my-promise notif))))])
