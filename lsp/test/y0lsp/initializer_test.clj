@@ -334,6 +334,11 @@
              (server/receive-request name ctx req))
      :notify (fn [name notif]
                (server/receive-notification name ctx notif))
+     :add-module (fn [path text]
+                   (swap! (:ws ctx) add-module {:path path
+                                                :text text
+                                                :is-open true})
+                   (swap! (:ws ctx) eval-with-deps {:path path}))
      :shutdown (fn [])}))
 
 ;; `addon-test` takes zero or more addons as arguments and returns a map
@@ -351,6 +356,8 @@
 ;; **Note:** At the moment, the test server is only simulated, i.e., there is no
 ;; server to shut down and therefore `shutdown` is no-op. However, to allow for
 ;; this to become a real server, we need tests to end with `shutdown`.
+
+;; ### Requests and Notifications
 
 ;; `send` takes a request name and body, sends it to the (simulated) server and
 ;; returns the response.
@@ -384,4 +391,26 @@
    (notify "test/didFoo" {:bar 42})
    (deref p1 100 :timeout) => {:bar 42}
    (deref p2 100 :timeout) => {:bar 42}
+   (shutdown)))
+
+;; ### Workspace Manipulation
+
+;; `add-module` takes a path and contents of a module and loads it.
+
+;; In the following example we define an addon that, when requested, returns the
+;; number of semantic errors for a given module. We create two modules, one
+;; semantically valid and another with an error and check that we get the
+;; correct number.
+(fact
+ (let [{:keys [add-module send shutdown]}
+       (addon-test
+        #(update % :req-handlers
+                 assoc "test/foo" (fn [{:keys [ws]} {:keys [path]}]
+                                    {:err-count (-> @ws :ms (get path)
+                                                    :semantic-errs deref
+                                                    count)})))]
+   (add-module "/path/to/m1.c0" "void foo() {}")
+   (add-module "/path/to/m2.c0" "void foo() { int32 a = b; }")
+   (send "test/foo" {:path "/path/to/m1.c0"}) => {:err-count 0}
+   (send "test/foo" {:path "/path/to/m2.c0"}) => {:err-count 1}
    (shutdown)))
