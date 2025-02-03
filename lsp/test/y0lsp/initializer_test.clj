@@ -11,7 +11,9 @@
    [y0.rules :refer [*error-target* *skip-recoverable-assertions*]]
    [y0.status :refer [ok]]
    [y0lsp.initializer :refer :all]
+   [y0lsp.location-utils :refer [to-lsp-pos]]
    [y0lsp.server :refer [register-notification register-req]]
+   [y0lsp.tree-index-test :refer [extract-marker]]
    [y0lsp.workspace :refer [add-module eval-with-deps]]))
 
 ;; # The Initializer
@@ -329,16 +331,22 @@
   (let [ctx (initialize-context
              (read-lang-config)
              [(-> "y0_test/" io/resource io/file)]
-             addons)]
+             addons)
+        add-module (fn [path text]
+                     (swap! (:ws ctx) add-module {:path path
+                                                  :text text
+                                                  :is-open true})
+                     (swap! (:ws ctx) eval-with-deps {:path path}))]
     {:send (fn [name req]
              (server/receive-request name ctx req))
      :notify (fn [name notif]
                (server/receive-notification name ctx notif))
-     :add-module (fn [path text]
-                   (swap! (:ws ctx) add-module {:path path
-                                                :text text
-                                                :is-open true})
-                   (swap! (:ws ctx) eval-with-deps {:path path}))
+     :add-module add-module
+     :add-module-with-pos (fn [path text]
+                            (let [[text pos] (extract-marker text "$")]
+                              (add-module path text)
+                              {:text-document {:uri (str "file://" path)}
+                               :position (to-lsp-pos pos)}))
      :shutdown (fn [])}))
 
 ;; `addon-test` takes zero or more addons as arguments and returns a map
@@ -413,4 +421,32 @@
    (add-module "/path/to/m2.c0" "void foo() { int32 a = b; }")
    (send "test/foo" {:path "/path/to/m1.c0"}) => {:err-count 0}
    (send "test/foo" {:path "/path/to/m2.c0"}) => {:err-count 1}
+   (shutdown)))
+
+;; Sometimes we want to create a module for a test, and need a pointer to a
+;; specific point within this module.
+
+;; `add-module-with-pos` takes a path and contents of a new module, where the
+;; contents contains the character `$` somewhere in the text. In addition to
+;; adding the module (calling `add-module`) with the `$` removed, the function
+;; returns a
+;; [TextDocumentPositionParams](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocumentPositionParams)
+;; that points to the location of the `$`.
+
+;; In the following example we create an addon that returns the number of
+;; statements in a given module. We use `add-module-with-pos` to create a module
+;; and check the position returned by it. Then we use the addon to see that the
+;; module has indeed been added to the workspace.
+(fact
+ (let [{:keys [add-module-with-pos send shutdown]}
+       (addon-test
+        #(update % :req-handlers
+                 assoc "test/foo" (fn [{:keys [ws]} {:keys [path]}]
+                                    {:statement-count (-> @ws :ms (get path)
+                                                          :statements
+                                                          count)})))]
+   (add-module-with-pos "/path/to/m.c0" "void $foo() {}") =>
+   {:text-document {:uri "file:///path/to/m.c0"}
+    :position {:line 0 :character 5}}
+   (send "test/foo" {:path "/path/to/m.c0"}) => {:statement-count 1}
    (shutdown)))

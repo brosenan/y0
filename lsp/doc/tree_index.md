@@ -30,7 +30,7 @@ takes two strings: `text` and `marker`, with the former intended to contain
 the latter exactly once, and returns a vector consisting of `text` with the
 `marker` removed and the position of `marker` within `text`.
 ```clojure
-(defn- extract-marker [text marker]
+(defn extract-marker [text marker]
   (let [index (str/index-of text marker)
         before (subs text 0 index)
         after (subs text (+ index (count marker)))
