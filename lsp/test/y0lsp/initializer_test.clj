@@ -11,7 +11,7 @@
    [y0.rules :refer [*error-target* *skip-recoverable-assertions*]]
    [y0.status :refer [ok]]
    [y0lsp.initializer :refer :all]
-   [y0lsp.server :refer [register-notification]]
+   [y0lsp.server :refer [register-notification register-req]]
    [y0lsp.workspace :refer [add-module eval-with-deps]]))
 
 ;; # The Initializer
@@ -316,3 +316,72 @@
    (server/shutdown server)
    @(:my-promise ctx) => {:foo :bar}
    @done))
+
+;; ## Testing Support
+
+;; To test addons, we want an easy way to set up a simulated server that
+;; features everything an addon can interact with. We need to initialize a
+;; context containing a workspace, add files to that workspace and send and
+;; receive requests and notifications.
+
+;; The following function is intended to do this.
+(defn addon-test [& addons]
+  (let [ctx (initialize-context
+             (read-lang-config)
+             [(-> "y0_test/" io/resource io/file)]
+             addons)]
+    {:send (fn [name req]
+             (server/receive-request name ctx req))
+     :notify (fn [name notif]
+               (server/receive-notification name ctx notif))
+     :shutdown (fn [])}))
+
+;; `addon-test` takes zero or more addons as arguments and returns a map
+;; containing functions for testing them. `shutdown` shuts the given server down
+;; and must be called at the end of each test.
+(register-req "test/foo" any?)
+(fact
+ (let [{:keys [shutdown]}
+       (addon-test #(update % :req-handlers
+                            assoc "test/foo" (fn [_ctx req]
+                                               req)))]
+   shutdown => fn?
+   (shutdown)))
+
+;; **Note:** At the moment, the test server is only simulated, i.e., there is no
+;; server to shut down and therefore `shutdown` is no-op. However, to allow for
+;; this to become a real server, we need tests to end with `shutdown`.
+
+;; `send` takes a request name and body, sends it to the (simulated) server and
+;; returns the response.
+(fact
+ (let [{:keys [send shutdown]}
+       (addon-test 
+        #(assoc % :foo [1 2 3 4])
+        #(update % :req-handlers
+                 assoc "test/foo" (fn [{:keys [foo]} req]
+                                    {:my-req req
+                                     :foo-from-ctx foo})))]
+   (send "test/foo" {:val 3}) => {:my-req {:val 3}
+                                  :foo-from-ctx [1 2 3 4]}
+   (shutdown)))
+
+;; `notify` takes a notification name and body and sends it to the server,
+;; invoking all notification handlers installed by the addons.
+(fact
+ (let [p1 (promise)
+       p2 (promise)
+       {:keys [notify shutdown]}
+       (addon-test
+        #(assoc % :my-promise p1)
+        #(assoc % :my-other-promise p2)
+        #(update-in % [:notification-handlers "test/didFoo"]
+                 conj (fn [{:keys [my-promise]} req]
+                                    (deliver my-promise req)))
+        #(update-in % [:notification-handlers "test/didFoo"]
+                    conj (fn [{:keys [my-other-promise]} req]
+                           (deliver my-other-promise req))))]
+   (notify "test/didFoo" {:bar 42})
+   (deref p1 100 :timeout) => {:bar 42}
+   (deref p2 100 :timeout) => {:bar 42}
+   (shutdown)))
