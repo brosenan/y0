@@ -465,23 +465,21 @@ returns a
 [TextDocumentPositionParams](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocumentPositionParams)
 that points to the location of the `$`.
 
-In the following example we create an addon that returns the number of
-statements in a given module. We use `add-module-with-pos` to create a module
-and check the position returned by it. Then we use the addon to see that the
-module has indeed been added to the workspace.
+In the following example we create an addon that returns the text contents of
+a given module. We use `add-module-with-pos` to create a module and check the
+position returned by it. Then we use the addon to see that the module has
+indeed been added to the workspace, with the `$` removed.
 ```clojure
 (fact
  (let [{:keys [add-module-with-pos send shutdown]}
        (addon-test
         #(update % :req-handlers
                  assoc "test/foo" (fn [{:keys [ws]} {:keys [path]}]
-                                    {:statement-count (-> @ws :ms (get path)
-                                                          :statements
-                                                          count)})))]
+                                    {:text (-> @ws :ms (get path) :text)})))]
    (add-module-with-pos "/path/to/m.c0" "void $foo() {}") =>
    {:text-document {:uri "file:///path/to/m.c0"}
     :position {:line 0 :character 5}}
-   (send "test/foo" {:path "/path/to/m.c0"}) => {:statement-count 1}
+   (send "test/foo" {:path "/path/to/m.c0"}) => {:text "void foo() {}"}
    (shutdown)))
 ```
 
