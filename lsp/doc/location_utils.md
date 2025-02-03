@@ -1,11 +1,12 @@
 ```clojure
 (ns y0lsp.location-utils-test
   (:require
-   [midje.sweet :refer [fact =>]]
+   [midje.sweet :refer [=> fact]]
+   [y0lsp.initializer-test :refer [addon-test]]
    [y0lsp.location-utils :refer :all]))
 
 ```
-Location Utilities
+# Location Utilities
 
 [Locations](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#location)
 and
@@ -22,7 +23,7 @@ The key differences between the two representations are:
 3. File paths are represented as URIs in the LSP, while $y_0$ uses absolute
    paths.
 
-Position Conversion
+## Position Conversion
 
 The function `from-lsp-pos` takes an [LSP
 position](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#position)
@@ -50,7 +51,7 @@ to a pair of an absolute path and a numeric position.
  ["/path/to/module.c0" 4000006])
 
 ```
-Location Conversion
+## Location Conversion
 
 `to-lsp-location` takes a $y_0$ location map and returns a corresponding [LSP
 location](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#location).
@@ -62,5 +63,27 @@ location](https://microsoft.github.io/language-server-protocol/specifications/ls
  {:uri "file:///path/to/module.c0"
   :range {:start {:line 3 :character 0}
           :end {:line 3 :character 5}}})
+
+```
+## Node Fetching
+
+To implement LSP services, we often need access to nodes in the parse-tree
+that correspond to a given position.
+
+The function `node-at-text-doc-pos` takes a server context and a
+[TextDocumentPositionParams](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocumentPositionParams)
+to an already-open module and returns the node that [best
+matches](tree_index.md#positions-and-nodes) that position in the module.
+```clojure
+(fact
+ (let [extract-node (fn [ctx req]
+                      {:node (node-at-text-doc-pos ctx req)})
+       {:keys [add-module-with-pos send shutdown]} (addon-test
+                                               #(update % :req-handlers
+                                                        assoc "test/foo"
+                                                        extract-node))
+       text-doc-pos (add-module-with-pos "/path/to/m.c0" "void $foo(){}")]
+   (send "test/foo" text-doc-pos) => {:node (symbol "/path/to/m.c0" "foo")}
+   (shutdown)))
 ```
 

@@ -1,7 +1,8 @@
 (ns y0lsp.location-utils 
   (:require
    [clojure.java.io :as io]
-   [y0.location-util :refer [decode-file-pos encode-file-pos]]))
+   [y0.location-util :refer [decode-file-pos encode-file-pos]]
+   [y0lsp.tree-index :refer [find-node]]))
 
 (defn from-lsp-pos [{:keys [line character]}]
   (encode-file-pos (inc line) (inc character)))
@@ -26,3 +27,9 @@
   {:uri (path-to-uri path)
    :range {:start (to-lsp-pos start)
            :end (to-lsp-pos end)}})
+
+(defn node-at-text-doc-pos [{:keys [ws]} {:keys [text-document position]}]
+  (let [path (-> text-document :uri uri-to-path)
+        index (-> @ws :ms (get path) :index)
+        pos (from-lsp-pos position)]
+    (find-node index pos)))
