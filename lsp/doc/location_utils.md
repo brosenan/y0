@@ -2,6 +2,7 @@
 (ns y0lsp.location-utils-test
   (:require
    [midje.sweet :refer [=> fact]]
+   [y0lsp.addon-utils :refer [add-req-handler]]
    [y0lsp.initializer-test :refer [addon-test]]
    [y0lsp.location-utils :refer :all]))
 
@@ -79,9 +80,8 @@ matches](tree_index.md#positions-and-nodes) that position in the module.
  (let [extract-node (fn [ctx req]
                       {:node (node-at-text-doc-pos ctx req)})
        {:keys [add-module-with-pos send shutdown]} (addon-test
-                                               #(update % :req-handlers
-                                                        assoc "test/foo"
-                                                        extract-node))
+                                               (add-req-handler "test/foo"
+                                                                extract-node))
        text-doc-pos (add-module-with-pos "/path/to/m.c0" "void $foo(){}")]
    (send "test/foo" text-doc-pos) => {:node (symbol "/path/to/m.c0" "foo")}
    (shutdown)))
@@ -102,10 +102,9 @@ section](#node-fetching)) and return its location.
  (let [get-node-location (fn [ctx req]
                            (let [node (node-at-text-doc-pos ctx req)]
                              (node-location node)))
-       {:keys [add-module-with-pos send shutdown]} (addon-test
-                                                    #(update % :req-handlers
-                                                             assoc "test/foo"
-                                                             get-node-location))
+       {:keys [add-module-with-pos send shutdown]}
+       (addon-test
+        (add-req-handler "test/foo" get-node-location))
        text-doc-pos (add-module-with-pos "/path/to/m.c0" "void $foo(){}")]
    (send "test/foo" text-doc-pos) => {:uri "file:///path/to/m.c0"
                                       :range {:start {:line 0 :character 4}

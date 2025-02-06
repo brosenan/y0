@@ -11,6 +11,7 @@
    [y0.config :refer [*y0-path* lang-config-spec]]
    [y0.rules :refer [*error-target* *skip-recoverable-assertions*]]
    [y0.status :refer [ok]]
+   [y0lsp.addon-utils :refer [add-notification-handler add-req-handler]]
    [y0lsp.initializer :refer :all]
    [y0lsp.location-utils :refer [to-lsp-pos]]
    [y0lsp.server :refer [register-notification register-req]]
@@ -295,9 +296,9 @@ and the other handles a `test/foo` notification.
  (let [add-foo-parser #(update-in % [:config-spec :parser]
                                   assoc :foo {:func (constantly [["foo"] []])
                                               :args []})
-       handle-foo-notification #(update-in % [:notification-handlers "test/foo"]
-                                           conj (fn [_ctx _res]
-                                                  "foo"))
+       handle-foo-notification (add-notification-handler "test/foo"
+                                                         (fn [_ctx _res]
+                                                           "foo"))
        ctx (initialize-context (read-lang-config)
                                [(-> "y0_test/" io/resource io/file)]
                                [add-foo-parser
@@ -329,10 +330,10 @@ server](https://github.com/clojure-lsp/lsp4clj?tab=readme-ov-file#start-and-stop
             (read-lang-config)
             [(-> "y0_test/" io/resource io/file)]
             [#(assoc % :my-promise (promise))
-             #(update-in % [:notification-handlers "test/didFoo"] conj
-                         (fn [{:keys [my-promise] :as ctx} notif]
-                           (when (= (:server ctx) server)
-                             (deliver my-promise notif))))])
+             (add-notification-handler "test/didFoo"
+                                       (fn [{:keys [my-promise] :as ctx} notif]
+                                         (when (= (:server ctx) server)
+                                           (deliver my-promise notif))))])
        done (start ctx server)]
    (async/put! input-ch
                (lsp.requests/notification "test/didFoo" {:foo :bar}))
@@ -380,9 +381,8 @@ and must be called at the end of each test.
 (register-req "test/foo" any?)
 (fact
  (let [{:keys [shutdown]}
-       (addon-test #(update % :req-handlers
-                            assoc "test/foo" (fn [_ctx req]
-                                               req)))]
+       (addon-test (add-req-handler "test/foo" (fn [_ctx req]
+                                                 req)))]
    shutdown => fn?
    (shutdown)))
 
@@ -400,10 +400,9 @@ returns the response.
  (let [{:keys [send shutdown]}
        (addon-test 
         #(assoc % :foo [1 2 3 4])
-        #(update % :req-handlers
-                 assoc "test/foo" (fn [{:keys [foo]} req]
-                                    {:my-req req
-                                     :foo-from-ctx foo})))]
+        (add-req-handler "test/foo" (fn [{:keys [foo]} req]
+                                      {:my-req req
+                                       :foo-from-ctx foo})))]
    (send "test/foo" {:val 3}) => {:my-req {:val 3}
                                   :foo-from-ctx [1 2 3 4]}
    (shutdown)))
@@ -419,12 +418,12 @@ invoking all notification handlers installed by the addons.
        (addon-test
         #(assoc % :my-promise p1)
         #(assoc % :my-other-promise p2)
-        #(update-in % [:notification-handlers "test/didFoo"]
-                 conj (fn [{:keys [my-promise]} req]
+        (add-notification-handler "test/didFoo"
+                                  (fn [{:keys [my-promise]} req]
                                     (deliver my-promise req)))
-        #(update-in % [:notification-handlers "test/didFoo"]
-                    conj (fn [{:keys [my-other-promise]} req]
-                           (deliver my-other-promise req))))]
+        (add-notification-handler "test/didFoo"
+                                  (fn [{:keys [my-other-promise]} req]
+                                    (deliver my-other-promise req))))]
    (notify "test/didFoo" {:bar 42})
    (deref p1 100 :timeout) => {:bar 42}
    (deref p2 100 :timeout) => {:bar 42}
@@ -443,11 +442,10 @@ correct number.
 (fact
  (let [{:keys [add-module send shutdown]}
        (addon-test
-        #(update % :req-handlers
-                 assoc "test/foo" (fn [{:keys [ws]} {:keys [path]}]
-                                    {:err-count (-> @ws :ms (get path)
-                                                    :semantic-errs deref
-                                                    count)})))]
+        (add-req-handler "test/foo" (fn [{:keys [ws]} {:keys [path]}]
+                                      {:err-count (-> @ws :ms (get path)
+                                                      :semantic-errs deref
+                                                      count)})))]
    (add-module "/path/to/m1.c0" "void foo() {}")
    (add-module "/path/to/m2.c0" "void foo() { int32 a = b; }")
    (send "test/foo" {:path "/path/to/m1.c0"}) => {:err-count 0}
@@ -473,9 +471,8 @@ indeed been added to the workspace, with the `$` removed.
 (fact
  (let [{:keys [add-module-with-pos send shutdown]}
        (addon-test
-        #(update % :req-handlers
-                 assoc "test/foo" (fn [{:keys [ws]} {:keys [path]}]
-                                    {:text (-> @ws :ms (get path) :text)})))]
+        (add-req-handler "test/foo" (fn [{:keys [ws]} {:keys [path]}]
+                                      {:text (-> @ws :ms (get path) :text)})))]
    (add-module-with-pos "/path/to/m.c0" "void $foo() {}") =>
    {:text-document {:uri "file:///path/to/m.c0"}
     :position {:line 0 :character 5}}
