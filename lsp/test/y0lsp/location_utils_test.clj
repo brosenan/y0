@@ -74,3 +74,27 @@
        text-doc-pos (add-module-with-pos "/path/to/m.c0" "void $foo(){}")]
    (send "test/foo" text-doc-pos) => {:node (symbol "/path/to/m.c0" "foo")}
    (shutdown)))
+
+;; ## Node Location
+
+;; The flip side of `node-at-text-doc-pos` is to take a parse-tree node and
+;; translate its location to an LSP
+;; [location](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#location).
+
+;; `node-location` does this. It takes a node and returns a location.
+
+;; In the following example we fetch a node at a given position (see [previous
+;; section](#node-fetching)) and return its location.
+(fact
+ (let [get-node-location (fn [ctx req]
+                           (let [node (node-at-text-doc-pos ctx req)]
+                             (node-location node)))
+       {:keys [add-module-with-pos send shutdown]} (addon-test
+                                                    #(update % :req-handlers
+                                                             assoc "test/foo"
+                                                             get-node-location))
+       text-doc-pos (add-module-with-pos "/path/to/m.c0" "void $foo(){}")]
+   (send "test/foo" text-doc-pos) => {:uri "file:///path/to/m.c0"
+                                      :range {:start {:line 0 :character 4}
+                                              :end {:line 0 :character 8}}}
+   (shutdown)))

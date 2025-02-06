@@ -33,3 +33,6 @@
         index (-> @ws :ms (get path) :index)
         pos (from-lsp-pos position)]
     (find-node index pos)))
+
+(defn node-location [node]
+  (-> node meta to-lsp-location))
