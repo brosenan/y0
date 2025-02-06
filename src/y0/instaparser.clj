@@ -89,23 +89,23 @@
     (catch Exception e {:err [(.getMessage e)]})))
 
 (defn instaparser [lang grammar id-kws dep-kw extra-deps]
-  (fn parse [path text resolve]
-    (let-s [parser (ok (instaparse-grammar grammar))
-            parse-tree (wrap-parse parser text)]
-           (let [statements (drop 1 parse-tree)
-                 deps-atom (atom nil)
-                 errs (atom [])
-                 statements (add-locations statements path)
-                 statements (vec (postwalk-with-meta
-                                  #(-> %
-                                       (symbolize path id-kws)
-                                       (extract-deps deps-atom dep-kw
-                                                     path resolve errs)
-                                       convert-int-node
-                                       convert-float-node) statements))
-                 deps (-> @deps-atom
-                          (concat extra-deps)
-                          vec)]
-             (if (seq @errs)
-               {:err (first @errs)}
-               (ok [statements deps]))))))
+  (let [parser (instaparse-grammar grammar)]
+    (fn parse [path text resolve]
+      (let-s [parse-tree (wrap-parse parser text)]
+             (let [statements (drop 1 parse-tree)
+                   deps-atom (atom nil)
+                   errs (atom [])
+                   statements (add-locations statements path)
+                   statements (vec (postwalk-with-meta
+                                    #(-> %
+                                         (symbolize path id-kws)
+                                         (extract-deps deps-atom dep-kw
+                                                       path resolve errs)
+                                         convert-int-node
+                                         convert-float-node) statements))
+                   deps (-> @deps-atom
+                            (concat extra-deps)
+                            vec)]
+               (if (seq @errs)
+                 {:err (first @errs)}
+                 (ok [statements deps])))))))
