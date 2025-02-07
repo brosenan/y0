@@ -173,7 +173,7 @@
                    (update ps :modules conj path))
        ws (-> (new-workspace load-dividers eval-func)
               (add-module {:path "/12.y1"})
-              (eval-with-deps {:path "/6.y1"}))]
+              (eval-with-deps "/6.y1"))]
    (-> ws :ms (get "/6.y1") :cache) =>
    {:pre-ps {:modules ["/3.y1" "/2.y1" "/1.y1"]}
     :ps {:modules ["/6.y1" "/3.y1" "/2.y1" "/1.y1"]}
@@ -221,9 +221,9 @@
                        (update ps :now conj path))
        ws (-> (new-workspace load-dividers eval-func-before)
               (add-module {:path "/12.y1"})
-              (eval-with-deps {:path "/6.y1"})
+              (eval-with-deps "/6.y1")
               (assoc :eval-module eval-func-now)
-              (eval-with-deps {:path "/12.y1"}))]
+              (eval-with-deps "/12.y1"))]
    (-> ws :ms (get "/12.y1") :cache :ps) =>
    {:before ["/6.y1" "/3.y1" "/2.y1" "/1.y1"] :now ["/12.y1" "/4.y1"]}))
 
@@ -246,7 +246,7 @@
                    (update ps :modules conj path))
        ws (-> (new-workspace load-dividers eval-func)
               (add-module {:path "/12.y1"})
-              (eval-with-deps {:path "/12.y1"}))]
+              (eval-with-deps "/12.y1"))]
    (-> ws :ms (get "/12.y1") :cache :ps) =>
    {:modules ["/12.y1" "/4.y1" "/6.y1" "/3.y1" "/2.y1" "/1.y1"]}
    (set (for [[mid m] (:ms ws)

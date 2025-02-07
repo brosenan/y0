@@ -276,7 +276,7 @@ the module's `:ps` contains a `function` named `foo`.
    (swap! ws add-module {:path "/path/to/module.c0"
                          :text "void foo() {}"
                          :is-open true})
-   (swap! ws eval-with-deps {:path "/path/to/module.c0"})
+   (swap! ws eval-with-deps "/path/to/module.c0")
    (let [c0ns (-> "y0_test/c0.y0" io/resource io/file .getAbsolutePath)]
      (-> ctx :ws deref :ms (get "/path/to/module.c0")
          :cache :ps (get {:arity 3 :name (str c0ns "/function")})
@@ -360,7 +360,7 @@ The following function is intended to do this.
                      (swap! (:ws ctx) add-module {:path path
                                                   :text text
                                                   :is-open true})
-                     (swap! (:ws ctx) eval-with-deps {:path path}))]
+                     (swap! (:ws ctx) eval-with-deps path))]
     {:send (fn [name req]
              (server/receive-request name ctx req))
      :notify (fn [name notif]

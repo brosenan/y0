@@ -63,9 +63,8 @@
           ms (update-in ms [dep :cache :refs] conj mid)]
       (recur ms deps mid))))
 
-(defn eval-with-deps [{:keys [mg ms eval-module] :as ws} m]
-  (let [mid (module-id m)
-        mg' (transpose mg)
+(defn eval-with-deps [{:keys [mg ms eval-module] :as ws} mid]
+  (let [mg' (transpose mg)
         rec-deps (bf-traverse mg' mid)
         pivot (find-pivot rec-deps ms)
         stop-set (-> ms (get pivot) :cache :all-deps)
@@ -118,7 +117,7 @@
         (invalidate-module mid)
         (update-in [:ms mid] load-module)
         (update-graph-dependencies mid)
-        (eval-with-deps {:path mid}))
+        (eval-with-deps mid))
     (-> ws
         (add-module {:path mid})
-        (eval-with-deps {:path mid}))))
+        (eval-with-deps mid))))
