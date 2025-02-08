@@ -111,13 +111,14 @@
 
 ;; TODO: Optimize so that if no new dependencies are introduced, evaluation
 ;; starts with :pre-ps.
-(defn update-module [{:keys [load-module] :as ws} mid]
-  (if (-> ws :ms (contains? mid))
-    (-> ws
-        (invalidate-module mid)
-        (update-in [:ms mid] load-module)
-        (update-graph-dependencies mid)
-        (eval-with-deps mid))
-    (-> ws
-        (add-module {:path mid})
-        (eval-with-deps mid))))
+(defn update-module [{:keys [load-module] :as ws} m]
+  (let [mid (module-id m)]
+    (if (-> ws :ms (contains? mid))
+      (-> ws
+          (invalidate-module mid)
+          (update :ms assoc mid (load-module m))
+          (update-graph-dependencies mid)
+          (eval-with-deps mid))
+      (-> ws
+          (add-module {:path mid})
+          (eval-with-deps mid)))))

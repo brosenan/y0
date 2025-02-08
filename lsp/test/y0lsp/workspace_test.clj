@@ -276,15 +276,15 @@
 ;; both the state of the module itself as well as the status of all dependent
 ;; modules, which may need to be reevaluated.
 
-;; `update-module` takes a workspace and a module ID (absolute path) as
-;; parameters and returns the updated workspace.
+;; `update-module` takes a workspace and a module as parameters and returns the
+;; updated workspace.
 
 ;; If the module does not pre-exist in the workspace, it is added and evaluated.
 (fact
  (let [eval-func (fn [ps {:keys [path]}]
                    (update ps :modules conj path))
        ws (-> (new-workspace load-dividers eval-func)
-              (update-module "/12.y1"))]
+              (update-module {:path "/12.y1"}))]
    (-> ws :ms keys set) => #{"/12.y1" "/6.y1" "/4.y1" "/3.y1" "/2.y1" "/1.y1"}
    (-> ws :ms (get "/12.y1") :cache :ps)
    => {:modules ["/12.y1" "/4.y1" "/6.y1" "/3.y1" "/2.y1" "/1.y1"]}))
@@ -292,23 +292,14 @@
 ;; If the module already exists, it is reloaded and reevaluated, but its
 ;; dependencies may not be, given that they are already loaded.
 
-;; We demonstrate this by updating module `/12.y1` twice, first with one set of
-;; load and evaluate functions, and then with another set. The second load
-;; function throws an exception if a module other than `/12.y1` is loaded. The
-;; second evaluate function writes to a different key in the `:ps`.
+;; We demonstrate this by updating module `/12.y1` twice, with different module
+;; contents. We show that the contents is updated. By updating the workspace's
+;; evaluation function we test that only that module has been reevaluated.
 (fact
  (let [eval-func (fn [ps {:keys [path]}]
                    (update ps :old conj path))
        ws (-> (new-workspace load-dividers eval-func)
-              (update-module "/12.y1")
-              (assoc :load-module #(if (= (:path %) "/12.y1")
-                                     {:path "/12.y1"
-                                      :deps ["/6.y1" "/4.y1"]
-                                      :statements ["This is new"]}
-                                     (throw
-                                      (Exception.
-                                       (str "Trying to load wrong module "
-                                            %)))))
+              (update-module {:path "/12.y1" :statements ["This is old"]})
               (assoc :eval-module (fn [ps {:keys [path]}]
                                     (when (not= path "/12.y1")
                                       (throw
@@ -316,7 +307,7 @@
                                         (str "Trying to eval wrong module "
                                              path))))
                                     (update ps :new conj path)))
-              (update-module "/12.y1"))]
+              (update-module {:path "/12.y1" :statements ["This is new"]}))]
    (-> ws :ms (get "/12.y1") :statements) => ["This is new"]
    (-> ws :ms (get "/12.y1") :cache :ps) =>
    {:old ["/4.y1" "/6.y1" "/3.y1" "/2.y1" "/1.y1"]
@@ -328,8 +319,8 @@
  (let [eval-func (fn [ps {:keys [path]}]
                    (update ps :old conj path))
        ws (-> (new-workspace load-dividers eval-func)
-              (update-module "/12.y1")
-              (update-module "/6.y1"))]
+              (update-module {:path "/12.y1"})
+              (update-module {:path "/6.y1"}))]
    ;; /4.y1 comes before /6.y1 in the sort order despite not being a dependency.
    (-> ws :ms (get "/4.y1") (contains? :cache)) => false
    (-> ws :ms (get "/3.y1") (contains? :cache)) => true))
@@ -339,23 +330,20 @@
 ;; When a module is updated, it is possible that its dependencies change. The
 ;; change in depdendencies should be reflected in the graph.
 
-;; In the following example we update module `/12.y1` twice. First with the
-;; regular `:load-module` function, and then with a function that updates the
-;; dependencies to `/6.y1`, which is already a dependency and `/10.y1`, which is
-;; new. We show that the predecessors of node `/12.y1` in the graph are now
-;; `/6.y1` and `/10.y1`, and that `/5.y1`, a dependency of `/10.y1`, is also
-;; added to the workspace.
+;; In the following example we update module `/12.y1` twice. First by only
+;; providing a `:path`, thus allowing `load-dividers` to select the
+;; dependencies, and then with the `:deps` set to `/6.y1` and `/10.y1`. We show
+;; that the predecessors of node `/12.y1` in the graph are now `/6.y1` and
+;; `/10.y1`, and that `/5.y1`, a dependency of `/10.y1`, is also added to the
+;; workspace.
 (fact
  (let [eval-func (fn [ps {:keys [path]}]
                    (update ps :modules conj path))
        ws (-> (new-workspace load-dividers eval-func)
-              (update-module "/12.y1")
-              (assoc :load-module #(if (= (:path %) "/12.y1")
-                                     {:path "/12.y1"
-                                      :deps ["/6.y1" "/10.y1"]
-                                      :statements ["This is new"]}
-                                     (load-dividers %)))
-              (update-module "/12.y1"))]
+              (update-module {:path "/12.y1"})
+              (update-module {:path "/12.y1"
+                              :deps ["/6.y1" "/10.y1"]
+                              :statements ["This is new"]}))]
    (-> ws :mg (predecessors "/12.y1")) => #{"/6.y1" "/10.y1"}
    (-> ws :mg (predecessors "/10.y1")) => #{"/2.y1" "/5.y1"}
    (-> ws :ms (contains? "/5.y1")) => true))
