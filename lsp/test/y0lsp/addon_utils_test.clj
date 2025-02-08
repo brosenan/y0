@@ -71,24 +71,32 @@
 ;; When implementing request and notification handlers, we often need to access
 ;; the the workspace. This involves reading state and manipulation.
 
-;; The workspace is held by an atom which allows it to be updated. The function
-;; `swap-ws!` allows such updates. It takes a context, a function and arguments
-;; for the function and calls it on the workspace.
+;; The workspace is held by an atom which allows it to be updated.
+
+;; The `get-module` takes a context and a path and returns the module with that
+;; path, if exists in the workspace.
+
+;; The function `swap-ws!` allows such updates. It takes a context, a function
+;; and arguments for the function and calls it on the workspace.
 
 ;; In the following example we [add a module](workspace.md#adding-a-module) and
-;; [evaluate it](workspace.md#evaluation-and-caching) using `swap-ws!`.
+;; [evaluate it](workspace.md#evaluation-and-caching) using `swap-ws!`. Then we
+;; use `get-module` to fetch the module we created and check that the `:ps` is
+;; not `nil`.
 (register-req "test/bar" any?)
 (fact
  (let [{:keys [send shutdown]}
        (addon-test
+        ;; Add and evaluate a module
         (add-req-handler "test/foo"
                          (fn [ctx {:keys [path text]}]
                            (swap-ws! ctx add-module {:path path :text text})
                            (swap-ws! ctx eval-with-deps path)
                            {}))
+        ;; Retrieve a module's `:ps`
         (add-req-handler "test/bar"
                          (fn [ctx {:keys [path]}]
-                           (-> ctx :ws deref :ms (get path) :cache :ps))))]
+                           (-> (get-module ctx path) :cache :ps))))]
    (send "test/foo" {:path "/x.c0" :text "void foo() {}"}) => {}
    (send "test/bar" {:path "/x.c0"}) => #(not (nil? %))
    (shutdown)))

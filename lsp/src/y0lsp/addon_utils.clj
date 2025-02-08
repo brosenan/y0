@@ -19,3 +19,6 @@
 
 (defn swap-ws! [ctx f & args]
   (apply swap! (:ws ctx) f args))
+
+(defn get-module [ctx path]
+  (-> ctx :ws deref :ms (get path)))
