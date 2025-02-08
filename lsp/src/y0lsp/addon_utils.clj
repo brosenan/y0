@@ -16,3 +16,6 @@
 
 (defn merge-server-capabilities [cap]
   #(update % :server-capabilities deep-merge cap))
+
+(defn swap-ws! [ctx f & args]
+  (apply swap! (:ws ctx) f args))
