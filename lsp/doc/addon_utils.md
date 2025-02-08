@@ -11,7 +11,12 @@
 
 This module contains helper functions for creating addons.
 
-## Handler Installation Functions
+## Context Manipulators
+
+In this section we describe functions that create functions that update the
+server context. These functions can be composed to create an addon.
+
+### Handler Installation Functions
 
 The `y0lsp` [server](server.md) allows for
 [request](server.md#handling-requests) and
@@ -46,5 +51,24 @@ a addon function that adds the handler as a handler for that notification.
    (notify "test/didFoo" {:foo :bar})
    @x => {:foo :bar}
    (shutdown)))
+
+```
+### Capabilities
+
+The key `:server-capabilities` in the server context collects the [Server
+capabilities](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#serverCapabilities)
+that will be sent to the client on initialization.
+
+`merge-server-capabilities` takes a partial capabilities map and returns a
+function that merges it to the `:server-capabilities` in the context.
+```clojure
+(fact
+ (let [f (comp (merge-server-capabilities {:foo {:bar :baz}
+                                           :x 1})
+               (merge-server-capabilities {:foo {:baz :bar}
+                                           :x 2}))]
+   (f {}) => {:server-capabilities {:foo {:bar :baz
+                                          :baz :bar}
+                                    :x 1}}))
 ```
 
