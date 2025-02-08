@@ -114,18 +114,20 @@ of this integer.
 ```clojure
 (defn- load-dividers [{:keys [path] :as m}]
   (let [[_ num] (re-matches #"/(\d+).y1" path)
-        n (Integer/parseInt num)]
-    (loop [k (dec n)
-           deps nil
-           stop #{}]
-      (if (= k 0)
-        (assoc m :deps deps)
-        (cond
-          (->> stop (filter #(= (mod % k) 0)) seq) (recur (dec k) deps stop)  
-          (= (mod n k) 0) (recur (dec k) 
-                                 (conj deps (str "/" k ".y1")) 
-                                 (conj stop k)) 
-          :else (recur (dec k) deps stop))))))
+        n (Integer/parseInt num)
+        calc-deps (fn [k deps stop]
+                    (if (= k 0)
+                      deps
+                      (cond
+                        (->> stop (filter #(= (mod % k) 0)) seq) (recur (dec k) deps stop)
+                        (= (mod n k) 0) (recur (dec k)
+                                               (conj deps (str "/" k ".y1"))
+                                               (conj stop k))
+                        :else (recur (dec k) deps stop))))
+        deps (calc-deps (dec n) nil #{})]
+    (if (contains? m :deps)
+      m
+      (assoc m :deps deps))))
 
 (fact
  (load-dividers {:path "/12.y1"}) => {:path "/12.y1"
@@ -133,6 +135,16 @@ of this integer.
  (let [ws (-> (new-workspace load-dividers identity)
               (add-module {:path "/12.y1"}))]
    (-> ws :mg nodes) => #{"/1.y1" "/2.y1" "/3.y1" "/4.y1" "/6.y1" "/12.y1"}))
+
+```
+If the given module already has `:deps`, they are not changed.
+```clojure
+(fact
+ (load-dividers {:path "/12.y1" :deps ["/8.y1"]}) => {:path "/12.y1"
+                                                      :deps ["/8.y1"]}
+ (let [ws (-> (new-workspace load-dividers identity)
+              (add-module {:path "/12.y1"  :deps ["/8.y1"]}))]
+   (-> ws :mg nodes) => #{"/1.y1" "/2.y1" "/4.y1" "/8.y1" "/12.y1"}))
 
 ```
 ## Caching
