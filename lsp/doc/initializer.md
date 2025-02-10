@@ -74,14 +74,23 @@ config from the root of the `y0` repo.
 
 ```
 Next, we take our language config and override its `:stylesheet` attributes
-(for both `y1` and `c0`). Then we test that we get a proper language map for
-both languages.
+(for both `y1` and `c0`).
+```clojure
+(def lang-config-with-style
+  (-> (read-lang-config)
+      (update "y1" assoc :stylesheet [{:foo 1}])
+      (update "c0" assoc :stylesheet [{:foo 2}])))
+
+```
+The function `create-language-map` takes a server context containing
+`:config-spec` and `:config`, and adds `:lang-map`, containing a languages
+map based on the config and the spec.
 ```clojure
 (fact
- (let [config (-> (read-lang-config)
-                  (update "y1" assoc :stylesheet [{:foo 1}])
-                  (update "c0" assoc :stylesheet [{:foo 2}]))
-       lang-map (to-language-map lang-config-spec config)]
+ (let [ctx (-> {:config lang-config-with-style
+                :config-spec lang-config-spec}
+               create-language-map)
+       lang-map (:lang-map ctx)]
    (-> lang-map (get "y1") :parse) => fn?
    (-> lang-map (get "c0") :resolve) => fn?
    (let [f1 (-> lang-map (get "y1") :lss)
@@ -108,18 +117,20 @@ Second, in addition to loading the module's `:statements`, it also creates an
 `:index`, [mapping line numbers to sequences of tree nodes](tree_index.md)
 and an empty `:errs` atom, for collecting evaluation errors.
 
-The function `module-loader` takes a language-map and returns function
-(loader) that takes a partial module (could be a `:path` only) and returns a
-complete module, adding the missing keys.
+The function `module-loader` takes a server context containing a `:lang-map`
+and returns function (loader) that takes a partial module (could be a `:path`
+only) and returns a complete module, adding the missing keys.
 ```clojure
 (fact
- (let [config (read-lang-config)
-       lang-map (binding [*y0-path* [(-> "y0_test/"
-                                         io/resource
-                                         io/file)]]
-                  (to-language-map lang-config-spec config))
-       lang-map (update lang-map "c0" assoc :read (constantly "void foo() {}"))
-       loader (module-loader lang-map)
+ (let [ctx (binding [*y0-path* [(-> "y0_test/"
+                                    io/resource
+                                    io/file)]]
+             (-> {:config (read-lang-config)
+                  :config-spec lang-config-spec}
+                 create-language-map
+                 (update-in [:lang-map "c0"]
+                            assoc :read (constantly "void foo() {}"))))
+       loader (module-loader ctx)
        {:keys [path lang text statements deps index semantic-errs]}
        (loader {:path "/path/to/my-module.c0"})]
    path => "/path/to/my-module.c0"
@@ -145,15 +156,18 @@ To demonstrate this, we repeat the previous example, but we replace the
 that the error is captured in the returned module.
 ```clojure
 (fact
- (let [config (read-lang-config)
-       lang-map (binding [*y0-path* [(-> "y0_test/"
-                                         io/resource
-                                         io/file)]]
-                  (to-language-map lang-config-spec config))
-       lang-map (update lang-map "c0" assoc :read (constantly "void foo() {}"))
-       lang-map (update lang-map "c0" assoc :parse
-                        (constantly {:err ["Some parse error"]}))
-       loader (module-loader lang-map)
+ (let [ctx (binding [*y0-path* [(-> "y0_test/"
+                                    io/resource
+                                    io/file)]]
+             (-> {:config (read-lang-config)
+                  :config-spec lang-config-spec}
+                 create-language-map
+                 (update-in [:lang-map "c0"]
+                            assoc :read (constantly "void foo() {}"))
+                 (update-in [:lang-map "c0"]
+                            assoc :parse 
+                            (constantly {:err ["Some parse error"]}))))
+       loader (module-loader ctx)
        {:keys [err]}
        (loader {:path "/path/to/my-module.c0"})]
    err => ["Some parse error"]))

@@ -12,13 +12,17 @@
    [y0lsp.tree-index :refer [index-nodes]]
    [y0lsp.workspace :refer [new-workspace]]))
 
-(defn to-language-map [conf-spec lang-config]
+(defn- to-language-map [conf-spec lang-config]
   (language-map-from-config lang-config
                             (-> conf-spec
                                 (assoc :lss {:default {:func #(compile-stylesheet %)
                                                         :args [:stylesheet]}}))
                             (-> keys-map
                                 (assoc :lss :lss))))
+
+(defn create-language-map [{:keys [config config-spec] :as ctx}]
+  (-> ctx
+      (assoc :lang-map (to-language-map config-spec config))))
 
 (defn- add-index [{:keys [statements] :as m}]
   (assoc m :index (index-nodes statements)))
@@ -28,7 +32,7 @@
     (:ok status)
     (assoc m :err (:err status))))
 
-(defn module-loader [lang-map]
+(defn module-loader [{:keys [lang-map]}]
   (fn [m]
     (-> m
         (load-module lang-map)
@@ -49,11 +53,11 @@
           (swap! semantic-errs conj (:err status))
           ps)))))
 
-(defn create-workspace [{:keys [config config-spec y0-path] :as ctx}]
-  (let [lang-map (binding [*y0-path* y0-path]
-                   (to-language-map config-spec config))]
+(defn create-workspace [{:keys [y0-path] :as ctx}]
+  (let [ctx (binding [*y0-path* y0-path]
+                   (-> ctx create-language-map))]
     (-> ctx
-      (assoc :ws (atom (new-workspace (module-loader lang-map)
+      (assoc :ws (atom (new-workspace (module-loader ctx)
                                       (module-evaluator apply-statements)))))))
 
 (defn initialize-context [config y0-path addons]
