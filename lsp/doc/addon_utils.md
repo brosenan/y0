@@ -13,6 +13,16 @@
 
 This module contains helper functions for creating addons.
 
+## Addon Registration
+
+Addons are registered using the `register-addon` function. It registers the
+addon under the given name in a global map held within an atom.
+```clojure
+(register-addon "my-addon" #(assoc % :foo :bar))
+(fact
+ (-> @addons (get "my-addon")) => fn?)
+
+```
 ## Context Manipulators
 
 In this section we describe functions that create functions that update the

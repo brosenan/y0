@@ -1,5 +1,10 @@
 (ns y0lsp.addon-utils)
 
+(def addons (atom {}))
+
+(defn register-addon [name func]
+  (swap! addons assoc name func))
+
 (defn add-req-handler [name handler]
   #(update % :req-handlers assoc name handler))
 
