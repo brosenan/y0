@@ -2,9 +2,9 @@
 (ns y0lsp.addon-utils-test
   (:require
    [midje.sweet :refer [fact]]
-   [clojure.java.io :as io]
    [y0lsp.addon-utils :refer :all]
    [y0lsp.initializer-test :refer [addon-test]]
+   [y0lsp.location-utils :refer [node-at-text-doc-pos]]
    [y0lsp.server :refer [register-notification register-req]]
    [y0lsp.workspace :refer [add-module eval-with-deps]]))
 
@@ -118,6 +118,36 @@ not `nil`.
                            (-> (get-module ctx path) :cache :ps))))]
    (send "test/foo" {:path "/x.c0" :text "void foo() {}"}) => {}
    (send "test/bar" {:path "/x.c0"}) => #(not (nil? %))
+   (shutdown)))
+
+```
+### Accessing the Language Stylesheet
+
+The [language stylesheet](language_stylesheet.md) provides a translation
+layer, translating the language of $y_0$ predicates to the language of the
+LSP.
+
+The `:lang-map` holds, for each language, a compiled stylesheet under the key
+`:lss`. The function `lss-for-node` takes a context and a parse-tree node and
+returns the `:lss` corresponding to the language the node's containing module
+is using.
+
+In the following example we install one addon that updates the stylesheet of
+laungauges `y1` and `c0`, and a second addon which evaluates attribute `:foo`
+in the given module. We create a `c0` module and evaluate it on some node.
+```clojure
+(fact
+ (let [{:keys [add-module-with-pos send shutdown]}
+       (addon-test
+        #(update-in % [:config "y1"] assoc :stylesheet [{:foo 42}])
+        #(update-in % [:config "c0"] assoc :stylesheet [{:foo :bar}])
+        (add-req-handler "test/foo"
+                         (fn [ctx req]
+                           (let [node (node-at-text-doc-pos ctx req)
+                                 lss (lss-for-node ctx node)]
+                             (lss :foo)))))
+       text-pos (add-module-with-pos "/path/to/x.c0" "void $foo() {}")]
+   (send "test/foo" text-pos) => :bar
    (shutdown)))
 ```
 

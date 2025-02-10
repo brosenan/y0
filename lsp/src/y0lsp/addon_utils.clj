@@ -27,3 +27,10 @@
 
 (defn get-module [ctx path]
   (-> ctx :ws deref :ms (get path)))
+
+(defn lss-for-node [{:keys [lang-map] :as ctx} node]
+  (let [path (-> node meta :path)
+        {:keys [lang]} (get-module ctx path)
+        lss (get-in lang-map [lang :lss])]
+    (fn [key]
+      (lss node key))))

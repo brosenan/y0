@@ -57,11 +57,16 @@
                     expr))
                 expr))
 
+(defn node-name [node]
+  (cond
+    (sequential? node) (first node)
+    :else node))
+
 (defn compile-stylesheet [lss]
   (let [[default & rules] lss
         rules (compile-rules rules)]
     (fn [node attr]
-      (let [node-name (first node)
+      (let [node-name (node-name node)
             matched-preds (->> node meta :matches deref keys (map name) set)
             attr-expr (loop [rules rules]
                         (if (empty? rules)
