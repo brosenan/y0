@@ -136,3 +136,32 @@
        text-pos (add-module-with-pos "/path/to/x.c0" "void $foo() {}")]
    (send "test/foo" text-pos) => :bar
    (shutdown)))
+
+;; ## Handler Augmentation Functions
+
+;; A handler augmentation function is a function that takes a (request
+;; or notification) handler and returns another handler, which is augmented
+;; somehow. Augmentation can involve either the input, output, or both.
+
+;; `add-node-and-lss-to-doc-pos` augments a handler which input is a
+;; [TextDocumentPositionParams](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocumentPositionParams)
+;; by adding two additional keys to the request: `:node`, containing the node
+;; pointed to by the request, and `:lss`, a function that evaluates stylesheet
+;; attributes for that node.
+
+;; In the following example we set the stylesheet for language `c0`, setting the
+;; value of attribute `:foo` to `:bar` and create a handler that returns the
+;; node and the value of `:foo` on that node.
+(fact
+ (let [{:keys [add-module-with-pos send shutdown]}
+       (addon-test
+        #(update-in % [:config "c0"] assoc :stylesheet [{:foo :bar}])
+        (->> (fn [_ctx {:keys [node lss]}]
+               {:node node
+                :foo (lss :foo)})
+             add-node-and-lss-to-doc-pos
+             (add-req-handler "test/foo")))
+       text-pos (add-module-with-pos "/path/to/x.c0" "void $foo() {}")]
+   (send "test/foo" text-pos) => {:node (symbol "/path/to/x.c0" "foo")
+                                  :foo :bar}
+   (shutdown)))

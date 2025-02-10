@@ -1,4 +1,6 @@
-(ns y0lsp.addon-utils)
+(ns y0lsp.addon-utils 
+  (:require
+   [y0lsp.location-utils :refer [node-at-text-doc-pos]]))
 
 (def addons (atom {}))
 
@@ -34,3 +36,12 @@
         lss (get-in lang-map [lang :lss])]
     (fn [key]
       (lss node key))))
+
+(defn add-node-and-lss-to-doc-pos [handler]
+  (fn [ctx req]
+    (let [node (node-at-text-doc-pos ctx req)
+          lss (lss-for-node ctx node)
+          req (-> req
+                  (assoc :node node)
+                  (assoc :lss lss))]
+      (handler ctx req))))
