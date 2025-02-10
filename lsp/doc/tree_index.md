@@ -121,7 +121,9 @@ innermost node that comtains the position.
  (let [[nodes pos] (pos-in-tree "(ns foo)\n(do\n (:this $is)\n (that is not))")]
    (find-sub-node-at-pos nodes pos) => 'x/is)
  (let [[nodes pos] (pos-in-tree "(ns foo)\n(do\n $(:this is)\n (that is not))")]
-   (find-sub-node-at-pos nodes pos) => '(:this x/is)))
+   (find-sub-node-at-pos nodes pos) => '(:this x/is))
+ (let [[nodes pos] (pos-in-tree "(ns foo)\n(do\n (this :i$s)\n (that is not))")]
+   (find-sub-node-at-pos nodes pos) => '(x/this :is)))
 
 ```
 If the position is outside the range of the node-list, `nil` is returned.

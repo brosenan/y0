@@ -13,7 +13,7 @@
   (loop [nodes nodes
          prev nil]
     (if (empty? nodes)
-      nil
+      prev
       (let [[node & nodes] nodes
             rel (relate-node-to-pos node pos)]
         (cond
