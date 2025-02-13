@@ -3,6 +3,8 @@
             [lsp4clj.coercer :as coercer]
             [clojure.spec.alpha :as s]))
 
+(def version "0.1.0")
+
 (defn- check-conformance [spec val err-atom code msg]
   (let [explanation (s/explain-data spec val)]
     (if (nil? explanation)
@@ -26,14 +28,6 @@
         dontcare-var (gensym "_")]
     `(defmethod server/receive-request ~req [~dontcare-var ~ctx-var ~req-var]
        (handle-request ~ctx-var ~req ~req-var ~response-spec))))
-
-(defmethod server/receive-request "initialize"
-  [_ 
-   {:keys [server-capabilities client-capabilities]} 
-   req]
-  (reset! client-capabilities (:client-capabilities req))
-  {:server-capabilities server-capabilities
-   :server-info {:name "y0lsp"}})
 
 (defn handle-notification [{:keys [notification-handlers] :as ctx} key notif]
   (doseq [f (get notification-handlers key)]

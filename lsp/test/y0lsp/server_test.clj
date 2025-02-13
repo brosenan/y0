@@ -39,35 +39,6 @@
                            (lsp.requests/notification msg notif)))
      :shutdown (fn [] (server/shutdown server))}))
 
-;; ## Initialization
-
-;; An LSP connection starts with an [initialization
-;; handshake](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#initialize)
-;; in which the client and server exchange
-;; [capabilities](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#capabilities).
-
-;; The `y0lsp` handles the initialization request as follows:
-;; * Client capabilities are stored in the server context, by updating the atom
-;;   `:client-capabilities`.
-;; * Server capabilities are provided from the server context, as stored under
-;;   `:server-capabilities`.
-
-;; In the following example we build a context containing `:server-capabilities`
-;; and an empty atom for the `:client-capabilities`. Then we initialize a server
-;; and send it an initialization request with some client capabilities.
-;; Eventually, we check that the response contains our server capabilities and
-;; that the `:client-capabilities` are updated from the request.
-(fact
- (let [ctx {:server-capabilities {:workspace {:apply-edit true}}
-            :client-capabilities (atom nil)}
-       {:keys [send-req shutdown]} (test-server ctx)]
-   (send-req "initialize" {:client-capabilities
-                           {:client :capabilities}}) =>
-   {:server-capabilities {:workspace {:apply-edit true}}
-    :server-info {:name "y0lsp"}}
-   (-> ctx :client-capabilities deref) => {:client :capabilities}
-   (shutdown)))
-
 ;; ## Handling Requests
 
 ;; Most LSP services are implemented by handling requests. The client sends a
