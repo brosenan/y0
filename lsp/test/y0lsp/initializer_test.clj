@@ -10,7 +10,8 @@
    [y0.config :refer [*y0-path* lang-config-spec]]
    [y0.rules :refer [*error-target* *skip-recoverable-assertions*]]
    [y0.status :refer [ok]]
-   [y0lsp.addon-utils :refer [add-notification-handler add-req-handler]]
+   [y0lsp.addon-utils :refer [add-notification-handler add-req-handler
+                              register-addon]]
    [y0lsp.initializer :refer :all]
    [y0lsp.location-utils :refer [to-lsp-pos]]
    [y0lsp.server :refer [register-notification register-req]]
@@ -341,7 +342,10 @@
 
 ;; The following function is intended to do this.
 (defn addon-test [& addons]
-  (let [ctx (initialize-context
+  (let [addons (map #(if (string? %)
+                       (get @y0lsp.addon-utils/addons %)
+                       %) addons)
+        ctx (initialize-context
              (read-lang-config)
              [(-> "y0_test/" io/resource io/file)]
              addons)
@@ -456,4 +460,21 @@
    {:text-document {:uri "file:///path/to/m.c0"}
     :position {:line 0 :character 5}}
    (send "test/foo" {:path "/path/to/m.c0"}) => {:text "void foo() {}"}
+   (shutdown)))
+
+;; ### Working with Registered Addons
+
+;; `addon-test` can test [registered addons](addon_utils.md#addon-registration)
+;; by using the addon's registered name instead of a function as argument.
+
+;; In the following example, we register an addon named `foo` and exersize it.
+(register-addon "foo" (->> (fn [_ctx {:keys [x]}]
+                             {:y (+ x 2)})
+                           (add-req-handler "test/foo")))
+(register-req "test/foo" any?)
+
+(fact
+ (let [{:keys [send shutdown]}
+       (addon-test "foo")]
+   (send "test/foo" {:x 3}) => {:y 5}
    (shutdown)))
