@@ -17,7 +17,17 @@
 ;; addon under the given name in a global map held within an atom.
 (register-addon "my-addon" #(assoc % :foo :bar))
 (fact
- (-> @addons (get "my-addon")) => fn?)
+ (let [f (get @addons "my-addon")]
+   (f {}) => {:foo :bar}))
+
+;; `register-addon` can take multiple functions and composes them together.
+(register-addon "my-other-addon" 
+                #(assoc % :foo :bar)
+                #(assoc % :quux :baz))
+(fact
+ (let [f (get @addons "my-other-addon")]
+   (f {}) => {:foo :bar
+              :quux :baz}))
 
 ;; ## Context Manipulators
 

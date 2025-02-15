@@ -4,8 +4,8 @@
 
 (def addons (atom {}))
 
-(defn register-addon [name func]
-  (swap! addons assoc name func))
+(defn register-addon [name & funcs]
+  (swap! addons assoc name (apply comp funcs)))
 
 (defn add-req-handler [name handler]
   #(update % :req-handlers assoc name handler))
