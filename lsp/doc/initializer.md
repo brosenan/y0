@@ -368,7 +368,9 @@ The following function is intended to do this.
 ```clojure
 (defn addon-test [& addons]
   (let [addons (map #(if (string? %)
-                       (get @y0lsp.addon-utils/addons %)
+                       (if (contains? @y0lsp.addon-utils/addons %)
+                         (get @y0lsp.addon-utils/addons %)
+                         (throw (Exception. (str "Addon " % " not found"))))
                        %) addons)
         ctx (initialize-context
              (read-lang-config)
