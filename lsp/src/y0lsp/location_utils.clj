@@ -11,7 +11,7 @@
   (let [[line character] (decode-file-pos pos)]
     {:line (dec line) :character (dec character)}))
 
-(defn- uri-to-path [uri]
+(defn uri-to-path [uri]
   (-> uri io/as-url io/file .getAbsolutePath))
 
 (defn- path-to-uri [path]
