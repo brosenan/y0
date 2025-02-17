@@ -79,3 +79,32 @@
                             :text "void foo() {}"}})
    (send "test" {:path "/path/to/mod.c0"}) => {:is-open true}
    (shutdown)))
+
+;; ## Updating a Document
+
+;; When a document is updated on disk, the client sends a
+;; `textDocument/didChange` notification. `docsync` handles it by [updating the
+;; module in the workspace](workspace.md#module-updates).
+
+;; We demonstrate this by creating a test addon that returns the number of the
+;; module's `:semantic-errs`. Then we send a `didOpen` notification on some
+;; module, and then call the test addon to see that there are no errors. Then we
+;; send a `didChange` notification on the same module, containing a semantic
+;; error, and call the test addon again to see its effect.
+(fact
+ (let [{:keys [notify send shutdown]}
+       (addon-test "docsync"
+                   (->> (fn [ctx {:keys [path]}]
+                          {:num-errs (-> (get-module ctx path)
+                                         :semantic-errs deref count)})
+                        (add-req-handler "test")))]
+   (notify "textDocument/didOpen"
+           {:text-document {:uri "file:///path/to/mod.c0"
+                            :text "void foo() {}"}})
+   (send "test" {:path "/path/to/mod.c0"}) => {:num-errs 0}
+   
+   (notify "textDocument/didChange"
+           {:text-document {:uri "file:///path/to/mod.c0"
+                            :text "void foo() { bar(); }"}})
+   (send "test" {:path "/path/to/mod.c0"}) => {:num-errs 1} 
+   (shutdown)))
