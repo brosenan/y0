@@ -14,10 +14,9 @@
 `docsync` is a core addon that adds server support for [text document
 synchronization](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#textDocument_synchronization).
 
-This involves updating the [workspace](workspace.md) on changes to documents
-or changes to their state. This includes when a document is opened
-(`textDocument/didOpen`), is updated (`textDocument/didChange`) or closed
-(`textDocument/didClose`).
+This involves updating the [workspace](workspace.md) when a document is
+opened (`textDocument/didOpen`) ofupdated (`textDocument/didChange`). Other
+changes (e.g., a document being closed) can be gracefully ignored.
 
 ## Server Capabilities
 
