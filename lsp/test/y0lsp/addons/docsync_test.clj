@@ -5,6 +5,7 @@
    [y0lsp.addon-utils :refer [add-notification-handler add-req-handler
                               merge-server-capabilities get-module]]
    [y0lsp.server :refer [register-req]]
+   [y0lsp.location-utils :refer [uri-to-path]]
    [y0lsp.initializer-test :refer [addon-test]]))
 
 ;; # Document Synchronization
@@ -79,6 +80,30 @@
    (send "test" {:path "/path/to/mod.c0"}) => {:is-open true}
    (shutdown)))
 
+;; After the module has been loaded and evaluated, the addon sends an internal
+;; `y0lsp/moduleEvaluated` notification, containing the module's `:uri`.
+
+;; We demonstrate this by creating a test addon which registers to this
+;; notification, counts the number of `:semantic-errs` in the module and updates
+;; an atom with this value.
+
+;; Then we send a `textDocument/didOpen` notification with a module containing a
+;; semantic error and see that it is being counted.
+(fact
+ (let [res (atom nil)
+       {:keys [notify shutdown]}
+       (addon-test "docsync"
+                   (->> (fn [ctx {:keys [uri]}]
+                          (let [path (uri-to-path uri)]
+                            (reset! res (-> (get-module ctx path)
+                                            :semantic-errs deref count))))
+                        (add-notification-handler "y0lsp/moduleEvaluated")))]
+   (notify "textDocument/didOpen"
+           {:text-document {:uri "file:///path/to/mod.c0"
+                            :text "void foo() { bar(); }"}})
+   @res => 1
+   (shutdown)))
+
 ;; ## Updating a Document
 
 ;; When a document is updated on disk, the client sends a
@@ -106,4 +131,30 @@
            {:text-document {:uri "file:///path/to/mod.c0"
                             :text "void foo() { bar(); }"}})
    (send "test" {:path "/path/to/mod.c0"}) => {:num-errs 1} 
+   (shutdown)))
+
+;; After an update is complete, the handler sends a `y0lsp/moduleEvaluated` with
+;; the module's `:uri`.
+
+;; We demonstrate this by repeating the previous example, but this time, instead
+;; of defining a custom request handler to return the number of errors, we use
+;; the notification to update an atom.
+(fact
+ (let [res (atom nil)
+       {:keys [notify shutdown]}
+       (addon-test "docsync"
+                   (->> (fn [ctx {:keys [uri]}]
+                          (let [path (uri-to-path uri)]
+                            (reset! res (-> (get-module ctx path)
+                                            :semantic-errs deref count))))
+                        (add-notification-handler "y0lsp/moduleEvaluated")))]
+   (notify "textDocument/didOpen"
+           {:text-document {:uri "file:///path/to/mod.c0"
+                            :text "void foo() {}"}})
+   @res => 0
+
+   (notify "textDocument/didChange"
+           {:text-document {:uri "file:///path/to/mod.c0"
+                            :text "void foo() { bar(); }"}})
+   @res => 1
    (shutdown)))
