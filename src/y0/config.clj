@@ -12,6 +12,9 @@
 (def ^:dynamic *y0-langdef* nil)
 (def ^:dynamic *y0-path* nil)
 
+(defn cwd []
+  (-> "." clojure.java.io/file .getAbsolutePath))
+
 (defn- get-or-throw
   ([m key name optional? optional-ret]
    (if (contains? m key)
@@ -55,7 +58,11 @@
                                    :args [:root-symbols :root-namespace]}}
    :relative-path-resolution {:dots {:func qname-to-rel-path-resolver
                                      :args [:file-ext]}}
-   :path-prefixes {:from-env {:func path-prefixes-from-env
+   :path-prefixes {:default {:func (fn []
+                                     (fn []
+                                       [(cwd)]))
+                              :args []}
+                   :from-env {:func path-prefixes-from-env
                               :args [:path-prefixes-env]}}
    :expr-stringifier {:default {:func (constantly #(explanation-expr-to-str % 3))
                                 :args []}

@@ -225,8 +225,9 @@ The following example language configuration uses an Instaparse-based parser.
                      :relative-path-resolution :dots
                      :file-ext "c0"
                      :y0-modules ["c0"]
-                     :path-prefixes :from-env
-                     :path-prefixes-env "C0-PATH"
+                     ;; Omitting :path-prefixes results in using the current
+                     ;; directory as base.
+                     ;; :path-prefixes-env is thus not needed.
                      :reader :slurp}}]
    (binding [*y0-path* [(java.io.File. "/path/to/y0")]]
      (def lang-map1 (language-map-from-config config))) => #'lang-map1)
@@ -241,7 +242,7 @@ The following example language configuration uses an Instaparse-based parser.
    (provided
     (exists? (java.io.File. "/base/foo.c0")) => true
     (exists? (java.io.File. "/path/to/y0/c0.y0")) => true
-    (getenv "C0-PATH") => "/base:/dirs"))
+    (cwd) => "/base"))
 
  ;; Because we did not set `:decorate`, `:decorate` is `false` in the
  ;; `lang-map`.
