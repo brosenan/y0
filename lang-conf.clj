@@ -141,10 +141,6 @@
        :file-ext "c0"
        ;; The modules that define the language's semantics
        :y0-modules ["c0"]
-       ;; The prefix list comes from an environment variable...
-       :path-prefixes :from-env
-       ;; ...named C0-PATH
-       :path-prefixes-env "C0-PATH"
        ;; Read files using Clojure's slurp function.
        :reader :slurp
        ;; Stringify by extracting text from the source file
