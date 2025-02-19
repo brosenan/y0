@@ -44,13 +44,13 @@ common way of doing this is by having a list of possible prefixes (think,
 is expected to try these prefixes one by one and return the first path that
 resolves to an existing file.
 
-`prefix-list-resolver` takes a sequence of prefixes (as strings) and a
-relative-path resolver, and returns an absolute-path resolver.
+`prefix-list-resolver` takes function returning a sequence of prefixes (as
+strings) and a relative-path resolver, and returns an absolute-path resolver.
 ```clojure
 (fact
  (let [rrel (fn [x] (ok (io/file (str x ".foo"))))
        paths ["/foo" "/bar" "./baz"]
-       r (prefix-list-resolver paths rrel)
+       r (prefix-list-resolver (constantly paths) rrel)
        path1 (io/file "/foo/my-module.foo")
        path2 (io/file "/bar/my-module.foo")]
    (r "my-module") => {:ok path2}
@@ -65,10 +65,11 @@ It is common that for a given language, the list of prefixes is taken from
 an environment variable.
 
 `path-prefixes-from-env` takes the name of an environment variable, reads it
-and returns its contents, split on the colon (`:`) character.
+and returns a functiona that returns its contents, split on the colon (`:`)
+character.
 ```clojure
 (fact
- (path-prefixes-from-env "Y0_PATH") => ["/foo" "/bar" "."]
+ ((path-prefixes-from-env "Y0_PATH")) => ["/foo" "/bar" "."]
  (provided
   (getenv "Y0_PATH") => "/foo:/bar:."))
 
@@ -77,7 +78,8 @@ The sequence is lazy, and access to the environment variable is only made
 once the first element is being fected.
 ```clojure
 (fact
- (let [paths (path-prefixes-from-env "Y0_PATH")]
+ (let [paths-fn (path-prefixes-from-env "Y0_PATH")
+       paths (paths-fn)]
    (first paths) => "/foo"
    (provided
     (getenv "Y0_PATH") => "/foo:/bar:.")))

@@ -13,17 +13,18 @@
 (defn exists? [file]
   (.exists file))
 
-(defn prefix-list-resolver [paths rel-resolve]
+(defn prefix-list-resolver [paths-fn rel-resolve]
   (fn [module]
-    (let-s [suffix (rel-resolve module)]
-      (loop [paths paths]
-        (if (empty? paths)
-          {:err ["Could not find path for module" module]}
-          (let [[path & paths] paths
-                candidate (io/file path suffix)]
-            (if (exists? candidate)
-              (-> candidate .getAbsolutePath java.io.File. ok)
-              (recur paths))))))))
+    (let [paths (paths-fn)]
+      (let-s [suffix (rel-resolve module)]
+             (loop [paths paths]
+               (if (empty? paths)
+                 {:err ["Could not find path for module" module]}
+                 (let [[path & paths] paths
+                       candidate (io/file path suffix)]
+                   (if (exists? candidate)
+                     (-> candidate .getAbsolutePath java.io.File. ok)
+                     (recur paths)))))))))
 
 (defn getenv [env]
   (if-let [val (java.lang.System/getenv env)]
@@ -39,11 +40,13 @@
 
 (defn path-prefixes-from-env [env]
   (let [s (lazy-val #(seq (str/split (getenv env) #"[:]")))]
-    (reify clojure.lang.ISeq
-      (seq [_this] (s))
-      (next [_this] (rest (s)))
-      (first [_this] (first (s)))
-      (more [this] (next this)))))
+    (constantly (reify clojure.lang.ISeq
+                  (seq [_this] (s))
+                  (next [_this] (rest (s)))
+                  (first [_this] (first (s)))
+                  (more [this] (next this))))))
 
 (defn y0-resolver [y0-path]
-  (prefix-list-resolver y0-path (qname-to-rel-path-resolver "y0")))
+  (prefix-list-resolver
+   (constantly y0-path)
+   (qname-to-rel-path-resolver "y0")))
