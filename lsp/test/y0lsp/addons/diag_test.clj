@@ -44,3 +44,34 @@
     :severity 1
     :source "y0lsp"
     :message "This is an explanation"}))
+
+;; ## The `diag` Addon
+
+;; In the following example we demonstrate the `diag` addon. We define an
+;; environment with `diag` and `docsync`. We send a `textDocument/didOpen` for a
+;; `c0` file that does not have errors and see that we get a diagnostic
+;; notification with no diagnostics.
+
+;; Then we update the module to contain an error and see that we get a
+;; diagnostic for it.
+(fact
+ (let [ret (atom nil)
+       {:keys [notify on-notification shutdown]} (addon-test "docsync" "diag")]
+   (on-notification "textDocument/publishDiagnostics" (fn [params]
+                                                        (reset! ret params)))
+   (notify "textDocument/didOpen" {:text-document
+                                   {:uri "file:///path/to/foo.c0"
+                                    :text "void foo() {}"}})
+   @ret => {:uri "file:///path/to/foo.c0"
+            :diagnostics []}
+   
+   (notify "textDocument/didChange" {:text-document
+                                     {:uri "file:///path/to/foo.c0"
+                                      :text "void foo() { bar(); }"}})
+   @ret => {:uri "file:///path/to/foo.c0"
+            :diagnostics [{:range {:start {:line 0 :character 12}
+                                  :end {:line 0 :character 16}}
+                          :severity 1
+                          :source "y0lsp"
+                          :message "Call to undefined function bar in [:expr_stmt [:expr ...]]"}]}
+   (shutdown)))
