@@ -23,4 +23,24 @@
 ;; `textDocument/publishDiagnostics` notification, containing
 ;; [`PublishDiagnosticsParams`](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#publishDiagnosticsParams).
 
-;; 
+;; ## Explanation to Diagnostic
+
+;; A
+;; [Diagnostic](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#diagnostic)
+;; is the LSP representation for errors and warnings. Here we only refer to
+;; errors. [Explanations](../../doc/explanation.md) are the way $y_0$ semantic
+;; errors are represented.
+
+;; `explanation-to-diagnostic` takes an explanation and outputs a diagnostic.
+
+;; In the following example we create an explanation with a known location and
+;; translate it into a diagnostic.
+(fact 
+ (let [expl ["This is an"
+             (with-meta 'explanation {:path "/z.y0" :start 1000001 :end 2000003})]]
+   (explanation-to-diagnostic expl) =>
+   {:range {:start {:line 0 :character 0}
+            :end {:line 1 :character 2}}
+    :severity 1
+    :source "y0lsp"
+    :message "This is an explanation"}))
