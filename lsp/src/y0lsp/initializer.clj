@@ -70,4 +70,6 @@
 (defn start [ctx server]
   (server/start server 
                 (-> ctx
-                    (assoc :server server))))
+                    (assoc :server server)
+                    (assoc :notify (fn [name params]
+                                     (server/send-notification server name params))))))

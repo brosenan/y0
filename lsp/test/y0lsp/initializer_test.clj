@@ -308,10 +308,18 @@
 ;; and does the following:
 
 ;; 1. Adds the server as `:server` to the context.
-;; 2. Starts the server, given the context.
+;; 2. Adds a `:notify` function to the context, which sends notifications to the
+;;    server.
+;; 3. Starts the server, given the context.
 
 ;; It returns the `done` future [returned when starting the
 ;; server](https://github.com/clojure-lsp/lsp4clj?tab=readme-ov-file#start-and-stop-a-server).
+
+;; In the following example we create a `test/didFoo` notification handler that
+;; checks whether the `:server` in the context is the same as the server passed
+;; to `start`, then it delivers the notification to a promise (so that it can be
+;; checked by the test), and finally it uses `:notify` to send a `test/didBar`
+;; notification back to the server.
 (register-notification "test/didFoo")
 (fact
  (let [input-ch (async/chan 3)
@@ -323,14 +331,18 @@
             [(-> "y0_test/" io/resource io/file)]
             [#(assoc % :my-promise (promise))
              (add-notification-handler "test/didFoo"
-                                       (fn [{:keys [my-promise] :as ctx} notif]
+                                       (fn [{:keys [my-promise notify] :as ctx} notif]
                                          (when (= (:server ctx) server)
+                                           (notify "test/didBar" notif)
                                            (deliver my-promise notif))))])
        done (start ctx server)]
    (async/put! input-ch
                (lsp.requests/notification "test/didFoo" {:foo :bar}))
-   (server/shutdown server)
    @(:my-promise ctx) => {:foo :bar}
+   (let [{:keys [params method]} (async/<!! output-ch)]
+     params  => {:foo :bar}
+     method => "test/didBar")
+   (server/shutdown server)
    @done))
 
 ;; ## Testing Support
