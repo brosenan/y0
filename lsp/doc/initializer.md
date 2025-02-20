@@ -379,15 +379,19 @@ receive requests and notifications.
 The following function is intended to do this.
 ```clojure
 (defn addon-test [& addons]
-  (let [addons (map #(if (string? %)
+  (let [notif-handlers (atom {})
+        addons (map #(if (string? %)
                        (if (contains? @y0lsp.addon-utils/addons %)
                          (get @y0lsp.addon-utils/addons %)
                          (throw (Exception. (str "Addon " % " not found"))))
                        %) addons)
-        ctx (initialize-context
-             (read-lang-config)
-             [(-> "y0_test/" io/resource io/file)]
-             addons)
+        ctx (-> (initialize-context
+                 (read-lang-config)
+                 [(-> "y0_test/" io/resource io/file)]
+                 addons)
+                (assoc :notify (fn [method params]
+                                 (when (contains? @notif-handlers method)
+                                   ((get @notif-handlers method) params)))))
         add-module (fn [path text]
                      (swap! (:ws ctx) add-module {:path path
                                                   :text text
@@ -403,6 +407,8 @@ The following function is intended to do this.
                               (add-module path text)
                               {:text-document {:uri (str "file://" path)}
                                :position (to-lsp-pos pos)}))
+     :on-notification (fn [method handler]
+                        (swap! notif-handlers assoc method handler))
      :shutdown (fn [])}))
 
 ```
@@ -528,6 +534,31 @@ In the following example, we register an addon named `foo` and exersize it.
  (let [{:keys [send shutdown]}
        (addon-test "foo")]
    (send "test/foo" {:x 3}) => {:y 5}
+   (shutdown)))
+
+```
+### Testing for Sent Notifications
+
+Addons can send notifications to the server. In order to test this behavior,
+the key `:on-notification` is bound to a function that takes a notification
+method and a handler, and invokes the handler on calls to the `:notify`
+function with that method.
+
+We demonstrate this using a test addon which listens to a notification and
+relays this notification back to the server. We hook to the latter and see
+that it is invoked.
+```clojure
+(fact
+ (let [ret (atom nil)
+       {:keys [notify on-notification shutdown]}
+       (addon-test
+        (add-notification-handler "test/didFoo"
+                                  (fn [{:keys [notify]} params]
+                                    (notify "test/didBar" params))))]
+   (on-notification "test/didBar" (fn [params]
+                                    (reset! ret params)))
+   (notify "test/didFoo" {:bar 42})
+   @ret => {:bar 42}
    (shutdown)))
 ```
 
