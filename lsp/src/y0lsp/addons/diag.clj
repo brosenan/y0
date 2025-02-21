@@ -20,12 +20,17 @@
 
 (register-addon "diag"
                 (->> (fn [{:keys [notify] :as ctx} {:keys [uri]}]
-                       (let [{:keys [semantic-errs]}
+                       (let [{:keys [semantic-errs statements lang]}
                              (get-module ctx (uri-to-path uri))
                              diagnostics (->> @semantic-errs
                                               (map :err)
                                               (map explanation-to-diagnostic))]
                          (notify "textDocument/publishDiagnostics"
                                  {:uri uri
-                                  :diagnostics diagnostics})))
+                                  :diagnostics (conj diagnostics {:range {:start {:line 0 :character 0}
+                                  :end {:line 0 :character 0}}
+     :severity 2
+     :source "y0lsp"
+     :message (str "Lang: " lang " statements: " (prn-str statements))})
+                                  })))
                      (add-notification-handler "y0lsp/moduleEvaluated")))
