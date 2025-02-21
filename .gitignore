@@ -13,6 +13,6 @@ pom.xml.asc
 /.clj-kondo
 /.lsp
 /?
-lsp/target
+/lsp/target
 .nrepl-port
 .lein-repl-history
