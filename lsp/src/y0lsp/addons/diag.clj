@@ -20,17 +20,23 @@
 
 (register-addon "diag"
                 (->> (fn [{:keys [notify] :as ctx} {:keys [uri]}]
-                       (let [{:keys [semantic-errs statements lang]}
+                       (let [{:keys [semantic-errs statements lang err]}
                              (get-module ctx (uri-to-path uri))
                              diagnostics (->> @semantic-errs
                                               (map :err)
-                                              (map explanation-to-diagnostic))]
+                                              (map explanation-to-diagnostic))
+                             diagnostics (if (nil? err)
+                                           diagnostics
+                                           (conj diagnostics {:range {:start {:line 0 :character 0}
+                                                                      :end {:line 0 :character 0}}
+                                                              :severity 2
+                                                              :source "y0lsp"
+                                                              :message (prn-str err)}))]
                          (notify "textDocument/publishDiagnostics"
                                  {:uri uri
                                   :diagnostics (conj diagnostics {:range {:start {:line 0 :character 0}
-                                  :end {:line 0 :character 0}}
-     :severity 2
-     :source "y0lsp"
-     :message (str "Lang: " lang " statements: " (prn-str statements))})
-                                  })))
+                                                                          :end {:line 0 :character 0}}
+                                                                  :severity 2
+                                                                  :source "y0lsp"
+                                                                  :message (str "Lang: " lang " statements: " (prn-str statements))})})))
                      (add-notification-handler "y0lsp/moduleEvaluated")))
