@@ -6,18 +6,10 @@
    [edamame.impl.parser :refer [parse-string-all]]
    [y0.config :refer [cwd]]
    [y0lsp.addon-utils :refer [addons]]
-   [y0lsp.initializer :refer [initialize-context]]))
+   [y0lsp.initializer :refer [initialize-context]]
+   [y0lsp.all-addons]))
 
 (defn- all-addons []
-  (vec (->> (io/resource "addons")
-            io/file
-            file-seq
-            (filter #(str/ends-with? % ".clj"))
-            (map #(.getName %))
-            (map #(str/replace % ".clj" ""))
-            (map #(str "y0lsp.addons." %))
-            (map symbol)
-            (map require)))
   (for [[name addon] @addons]
     (with-meta addon {:addon name})))
 

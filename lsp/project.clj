@@ -14,6 +14,7 @@
   :profiles {:dev {:dependencies [[midje "1.10.10"]]
                    :resource-paths ["src/y0lsp/" "../" "../y0_test/"]}}
   :plugins [[lein-midje "3.2.2"]]
+  :aot :all
   :source-paths ["src" "../src"]
   :main y0lsp.main
   :resource-paths ["src/y0lsp/"]
