@@ -78,5 +78,26 @@ diagnostic for it.
                           :source "y0lsp"
                           :message "Call to undefined function bar in [:expr_stmt [:expr ...]]"}]}
    (shutdown)))
+  
+  
+```
+If an error does not have location information, `:start` and `:end` are set
+to (0,0).
+```clojure
+(fact
+ (let [ret (atom nil)
+       {:keys [notify on-notification shutdown]} (addon-test "docsync" "diag")]
+   (on-notification "textDocument/publishDiagnostics" (fn [params]
+                                                        (reset! ret params)))
+   (notify "textDocument/didOpen" {:text-document
+                                   {:uri "file:///path/to/foo.c0"
+                                    :text "This does not parse"}})
+   @ret => {:uri "file:///path/to/foo.c0"
+            :diagnostics [{:range {:start {:line 0 :character 0}
+                                   :end {:line 0 :character 0}}
+                           :severity 1
+                           :source "y0lsp"
+                           :message ""}]}
+   (shutdown)))
 ```
 

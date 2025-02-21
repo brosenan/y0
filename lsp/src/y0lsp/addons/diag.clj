@@ -5,8 +5,14 @@
    [y0lsp.addon-utils :refer [add-notification-handler register-addon
                               get-module]]))
 
+(defn- safe-to-lsp-location [loc]
+  (if (nil? loc)
+  {:range {:start {:line 0 :character 0}
+           :end {:line 0 :character 0}}}
+  (to-lsp-location loc)))
+
 (defn explanation-to-diagnostic [expl]
-  (let [{:keys [range]} (-> expl code-location to-lsp-location)]
+  (let [{:keys [range]} (-> expl code-location safe-to-lsp-location)]
     {:range range
      :severity 1
      :source "y0lsp"
