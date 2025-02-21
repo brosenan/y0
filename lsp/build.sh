@@ -16,5 +16,10 @@ echo "  ))" >> "$all_addons_file"
 
 lein uberjar
 
-mkdir -p "$basedir/bin"
-cp $basedir/target/y0lsp-*-standalone.jar "$basedir/bin/y0lsp.jar"
+bindir="$basedir/bin"
+mkdir -p "$bindir"
+
+jarfile="$bindir/y0lsp.jar"
+cp $basedir/target/y0lsp-*-standalone.jar "$jarfile"
+
+echo "$jarfile built successfully."
