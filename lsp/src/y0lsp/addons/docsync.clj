@@ -7,6 +7,7 @@
             [lsp4clj.server :as server]))
 
 (register-notification "textDocument/didOpen")
+(register-notification "textDocument/didClose")
 (register-notification "textDocument/didChange")
 (register-notification "y0lsp/moduleEvaluated")
 
@@ -20,11 +21,11 @@
     (server/receive-notification
      "y0lsp/moduleEvaluated" ctx {:uri uri})))
 
-(defn- handle-did-change [ctx {:keys [text-document]}]
+(defn- handle-did-change [ctx {:keys [text-document content-changes]}]
   (let [{:keys [uri]} text-document
         path (uri-to-path uri)]
     (swap-ws! ctx update-module {:path path
-                                 :text (:text text-document)
+                                 :text (:text content-changes)
                                  :is-open true})
     (server/receive-notification
      "y0lsp/moduleEvaluated" ctx {:uri uri})))

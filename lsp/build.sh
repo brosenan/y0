@@ -23,3 +23,4 @@ jarfile="$bindir/y0lsp.jar"
 cp $basedir/target/y0lsp-*-standalone.jar "$jarfile"
 
 echo "$jarfile built successfully."
+"$basedir/create-docs.sh"

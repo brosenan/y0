@@ -140,8 +140,8 @@ error, and call the test addon again to see its effect.
    
    
    (notify "textDocument/didChange"
-           {:text-document {:uri "file:///path/to/mod.c0"
-                            :text "void foo() { bar(); }"}})
+           {:text-document {:uri "file:///path/to/mod.c0"}
+            :content-changes {:text "void foo() { bar(); }"}})
    (send "test" {:path "/path/to/mod.c0"}) => {:num-errs 1} 
    (shutdown)))
 
@@ -168,8 +168,8 @@ the notification to update an atom.
    @res => 0
 
    (notify "textDocument/didChange"
-           {:text-document {:uri "file:///path/to/mod.c0"
-                            :text "void foo() { bar(); }"}})
+           {:text-document {:uri "file:///path/to/mod.c0"}
+            :content-changes {:text "void foo() { bar(); }"}})
    @res => 1
    (shutdown)))
 ```

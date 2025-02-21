@@ -5,6 +5,7 @@
    [y0lsp.server :refer [register-notification register-req]]))
 
 (register-req "initialize" any?)
+(register-notification "initialized")
 (register-notification "y0lsp/initialized")
 (register-addon "init"
                 (->> (fn [{:keys [server-capabilities
