@@ -62,9 +62,10 @@
    @ret => {:uri "file:///path/to/foo.c0"
             :diagnostics []}
    
-   (notify "textDocument/didChange" {:text-document
-                                     {:uri "file:///path/to/foo.c0"}
-                                     :content-changes {:text "void foo() { bar(); }"}})
+   (notify "textDocument/didChange"
+           {:text-document
+            {:uri "file:///path/to/foo.c0"}
+            :content-changes [{:text "void foo() { bar(); }"}]})
    @ret => {:uri "file:///path/to/foo.c0"
             :diagnostics [{:range {:start {:line 0 :character 12}
                                   :end {:line 0 :character 16}}

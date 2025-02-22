@@ -141,7 +141,7 @@ error, and call the test addon again to see its effect.
    
    (notify "textDocument/didChange"
            {:text-document {:uri "file:///path/to/mod.c0"}
-            :content-changes {:text "void foo() { bar(); }"}})
+            :content-changes [{:text "void foo() { bar(); }"}]})
    (send "test" {:path "/path/to/mod.c0"}) => {:num-errs 1} 
    (shutdown)))
 
@@ -169,7 +169,7 @@ the notification to update an atom.
 
    (notify "textDocument/didChange"
            {:text-document {:uri "file:///path/to/mod.c0"}
-            :content-changes {:text "void foo() { bar(); }"}})
+            :content-changes [{:text "void foo() { bar(); }"}]})
    @res => 1
    (shutdown)))
 ```
