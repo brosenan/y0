@@ -1,6 +1,6 @@
 (ns y0lsp.addons.diag
   (:require
-   [y0.explanation :refer [code-location explanation-to-str]]
+   [y0.explanation :refer [code-location explanation-to-str *stringify-expr*]] 
    [y0lsp.location-utils :refer [to-lsp-location uri-to-path]]
    [y0lsp.addon-utils :refer [add-notification-handler register-addon
                               get-module]]))
@@ -18,13 +18,22 @@
      :source "y0lsp"
      :message (explanation-to-str expl)}))
 
+(defn- expr-stringifier [langmap lang]
+  (with-meta (-> langmap
+                 (get lang)
+                 (get :stringify-expr *stringify-expr*))
+    {:foo :bar}))
+
 (register-addon "diag"
-                (->> (fn [{:keys [notify] :as ctx} {:keys [uri]}]
-                       (let [{:keys [semantic-errs statements lang err text]}
+                (->> (fn [{:keys [notify lang-map] :as ctx} {:keys [uri]}]
+                       (let [{:keys [semantic-errs lang]}
                              (get-module ctx (uri-to-path uri))
-                             diagnostics (->> @semantic-errs
-                                              (map :err)
-                                              (map explanation-to-diagnostic))]
+                             diagnostics (binding [*stringify-expr*
+                                                   (expr-stringifier lang-map lang)]
+                                           (->> @semantic-errs
+                                                (map :err)
+                                                (map explanation-to-diagnostic)
+                                                vec))]
                          (notify "textDocument/publishDiagnostics"
                                  {:uri uri
                                   :diagnostics diagnostics})))
