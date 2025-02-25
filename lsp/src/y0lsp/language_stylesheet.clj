@@ -13,11 +13,18 @@
             (keyword sel) (keyword n))]
     [n matches]))
 
+(defn- match-name [a b]
+  (cond
+    (nil? a) true
+    (= a b) true
+    (and (symbol? a)
+         (symbol? b)) (= (name a) (name b))
+    :else false))
+
 (defn selector-to-func [sel]
   (let [[n matches] (extract-matches sel)]
-    (fn [name pred-names]
-      (and (or (nil? n)
-               (= n name))
+    (fn [nm pred-names]
+      (and (match-name n nm)
            (set/subset? matches pred-names)))))
 
 (defn- compile-rules [rules]
@@ -28,8 +35,14 @@
       (let [[sel attrs & rules] rules]
         (recur rules (conj crules [(selector-to-func sel) attrs]))))))
 
+(defn- get-pred [map pred]
+  (->> (for [[key v] map
+             :when (match-name pred key)]
+         v)
+       first))
+
 (defn- handle-with-pred [[_with-pred [pred & params] body] node]
-  (let [args (-> node meta :matches deref (get pred) :args)
+  (let [args (-> node meta :matches deref (get-pred pred) :args)
         rep (zipmap params args)]
     (walk/postwalk-replace rep body)))
 

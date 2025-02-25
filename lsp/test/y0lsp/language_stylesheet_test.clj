@@ -45,18 +45,18 @@
    (f :bar #{}) => false
    (f 'foo #{}) => false))
 
-;; Similarly, a simple symbol matches the same symbol, including namespace.
+;; Similarly, a simple symbol matches the same symbol, up-to namespace.
 (fact
  (let [f (selector-to-func 'foo/bar)]
    (f 'foo/bar #{}) => true
-   (f 'foo1/bar #{}) => false
+   (f 'foo1/bar #{}) => true
    (f 'foo/bar2 #{}) => false
    (f :foo/bar #{}) => false))
 
 ;; ### Matched Predicates
 
 ;; The selector may contain suffixes of the form `.pred`, where `pred` is a name
-;; of a $y_0$ predicate, excluding its namesapce. The selector matches if all
+;; of a $y_0$ predicate, excluding its namespace. The selector matches if all
 ;; the specified `pred`s are in the given set of predicate names.
 (fact
  (let [f (selector-to-func 'foo/bar.baz.quux)]
@@ -154,7 +154,7 @@
 ;; attributes.
 (fact
  (let [node (with-meta [:my-node 1 2 3]
-              {:matches (atom {'y1/typeof {:args ['y1/int]}})})]
+              {:matches (atom {'typeof {:args ['y1/int]}})})]
    (eval-attr '(with-pred [y1/typeof :type]
                  ["Type:" :type]) node)) => ["Type:" 'y1/int])
 
