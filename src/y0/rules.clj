@@ -233,8 +233,9 @@
                   ps (f ps impns)]
                  (recur fns ps)))))))
 
-(defn- add-fact [ps [_fact fact] vars]
-  (add-rule ps `(y0.core/all [] ~fact) vars))
+(defn- add-fact [ps statement vars]
+  (let [[_fact fact] statement]
+    (add-rule ps (with-meta `(y0.core/all [] ~fact) (meta statement)) vars)))
 
 (defn apply-statement [statement ps vars]
   (cond
