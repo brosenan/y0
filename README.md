@@ -1,5 +1,8 @@
 ![logo](y0.png)
 
+**Note:** This README refers to the $y_0$ language implementation. For the
+`y0lsp` universal language server implementation refer to [y0lsp](lsp/).
+
 # $y_0$: A Language for Defining Programming Language Semantics
 
 $y_0$, AKA Y Nought, AKA Why Not, is a declarative language intended for
@@ -192,8 +195,7 @@ ecosystem, including:
 *   [Language-spec](doc/spec_analyzer.md) support for allowing literate
     unit-tests for language definitions.
 
-This repo does not implement a language server. This will be provided by a
-different repo.
+See [y0lsp](lsp/) for a universal language server implementation based on $y_0$.
 
 ## Documentation
 

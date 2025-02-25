@@ -28,9 +28,9 @@ However, here we give the overall outline of such an integration.
 
 ### Running the Server
 
-`y0lsp.jar` can be [downloaded from here](bin/y0lsp.jar?raw=true), as a
-_self-contained executable JAR file_. This means you need a Java Runtime
-Environment installed in order to use it.
+`y0lsp.jar` can be [downloaded from here](bin/y0lsp.jar) (click "Raw" to
+download), as a _self-contained executable JAR file_. This means you need a Java
+Runtime Environment installed in order to use it.
 
 Assuming `y0lsp.jar` is placed in some `EXTENSION_HOME`, the command line to
 execute the server is:
@@ -56,7 +56,8 @@ be named "EXTENSION_HOME". This is only given as an example setup.
 
 ## Resources
 
-* The server can be downloaded from [here](bin/y0lsp.jar?raw=true).
+* The server can be downloaded from [here](bin/y0lsp.jar) (click "Raw" to
+  download).
 * The language config documentation is [here](../doc/config.md), with an example
   [here](demo/lang-conf.edn).
 * Resources regarding the $y_0$ language can be found
