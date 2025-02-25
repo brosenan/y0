@@ -6,7 +6,8 @@
                               merge-server-capabilities get-module]]
    [y0lsp.server :refer [register-req]]
    [y0lsp.location-utils :refer [uri-to-path]]
-   [y0lsp.initializer-test :refer [addon-test]]))
+   [y0lsp.initializer-test :refer [addon-test]]
+   [y0lsp.addons.init]))
 
 ;; # Document Synchronization
 

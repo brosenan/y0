@@ -212,7 +212,7 @@ different repo.
 *   $C_0$: a language inspired by C/go.
     *   [Language spec](doc/c0-spec.md)
     *   [Language semantics](doc/c0.md)
-    *   [Language config, defining c0's syntax](lang-conf.clj)
+    *   [Language config, defining c0's syntax](lang-conf.edn)
 
 ### Developer Documentation
 

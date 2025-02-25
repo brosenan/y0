@@ -66,7 +66,7 @@ To demonstrate this, we first introduce a function for reading the language
 config from the root of the `y0` repo. 
 ```clojure
 (defn read-lang-config []
-  (-> "lang-conf.clj"
+  (-> "lang-conf.edn"
       io/resource
       io/file
       slurp
