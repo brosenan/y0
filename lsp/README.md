@@ -1,13 +1,13 @@
 # `y0lsp`: A Universal Language Server based on $y_0$
 
-`y0lsp` is a **universal language server** based on the [$y_0$](../README.md)
-language. Its architecture is based on a separation of concerns between the
-[language server protocol
+`y0lsp` is a **universal language server** based on the $y_0$
+[language](../README.md). Its architecture is based on a separation of concerns
+between the [language server protocol
 (LSP)](https://en.wikipedia.org/wiki/Language_Server_Protocol) on the one hand,
 and the semantics of a given language, on the other hand.
 
-`y0lsp` provides this separation of concerns by providing a declarative language
-([$y_0$](../README.md)) for defining the semantics of languages and
+`y0lsp` provides this separation of concerns by providing a [declarative
+language](../README.md) ($y_0$) for defining the semantics of languages and
 instrumenting the implementation of this language to provide semantic
 information about the code. Then, using [addons](doc/addon_utils.md), `y0lsp`
 implements the different LSP services, based on the semantic information that is
@@ -28,9 +28,9 @@ However, here we give the overall outline of such an integration.
 
 ### Running the Server
 
-`y0lsp.jar` can be [downloaded from here](bin/y0lsp.jar), as a _self-contained
-executable JAR file_. This means you need a Java Runtime Environment installed
-in order to use it.
+`y0lsp.jar` can be [downloaded from here](bin/y0lsp.jar?raw=true), as a
+_self-contained executable JAR file_. This means you need a Java Runtime
+Environment installed in order to use it.
 
 Assuming `y0lsp.jar` is placed in some `EXTENSION_HOME`, the command line to
 execute the server is:
@@ -43,7 +43,7 @@ $ $JAVA_HOME/bin/java -jar $EXTENSION_HOME/y0lsp.jar $EXTENSION_HOME
 
 The last component of the command (`$EXTENSION_HOME`) is an argument to the
 JAR's `main` function, which is a path to a directory which, at the very least,
-contain a `lang-conf.edn` file, containing the [$y_0$ language
+contain a `lang-conf.edn` file, containing the $y_0$ [language
 configuration](../doc/config.md) for all the languages this extension is
 intended to define (so basically, your language(s)), and `.y0` files containing
 their semantic definitions. [demo/](demo/) is such a directory, defining two
@@ -56,7 +56,7 @@ be named "EXTENSION_HOME". This is only given as an example setup.
 
 ## Resources
 
-* The server can be downloaded from [here](bin/y0lsp.jar).
+* The server can be downloaded from [here](bin/y0lsp.jar?raw=true).
 * The language config documentation is [here](../doc/config.md), with an example
   [here](demo/lang-conf.edn).
 * Resources regarding the $y_0$ language can be found
