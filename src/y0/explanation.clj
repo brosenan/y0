@@ -7,6 +7,7 @@
 (declare explanation-expr-to-str)
 
 (def ^:dynamic *stringify-expr* #(explanation-expr-to-str % 3))
+(def ^:dynamic *create-reader* io/reader)
 
 (defn- sequential-to-str [budget expr opener closer]
   (str opener
@@ -83,7 +84,7 @@
   (cond
     (has-location? expr) (let [loc (meta expr)]
                            (try
-                             (with-open [r (io/reader (:path loc))]
+                             (with-open [r (*create-reader* (:path loc))]
                                (-> (line-seq r)
                                    (extract-location loc)
                                    stringify-lines))
