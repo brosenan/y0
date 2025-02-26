@@ -19,10 +19,9 @@
      :message (explanation-to-str expl)}))
 
 (defn- expr-stringifier [langmap lang]
-  (with-meta (-> langmap
-                 (get lang)
-                 (get :stringify-expr *stringify-expr*))
-    {:foo :bar}))
+  (-> langmap
+      (get lang)
+      (get :stringify-expr *stringify-expr*)))
 
 (register-addon "diag"
                 (->> (fn [{:keys [notify lang-map] :as ctx} {:keys [uri]}]
