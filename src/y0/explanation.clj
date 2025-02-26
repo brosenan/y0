@@ -82,6 +82,7 @@
 
 (defn extract-expr-text [expr]
   (cond
+    (instance? clojure.lang.Atom expr) (recur @expr)
     (has-location? expr) (let [loc (meta expr)]
                            (try
                              (with-open [r (*create-reader* (:path loc))]

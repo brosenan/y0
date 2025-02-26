@@ -3,7 +3,7 @@
   (:require
    [midje.sweet :refer [fact =>]]
    [y0lsp.addons.hover :refer :all]
-   [y0lsp.addons.init]
+   [y0lsp.all-addons]
    [y0lsp.initializer-test :refer [addon-test]]))
 
 ```
@@ -52,7 +52,7 @@ variable definition and usage, and make a `textDocument/hover` request.
                                                         ["Type:" :type]))}]))
        pos (add-module-with-pos "/path/to/x.c0"
                                 "void foo() { int64 a = 1; int64 b = $a; }")]
-   (send "textDocument/hover" pos) => {:contents ["Type: [:int64_type]"]}
+   (send "textDocument/hover" pos) => {:contents ["Type: int64"]}
    (shutdown)))
 
 ```

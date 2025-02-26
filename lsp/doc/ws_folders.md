@@ -7,7 +7,7 @@
    [y0.status :refer [unwrap-status]]
    [y0lsp.addon-utils :refer [add-req-handler]]
    [y0lsp.addons.ws-folders :refer :all]
-   [y0lsp.addons.init]
+   [y0lsp.all-addons]
    [y0lsp.initializer-test :refer [addon-test]]
    [y0lsp.server :refer [register-req]]))
 

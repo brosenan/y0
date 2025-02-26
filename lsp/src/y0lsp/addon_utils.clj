@@ -1,6 +1,8 @@
 (ns y0lsp.addon-utils 
   (:require
-   [y0lsp.location-utils :refer [node-at-text-doc-pos]]))
+   [clojure.java.io :as io]
+   [y0.explanation :refer [*create-reader* *stringify-expr*]]
+   [y0lsp.location-utils :refer [node-at-text-doc-pos uri-to-path]]))
 
 (def addons (atom {}))
 
@@ -45,3 +47,18 @@
                   (assoc :node node)
                   (assoc :lss lss))]
       (handler ctx req))))
+
+(defn bind-stringify-expr [handler]
+  (fn [{:keys [lang-map] :as ctx} {:keys [uri text-document] :as req}]
+    (let [uri (if (nil? uri)
+                (:uri text-document)
+                uri)
+          {:keys [lang]} (get-module ctx (uri-to-path uri))
+          stringify-expr (-> lang-map
+                             (get lang)
+                             (get :stringify-expr *stringify-expr*))]
+      (binding [*create-reader* (fn [path]
+                                  (let [{:keys [text]} (get-module ctx path)]
+                                    (-> text char-array io/reader)))
+                *stringify-expr* stringify-expr]
+        (handler ctx req)))))

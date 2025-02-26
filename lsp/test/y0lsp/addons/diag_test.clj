@@ -71,7 +71,7 @@
                                   :end {:line 0 :character 16}}
                           :severity 1
                           :source "y0lsp"
-                          :message "Call to undefined function bar in [:expr_stmt [:expr [:func_call /path/to/foo.c0/bar]]]"}]}
+                          :message "Call to undefined function bar in bar();"}]}
    (shutdown)))
   
 ;; If an error does not have location information, `:start` and `:end` are set

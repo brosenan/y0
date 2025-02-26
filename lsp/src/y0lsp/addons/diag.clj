@@ -1,9 +1,9 @@
 (ns y0lsp.addons.diag
   (:require
-   [y0.explanation :refer [code-location explanation-to-str *stringify-expr*]] 
-   [y0lsp.location-utils :refer [to-lsp-location uri-to-path]]
-   [y0lsp.addon-utils :refer [add-notification-handler register-addon
-                              get-module]]))
+   [y0.explanation :refer [*stringify-expr* code-location explanation-to-str]]
+   [y0lsp.addon-utils :refer [add-notification-handler bind-stringify-expr
+                              get-module register-addon]]
+   [y0lsp.location-utils :refer [to-lsp-location uri-to-path]]))
 
 (defn- safe-to-lsp-location [loc]
   (if (nil? loc)
@@ -18,22 +18,16 @@
      :source "y0lsp"
      :message (explanation-to-str expl)}))
 
-(defn- expr-stringifier [langmap lang]
-  (-> langmap
-      (get lang)
-      (get :stringify-expr *stringify-expr*)))
-
 (register-addon "diag"
-                (->> (fn [{:keys [notify lang-map] :as ctx} {:keys [uri]}]
-                       (let [{:keys [semantic-errs lang]}
+                (->> (fn [{:keys [notify] :as ctx} {:keys [uri]}]
+                       (let [{:keys [semantic-errs]}
                              (get-module ctx (uri-to-path uri))
-                             diagnostics (binding [*stringify-expr*
-                                                   (expr-stringifier lang-map lang)]
-                                           (->> @semantic-errs
-                                                (map :err)
-                                                (map explanation-to-diagnostic)
-                                                vec))]
+                             diagnostics (->> @semantic-errs
+                                              (map :err)
+                                              (map explanation-to-diagnostic)
+                                              vec)]
                          (notify "textDocument/publishDiagnostics"
                                  {:uri uri
                                   :diagnostics diagnostics})))
+                     bind-stringify-expr
                      (add-notification-handler "y0lsp/moduleEvaluated")))

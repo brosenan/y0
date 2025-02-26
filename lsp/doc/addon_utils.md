@@ -2,6 +2,7 @@
 (ns y0lsp.addon-utils-test
   (:require
    [midje.sweet :refer [fact]]
+   [y0.explanation :refer [*create-reader* *stringify-expr*]]
    [y0lsp.addon-utils :refer :all]
    [y0lsp.initializer-test :refer [addon-test]]
    [y0lsp.location-utils :refer [node-at-text-doc-pos]]
@@ -191,6 +192,36 @@ node and the value of `:foo` on that node.
        text-pos (add-module-with-pos "/path/to/x.c0" "void $foo() {}")]
    (send "test/foo" text-pos) => {:node (symbol "/path/to/x.c0" "foo")
                                   :foo :bar}
+   (shutdown)))
+
+```
+In language server services, it is often needed to generate strings that
+contain the contents of parse-tree nodes. Stringifying these nodes can be
+done in various ways, and we let the language definition decide on that way
+using the [`:expr-stringifier` key in the language
+config](../../doc/config.md#controlling-explanation-output).
+
+The function `bind-stringify-expr` wraps the given handler with a binding of
+the `*stringify-expr*` dynamic variable, based on the language config choice
+of the associated module.
+
+In cases where (as in the `c0` example language), the choice of
+`:expr-stringifier` is `:extract-text`, which needs access to the actual
+code, the wrapper also binds `*create-reader*` to a function that accesses
+the text of the given module.
+```clojure
+(fact
+ (let [{:keys [add-module-with-pos send shutdown]}
+       (addon-test
+        (->> (fn [_ctx {:keys [node]}]
+               {:contents (slurp (*create-reader* (-> node meta :path)))
+                :term-at-pos (*stringify-expr* node)})
+             add-node-and-lss-to-doc-pos
+             bind-stringify-expr
+             (add-req-handler "test/foo")))
+       text-pos (add-module-with-pos "/path/to/x.c0" "v$oid foo() {}")]
+   (send "test/foo" text-pos) => {:contents "void foo() {}"
+                                  :term-at-pos "void"}
    (shutdown)))
 ```
 
