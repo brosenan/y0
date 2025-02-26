@@ -147,5 +147,9 @@
        :expr-stringifier :extract-text
        ;; Decorate the tree
        :decorate :true
-       ;; Empty language stylesheet
-       :stylesheet [{}]}}
+       ;; Language stylesheet
+       :stylesheet [{}
+                    .typeof {:hover (str (with-pred [typeof :type]
+                                           ["Type:" :type]))
+                             :hover-md (str (with-pred [typeof :type]
+                                              ["Type: `" :type "`"]))}]}}
