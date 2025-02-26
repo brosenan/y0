@@ -43,15 +43,18 @@ variable definition and usage, and make a `textDocument/hover` request.
 ```clojure
 (fact
  (let [{:keys [send add-module-with-pos shutdown]}
-       (addon-test "hover"
+       (addon-test "hover" "init"
                    #(update-in %
                                [:config "c0"]
                                assoc :stylesheet
                                '[{}
                                  .typeof {:hover (str (with-pred [typeof :type]
-                                                        ["Type:" :type]))}]))
+                                                        ["Type:" :type]))
+                                          :hover-md (str (with-pred [typeof :type]
+                                                           ["Type: `" :type "`"]))}]))
        pos (add-module-with-pos "/path/to/x.c0"
                                 "void foo() { int64 a = 1; int64 b = $a; }")]
+   (send "initialize" {})
    (send "textDocument/hover" pos) => {:contents ["Type: int64"]}
    (shutdown)))
 
@@ -60,10 +63,48 @@ If the artifact at the location does not have a definition, the request
 returns `nil`.
 ```clojure
 (fact
- (let [{:keys [send add-module-with-pos shutdown]} (addon-test "find-def")
+ (let [{:keys [send add-module-with-pos shutdown]} (addon-test "hover" "init")
        pos (add-module-with-pos "/path/to/x.c0"
                                 "void foo() {} void bar() { foo($); }")]
-   (send "textDocument/definition" pos) => nil
+   (send "initialize" {})
+   (send "textDocument/hover" pos) => nil
+   (shutdown)))
+
+```
+## Markdown Hover
+
+The `hover` addon has the possibility to generate markdown text instead of
+plain text. This will happen if two conditions are met:
+
+1. The node being presented has a `:hover-md` attribute.
+2. The `:client-capabilities` have `markdown` in the `:text-document`
+   `:hover` `:content-format`.
+
+If both conditions hole, `:hover-md` is used to produce Markdown text.
+
+In the following example we set both `:hover` and `:hover-md` (as we did in
+the plain-text example above), but this time we first send `initialization`
+with client capabilities that enable markdown. We expect to get the marked
+text.
+```clojure
+(fact
+ (let [{:keys [send add-module-with-pos shutdown]}
+       (addon-test "hover" "init"
+                   #(update-in %
+                               [:config "c0"]
+                               assoc :stylesheet
+                               '[{}
+                                 .typeof {:hover (str (with-pred [typeof :type]
+                                                        ["Type:" :type]))
+                                          :hover-md (str (with-pred [typeof :type]
+                                                           ["Type: `" :type "`"]))}]))
+       pos (add-module-with-pos "/path/to/x.c0"
+                                "void foo() { int64 a = 1; int64 b = $a; }")]
+   (send "initialize" {:capabilities
+                       {:text-document
+                        {:hover
+                         {:content-format ["plaintext" "markdown"]}}}})
+   (send "textDocument/hover" pos) => {:contents ["Type: ` int64 `"]}
    (shutdown)))
 ```
 

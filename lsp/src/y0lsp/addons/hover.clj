@@ -11,9 +11,21 @@
 (register-addon "hover"
                 (->> {:hover-provider true}
                      merge-server-capabilities)
-                (->> (fn [ctx {:keys [lss]}]
-                       (let [text (lss :hover)]
-                         {:contents [text]}))
+                (->> (fn [{:keys [client-capabilities]} {:keys [lss]}]
+                       (let [text (lss :hover)
+                             md-allowed (-> @client-capabilities
+                                            :text-document
+                                            :hover
+                                            :content-format
+                                            set
+                                            (contains? "markdown"))
+                             md (if md-allowed
+                                  (lss :hover-md)
+                                  nil)
+                             contents (if (nil? md) text md)]
+                         (if (nil? contents)
+                           nil
+                           {:contents [contents]})))
                      add-node-and-lss-to-doc-pos
                      bind-stringify-expr
                      (add-req-handler "textDocument/hover")))
