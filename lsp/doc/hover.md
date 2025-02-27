@@ -65,7 +65,7 @@ returns `nil`.
 (fact
  (let [{:keys [send add-module-with-pos shutdown]} (addon-test "hover" "init")
        pos (add-module-with-pos "/path/to/x.c0"
-                                "void foo() {} void bar() { foo($); }")]
+                                "void foo() {} void bar($) { foo(); }")]
    (send "initialize" {})
    (send "textDocument/hover" pos) => nil
    (shutdown)))
