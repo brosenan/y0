@@ -25,11 +25,12 @@
 (register-addon "highlight"
                 (-> {:document-highlight-provider true}
                     merge-server-capabilities)
-                (->> (fn [_ctx {:keys [node]}]
+                (->> (fn [_ctx {:keys [text-document node]}]
                        (let [defs (get-defs node)
                              refs (->> defs (mapcat get-refs))]
-                         (for [node (concat defs refs)]
-                           (let [{:keys [range]} (node-location node)]
-                             {:range range}))))
+                         (->> (concat defs refs)
+                              (map node-location)
+                              (filter #(= (:uri %) (:uri text-document)))
+                              (map #(dissoc % :uri)))))
                      add-node-and-lss-to-doc-pos
                      (add-req-handler "textDocument/documentHighlight")))

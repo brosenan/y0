@@ -1,7 +1,7 @@
 ```clojure
 (ns y0lsp.addons.highlight-test
   (:require
-   [midje.sweet :refer [fact =>]]
+   [midje.sweet :refer [=> fact]]
    [y0lsp.addons.highlight :refer :all]
    [y0lsp.all-addons]
    [y0lsp.initializer-test :refer [addon-test]]))
@@ -43,14 +43,14 @@ definition and both references returned.
                                    int64 v1 = 1;
                                    int64 v2 = $v1;
                                    int64 v3 = v1;
-                                 }")
-       res (send "textDocument/documentHighlight" pos)]
-   res => [{:range {:start {:line 0 :character 12}
-                    :end {:line 1 :character 48}}} 
-           {:range {:start {:line 3 :character 45}
-                    :end {:line 3 :character 48}}}
-           {:range {:start {:line 2 :character 45}
-                    :end {:line 2 :character 48}}}]
+                                 }")]
+   (send "textDocument/documentHighlight" pos) =>
+   [{:range {:start {:line 0 :character 12}
+             :end {:line 1 :character 48}}}
+    {:range {:start {:line 3 :character 45}
+             :end {:line 3 :character 48}}}
+    {:range {:start {:line 2 :character 45}
+             :end {:line 2 :character 48}}}]
    (shutdown)))
 
 ```
@@ -63,9 +63,8 @@ If the node does not have a definition, the request returns an empty list.
                                    in$t64 v1 = 1;
                                    int64 v2 = v1;
                                    int64 v3 = v1;
-                                 }")
-       res (send "textDocument/documentHighlight" pos)]
-   res => []
+                                 }")]
+   (send "textDocument/documentHighlight" pos) => []
    (shutdown)))
 ```
 
