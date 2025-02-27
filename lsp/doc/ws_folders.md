@@ -45,5 +45,30 @@ request to resolve some module.
     (exists? path1) => false
     (exists? path2) => true)
    (shutdown)))
+
+```
+Older clients may be populating the now-deprecated `:root-uri` property
+instead of `:workspace-folders`. We support it, with a lower priority to that
+of `:workspace-folders`.
+```clojure
+(fact
+ (let [{:keys [send shutdown]}
+       (addon-test "ws-folders" "init"
+                   (->> (fn [{:keys [lang-map]} {:keys [name]}]
+                          (let [{:keys [resolve]} (get lang-map "c0")]
+                            (str (unwrap-status (resolve name)))))
+                        (add-req-handler "test")))
+       path1 (io/file "/foo/hello/world.c0")
+       path2 (io/file "/bar/hello/world.c0")
+       path3 (io/file "/baz/hello/world.c0")]
+   (send "initialize" {:workspace-folders [{:uri "file:///foo"}
+                                           {:uri "file:///bar"}]
+                       :root-uri "file:///baz"})
+   (send "test" {:name "hello.world"}) => "/baz/hello/world.c0"
+   (provided
+    (exists? path1) => false
+    (exists? path2) => false
+    (exists? path3) => true)
+   (shutdown)))
 ```
 
