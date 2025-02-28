@@ -74,8 +74,7 @@
                           :message "Call to undefined function bar in bar();"}]}
    (shutdown)))
   
-;; If an error does not have location information, `:start` and `:end` are set
-;; to (0,0).
+;; If there is a module-level error, such as a syntax error, it is returned.
 (fact
  (let [ret (atom nil)
        {:keys [notify on-notification shutdown]} (addon-test "docsync" "diag")]
@@ -85,9 +84,9 @@
                                    {:uri "file:///path/to/foo.c0"
                                     :text "This does not parse"}})
    @ret => {:uri "file:///path/to/foo.c0"
-            :diagnostics [{:range {:start {:line 0 :character 0}
-                                   :end {:line 0 :character 0}}
+            :diagnostics [{:range {:start {:line 0 :character 10}
+                                   :end {:line 0 :character 10}}
                            :severity 1
                            :source "y0lsp"
-                           :message ""}]}
+                           :message "Syntax error"}]}
    (shutdown)))

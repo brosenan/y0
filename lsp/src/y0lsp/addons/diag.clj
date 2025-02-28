@@ -20,12 +20,14 @@
 
 (register-addon "diag"
                 (->> (fn [{:keys [notify] :as ctx} {:keys [uri]}]
-                       (let [{:keys [semantic-errs]}
+                       (let [{:keys [semantic-errs err]}
                              (get-module ctx (uri-to-path uri))
-                             diagnostics (->> @semantic-errs
-                                              (map :err)
-                                              (map explanation-to-diagnostic)
-                                              vec)]
+                             diagnostics (if (nil? err)
+                                           (->> @semantic-errs
+                                                (map :err)
+                                                (map explanation-to-diagnostic)
+                                                vec)
+                                           [(-> err explanation-to-diagnostic)])]
                          (notify "textDocument/publishDiagnostics"
                                  {:uri uri
                                   :diagnostics diagnostics})))
