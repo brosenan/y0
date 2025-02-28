@@ -41,7 +41,7 @@
   {:parser {:edn {:func edn-parser
                   :args [:root-refer-map :lang :extra-modules]}
             :insta {:func instaparser
-                    :args [:lang :grammar :identifier-kws
+                    :args [:grammar :identifier-kws
                            :dependency-kw :extra-modules]}}
    :resolver {:prefix-list {:func prefix-list-resolver
                             :args [:path-prefixes

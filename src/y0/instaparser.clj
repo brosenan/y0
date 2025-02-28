@@ -85,7 +85,7 @@
         node))
     node))
 
-(defn instaparser [lang grammar id-kws dep-kw extra-deps]
+(defn instaparser [grammar id-kws dep-kw extra-deps]
   (let [parser (instaparse-grammar grammar)]
     (fn parse [path text resolve]
       (let [wrap-parse (fn [func & args]

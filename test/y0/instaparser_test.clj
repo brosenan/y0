@@ -239,11 +239,10 @@
 ;; ## The Parser Function
 
 ;; `instaparser` takes:
-;; 1. the name of the language (deprecated),
-;; 2. a grammar string,
-;; 3. a keyword or a set of keywords representing identifiers,
-;; 4. a single keyword representing a dependency module,
-;; 5. a list module paths representing _additional_ dependencies (usually used
+;; 1. a grammar string,
+;; 2. a keyword or a set of keywords representing identifiers,
+;; 3. a single keyword representing a dependency module,
+;; 4. a list module paths representing _additional_ dependencies (usually used
 ;;    for the language semantic definition in $y_0$) and returns a `:parse`
 ;; function which can be placed in a language map.
 (fact
@@ -259,8 +258,7 @@
                 float = #'-?[1-9][0-9]*([.][0-9]+)?([eE][+\\-][0-9]+)?'
                 --layout--
                 layout = #'\\s'+"]
-  (def my-parser (instaparser "y7"
-                              grammar
+  (def my-parser (instaparser grammar
                               :identifier
                               :dep
                               ["/path/to/y7.y0"])) =>
