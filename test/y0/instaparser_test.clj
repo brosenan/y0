@@ -198,7 +198,8 @@
    (extract-deps [:dep "some.module" "some.other.module"]
                  a :dep "foo.bar" resolve (atom nil)) =>
    (throws ":dep node should contain one element but has 2")
-   (extract-deps [:dep [:qname "some" "module"]] a :dep "foo.bar" resolve (atom nil)) =>
+   (extract-deps [:dep [:qname "some" "module"]]
+                 a :dep "foo.bar" resolve (atom nil)) =>
    (throws ":dep node should contain a single string. Found: [:qname \"some\" \"module\"]")))
 
 ;; If `resolve` fails to resolve the module, the error it returns is added to
@@ -225,24 +226,26 @@
 (fact
  (convert-int-node [:int "123"]) => [:int 123]
  (convert-int-node [:not-int "123"]) => [:not-int "123"]
- (convert-int-node [:int "123" "456"]) => (throws ":int node should contain one element but has 2"))
+ (convert-int-node [:int "123" "456"]) =>
+ (throws ":int node should contain one element but has 2"))
 
 ;; Similarly, `convert-float-node` converts nodes with the `:float` keyword.
 (fact
  (convert-float-node [:float "123.456e+7"]) => [:float 123.456e+7]
  (convert-float-node [:not-float "12.3"]) => [:not-float "12.3"]
- (convert-float-node [:float "123." "456"]) => (throws ":float node should contain one element but has 2"))
+ (convert-float-node [:float "123." "456"]) =>
+ (throws ":float node should contain one element but has 2"))
 
 ;; ## The Parser Function
 
 ;; `instaparser` takes:
-;; 1. a grammar string,
-;; 2. the name of the language,
-;; 3. a set of keywords representing identifiers
+;; 1. the name of the language (deprecated),
+;; 2. a grammar string,
+;; 3. a keyword or a set of keywords representing identifiers,
 ;; 4. a single keyword representing a dependency module,
-;; 5. a list module (maps with `:lang` and `:name`) representing _additional_
-;;    dependencies (usually used for the language semantic definition in $y_0$)
-;; and returns a `:parse` function which can be placed in a language map.
+;; 5. a list module paths representing _additional_ dependencies (usually used
+;;    for the language semantic definition in $y_0$) and returns a `:parse`
+;; function which can be placed in a language map.
 (fact
  (let [grammar "compilation_unit = import* statement*
                 import = <'import'> dep <';'>
@@ -264,9 +267,10 @@
    #'my-parser)
  my-parser => fn?)
 
-;; Given a module name, a module path and the text of the module, the resulting
-;; function returns a status containing the module's `statements`: the parse
-;; tree with the top-level label removed, and a set of dependencies.
+;; Given a module path, the text of the module and a resolver for resolving
+;; dependencies, the resulting function returns a status containing the module's
+;; `statements`: the parse tree with the top-level label removed, and a set of
+;; dependencies.
 
 ;; In the statements, identifiers are replaced with symbols and `:int` and
 ;; `:float` literals are replaced with actual values. Each node in the
@@ -286,8 +290,10 @@
    statements =>
    [[:import [:dep (symbol "/path/to/my-module.y7" "/foo/core.y7")]]
     [:import [:dep (symbol "/path/to/my-module.y7" "/bar/core.y7")]]
-    [:statement [:assign (symbol "/path/to/my-module.y7" "a") [:expr [:int -3]]]]
-    [:statement [:assign (symbol "/path/to/my-module.y7" "b") [:expr [:float 5.7]]]]
+    [:statement [:assign (symbol "/path/to/my-module.y7" "a")
+                 [:expr [:int -3]]]]
+    [:statement [:assign (symbol "/path/to/my-module.y7" "b")
+                 [:expr [:float 5.7]]]]
     [:statement
      [:assign (symbol "/path/to/my-module.y7" "x")
       [:expr (symbol "/path/to/my-module.y7" "a")]]]]
@@ -302,3 +308,22 @@
  (let [resolve (fn [m] {:err ["Failed to resolve module" m]})
        status (my-parser "/path/to/my-module.y7" sample-text1 resolve)]
    status => {:err ["Failed to resolve module" "foo.core"]}))
+
+;; ### Reporting Parse Errors
+
+;; Parsing errors are reported as `Syntax error`, with the location as `meta`.
+
+;; In the following example, the word `is` is where parsing fails.
+(fact
+ (def sample-text1 "import foo.core;
+                    import bar.core;
+
+                    This is a syntax error.")
+ (let [resolve (fn [m] (ok (java.io.File.
+                            (str "/" (str/replace m #"\." "/") ".y7"))))
+       status (my-parser "/path/to/my-module.y7" sample-text1 resolve)
+       {:keys [err]} status]
+   err => ["Syntax error"]
+   (meta err) => {:path "/path/to/my-module.y7"
+                  :start 4000026
+                  :end 4000026}))

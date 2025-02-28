@@ -1,8 +1,10 @@
 (ns y0.instaparser
-  (:require [instaparse.core :as insta]
-            [clojure.string :as str]
-            [y0.term-utils :refer [postwalk-meta postwalk-with-meta]]
-            [y0.status :refer [ok let-s ok?]]))
+  (:require
+   [clojure.string :as str]
+   [instaparse.core :as insta]
+   [y0.location-util :refer [encode-file-pos]]
+   [y0.status :refer [let-s ok ok?]]
+   [y0.term-utils :refer [postwalk-meta postwalk-with-meta]]))
 
 (def layout-separator "--layout--")
 
@@ -83,29 +85,36 @@
         node))
     node))
 
-(defn- wrap-parse [func & args]
-  (try
-    (ok (apply func args))
-    (catch Exception e {:err [(.getMessage e)]})))
-
 (defn instaparser [lang grammar id-kws dep-kw extra-deps]
   (let [parser (instaparse-grammar grammar)]
     (fn parse [path text resolve]
-      (let-s [parse-tree (wrap-parse parser text)]
-             (let [statements (drop 1 parse-tree)
-                   deps-atom (atom nil)
-                   errs (atom [])
-                   statements (add-locations statements path)
-                   statements (vec (postwalk-with-meta
-                                    #(-> %
-                                         (symbolize path id-kws)
-                                         (extract-deps deps-atom dep-kw
-                                                       path resolve errs)
-                                         convert-int-node
-                                         convert-float-node) statements))
-                   deps (-> @deps-atom
-                            (concat extra-deps)
-                            vec)]
-               (if (seq @errs)
-                 {:err (first @errs)}
-                 (ok [statements deps])))))))
+      (let [wrap-parse (fn [func & args]
+                         (try
+                           (let [ret (apply func args)]
+                             (if (insta/failure? ret)
+                               (let [{:keys [column line]} (insta/get-failure ret)
+                                     pos (encode-file-pos line column)]
+                                 {:err (with-meta ["Syntax error"]
+                                         {:path path
+                                          :start pos
+                                          :end pos})})
+                               (ok ret)))
+                           (catch Exception e {:err [(.getMessage e)]})))]
+        (let-s [parse-tree (wrap-parse parser text)]
+               (let [statements (drop 1 parse-tree)
+                     deps-atom (atom nil)
+                     errs (atom [])
+                     statements (add-locations statements path)
+                     statements (vec (postwalk-with-meta
+                                      #(-> %
+                                           (symbolize path id-kws)
+                                           (extract-deps deps-atom dep-kw
+                                                         path resolve errs)
+                                           convert-int-node
+                                           convert-float-node) statements))
+                     deps (-> @deps-atom
+                              (concat extra-deps)
+                              vec)]
+                 (if (seq @errs)
+                   {:err (first @errs)}
+                   (ok [statements deps]))))))))
