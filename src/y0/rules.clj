@@ -83,7 +83,11 @@
 (defn report-err [why-not]
   (when (some? *update-decor*)
     (*update-decor* #(assoc % :err why-not)))
-  {:err why-not})
+  (let [{:keys [path start end]} (-> *subject* meta)]
+    (if (some? path)
+      {:err (with-meta why-not
+              {:path path :start start :end end})}
+      {:err why-not})))
 
 (defn- add-deduction-rule [ps bindings head conditions vars def]
   (let [[head why-not] (split-goal head nil)
@@ -318,6 +322,9 @@
       (= op `=>) (add-translation-rule ps bindings head terms vars)
       :else {:err ["Invalid rule operator" op]})))
 
+;; This function does two things: it adds an entry for the matched predicate in
+;; the :matches of the goal's subject and returns a function for further
+;; updating this entry.
 (defn- update-decorations [goal rule]
   (let [[pred subj & args] goal
         subj (if (instance? clojure.lang.IAtom subj)
