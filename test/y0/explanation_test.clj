@@ -226,6 +226,13 @@
 ;; The function `code-location` takes an explanation and returns its associated
 ;; code location or `nil` if one is not found.
 (fact
+ (code-location (with-meta '["An explanation with location"]
+                  {:path "z.y0" :start 1000001 :end 1000002}))
+ => {:path "z.y0" :start 1000001 :end 1000002})
+
+;; If the explanation itself does not have location metadata, contained terms
+;; are searched. 
+(fact
  (code-location ["does not contain meta" 
                  (with-meta '(does not contain path) {:start 1000001 :end 1000002})
                  (with-meta '(does not contain start) {:path "x.y0" :end 1000002})
