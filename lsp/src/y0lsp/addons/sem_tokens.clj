@@ -42,5 +42,14 @@
     (sequential? tree) (mapcat all-symbols tree)
     :else []))
 
+(defn encode-symbols [tree sym-class]
+  (let [f (rel-pos-encoder)]
+    (->> tree
+         all-symbols
+         (mapcat (fn [sym]
+                   (let [start (symbol-start sym)
+                         len (symbol-len sym)]
+                     (concat (f start len) (sym-class sym))))))))
+
 (register-addon "sem-tokens"
                 )

@@ -88,12 +88,12 @@
    (f 1000010 2) => [0 4 2]
    (f 2000005 2) => [1 4 2]))
 
-;; ## Tokens in a Parse Tree
+;; ### Tokens in a Parse Tree
 
 ;; This addon needs to traverse the parse tree of a given module and classify
 ;; its identifiers (symbols). This section describes how we do this.
 
-;; ### Symbol Real Location
+;; #### Symbol Real Location
 
 ;; One of the challenges we have to face is that in some cases (e.g.,
 ;; [Instaparse-based parsers](../../doc/instaparser.md)) the location assigned
@@ -115,7 +115,7 @@
  (let [sym (with-meta 'abcdefg/foo {:end 2000004})]
    (symbol-start sym) => 2000001))
 
-;; ### Tree Traversal
+;; #### Tree Traversal
 
 ;; Given a parse tree (e.g., the `:statements` attribute of a module), the
 ;; function `all-symbols` returns a lazy sequence of all its symbols.
@@ -135,3 +135,32 @@
 ;; Nested structures are supported as well.
 (fact
  (all-symbols [123 'foo [456 ['bar] 'baz]]) => ['foo 'bar 'baz])
+
+;; ### The Encoding Function
+
+;; Putting it all together, the function `encode-symbols` takes a parse tree
+;; (e.g., a module's `:statements`) and a token classification function, and
+;; returns a sequence of integers, corresponding with the `:data` field of the
+;; [SemanticTokens](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#semanticTokens)
+;; message.
+
+;; The token classification function takes a symbol and returns a vector with
+;; two integers, one representing the token type and the other representing its
+;; modifiers.
+(fact
+ ;; xxxx_yyy_zz
+ ;; __aa
+ (let [tree [:foo
+             (with-meta 'xxxx {:start 1000001
+                               :end 1000005})
+             (with-meta 'yyy {:start 1000005
+                              :end 1000009})
+             [:bar (with-meta 'zz {:start 1000009
+                                   :end 1000012})
+              [:baz (with-meta 'aa {:start 1000012
+                                    :end 2000007})]]]]
+   (encode-symbols tree (constantly [7 0])) =>
+   [0 0 4 7 0
+    0 5 3 7 0
+    0 4 2 7 0
+    1 4 2 7 0]))
