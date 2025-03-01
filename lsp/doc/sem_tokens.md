@@ -96,5 +96,65 @@ length.
    (f 1000006 3) => [0 5 3]
    (f 1000010 2) => [0 4 2]
    (f 2000005 2) => [1 4 2]))
+
+```
+## Tokens in a Parse Tree
+
+This addon needs to traverse the parse tree of a given module and classify
+its identifiers (symbols). This section describes how we do this.
+
+### Symbol Real Location
+
+One of the challenges we have to face is that in some cases (e.g.,
+[Instaparse-based parsers](../../doc/instaparser.md)) the location assigned
+to a symbol often includes the preceding whitespace. This is problematic
+since the LSP does not allow for tokens to span more than a single line.
+
+To fix this, we calculate a symbol's start position by taking its `:end` and
+subtracting the length of the token.
+
+As a first step, the function `symbol-len` returns the length of the `name`
+of a symbol.
+```clojure
+(fact
+ (symbol-len 'foo) => 3
+ (symbol-len 'abcd/ef) => 2)
+
+```
+As a second step, the function `symbol-start` subtracts this length from the
+symbol's `:end` metadata.
+```clojure
+(fact
+ (let [sym (with-meta 'abcdefg/foo {:end 2000004})]
+   (symbol-start sym) => 2000001))
+
+```
+### Tree Traversal
+
+Given a parse tree (e.g., the `:statements` attribute of a module), the
+function `all-symbols` returns a lazy sequence of all its symbols.
+
+Given a symbol, it returns a sequence containing that one symbol.
+```clojure
+(fact
+ (all-symbols 'foo) => ['foo])
+
+```
+Given a leaf that is not a symbol, it returns an empty sequence.
+```clojure
+(fact
+ (all-symbols 123) => [])
+
+```
+For anything sequential, it extracts all symbols from within.
+```clojure
+(fact
+ (all-symbols [123 'foo 456 'bar]) => ['foo 'bar])
+
+```
+Nested structures are supported as well.
+```clojure
+(fact
+ (all-symbols [123 'foo [456 ['bar] 'baz]]) => ['foo 'bar 'baz])
 ```
 

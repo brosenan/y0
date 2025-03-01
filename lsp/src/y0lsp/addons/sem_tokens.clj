@@ -29,5 +29,18 @@
         (reset! last curr)
         [line character len]))))
 
+(defn symbol-len [sym]
+  (-> sym name count))
+
+(defn symbol-start [sym]
+  (let [{:keys [end]} (meta sym)]
+    (- end (symbol-len sym))))
+
+(defn all-symbols [tree]
+  (cond
+    (symbol? tree) [tree]
+    (sequential? tree) (mapcat all-symbols tree)
+    :else []))
+
 (register-addon "sem-tokens"
                 )
