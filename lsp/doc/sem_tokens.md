@@ -189,6 +189,35 @@ modifiers.
     1 4 2 7 0]))
 
 ```
+#### Ignoring Symbols
+
+We sometimes wish to ignore certain symbols, e.g., when they don't have
+special semantic information. We do that by allowing the classification
+function to return `nil` in some cases, and have `encode-symbols` ignore
+these symbols. The relative position needs to be maintained.
+
+In the following example we repeat the previous example, but classify `yyy`
+as `nil`. The coordinates for `zz` are then shifted to be the offset from the
+beginning of `xxxx`.
+```clojure
+(fact
+ ;; xxxx_____zz
+ ;; __aa
+ (let [tree [:foo
+             (with-meta 'xxxx {:start 1000001
+                               :end 1000005})
+             (with-meta 'yyy {:start 1000005
+                              :end 1000009})
+             [:bar (with-meta 'zz {:start 1000009
+                                   :end 1000012})
+              [:baz (with-meta 'aa {:start 1000012
+                                    :end 2000007})]]]]
+   (encode-symbols tree #(if (= % 'yyy) nil [7 0])) =>
+   [0 0 4 7 0
+    0 9 2 7 0
+    1 4 2 7 0]))
+
+```
 ## Capabilities Exchange
 
 The capability exchange for semantic tokens is used to agree on the type of

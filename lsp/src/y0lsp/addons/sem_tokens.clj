@@ -47,9 +47,12 @@
     (->> tree
          all-symbols
          (mapcat (fn [sym]
-                   (let [start (symbol-start sym)
-                         len (symbol-len sym)]
-                     (concat (f start len) (sym-class sym))))))))
+                   (let [cls (sym-class sym)]
+                     (if (nil? cls)
+                       []
+                       (let [start (symbol-start sym)
+                             len (symbol-len sym)]
+                         (concat (f start len) cls)))))))))
 
 (register-addon "sem-tokens"
                 #(update % :capability-providers conj
