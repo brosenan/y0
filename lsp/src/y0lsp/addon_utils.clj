@@ -17,7 +17,7 @@
            update name
            conj handler))
 
-(defn- deep-merge [m1 m2]
+(defn deep-merge [m1 m2]
   (if (and (map? m1)
            (map? m2))
     (merge-with deep-merge m1 m2)

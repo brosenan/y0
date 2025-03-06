@@ -45,6 +45,40 @@ capabilities.
    (shutdown)))
 
 ```
+### Capability Providers
+
+Sometimes the server capabilities cannot be provided ahead and they rather
+need to be based on the client capabilities.
+
+To address this, addons may register `:capability-providers`. These are
+functions that are given the client capabilities and return partial server
+capabilities. The returned capabilities are then merged (recursively) into
+the stroed server capabilities.
+
+In the following example we register two handlers, one that stores a
+capability by incrementing a value coming from the client capabilities, and
+one that decrements that value. In addition we provide a third capability
+from the stored `:server-capabilities`.
+```clojure
+(fact
+ (let [{:keys [send shutdown]}
+       (addon-test "init"
+                   (merge-server-capabilities
+                    {:some-cap {:foo 123}})
+                   #(update % :capability-providers
+                            conj (fn [{:keys [some-num]}]
+                                   {:some-cap {:incr (inc some-num)}}))
+                   #(update % :capability-providers
+                            conj (fn [{:keys [some-num]}]
+                                   {:some-cap {:decr (dec some-num)}})))
+       {:keys [capabilities]} (send "initialize"
+                                    {:capabilities {:some-num 42}})]
+   (-> capabilities :some-cap :foo) => 123
+   (-> capabilities :some-cap :incr) => 43
+   (-> capabilities :some-cap :decr) => 41
+   (shutdown)))
+
+```
 ## Sending a Notification
 
 In addition to exchanging capabilities, the `init` addon also sends an
