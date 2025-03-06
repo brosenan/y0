@@ -226,3 +226,77 @@
              :token-modifiers []}
     :full true}
    (shutdown)))
+
+;; ## Semantic Tokens Request
+
+;; This addon implements `textDocument/semanticTokens/full`, which takes a
+;; `:text-document` containing a `:uri` and returns a
+;; [SemanticTokens](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#semanticTokens)
+;; object in response, containing `:data`, [an integer representation of the
+;; tokens](#integer-encoding-for-tokens).
+
+;; The tokens are the symbols in the referenced module. Their types are
+;; determined by retrieving the attribute `:token-type` from the language
+;; stylesheet for each symbol. The order of types in `:token-types` in the
+;; client capabilities form the conversion between the attribute value (string)
+;; and the required integer.
+
+;; In the following example we replace the language's `:stylesheet` to contain
+;; different `:token-type`s for `.function` (function names) and `.typeof`
+;; (variable names). We then create a module containing code that has both, and
+;; see how it is encoded.
+(fact
+ (let [{:keys [send add-module-with-pos shutdown]}
+       (addon-test
+        "init" "sem-tokens"
+        #(update-in %
+                    [:config "c0"]
+                    assoc :stylesheet
+                    '[{}
+                      .typeof {:token-type "variable"}
+                      .function {:token-type "function"}]))
+       {:keys [text-document]} (add-module-with-pos "/path/to/x.c0"
+                                                    "$void foo(int64 x) {}
+                                                     void bar() {
+                                                       int64 a = 1;
+                                                       foo(a);
+                                                     }")]
+   (send "initialize" {:capabilities
+                       {:text-document
+                        {:semantic-tokens
+                         {:requests {:range true
+                                     :full {:delta true}}
+                          :token-types ["variable" "type" "function"]}}}})
+   (send "textDocument/semanticTokens/full"
+         {:text-document text-document}) => {:data [3 55 3 2 0
+                                                    0 4 1 0 0]}
+   (shutdown)))
+
+;; If a token type is missing in the list provided by the client, it is omitted
+;; form the output.
+(fact
+ (let [{:keys [send add-module-with-pos shutdown]}
+       (addon-test
+        "init" "sem-tokens"
+        #(update-in %
+                    [:config "c0"]
+                    assoc :stylesheet
+                    '[{}
+                      .typeof {:token-type "variable"}
+                      .function {:token-type "function"}]))
+       {:keys [text-document]} (add-module-with-pos "/path/to/x.c0"
+                                                    "$void foo(int64 x) {}
+                                                     void bar() {
+                                                       int64 a = 1;
+                                                       foo(a);
+                                                     }")]
+   (send "initialize" {:capabilities
+                       {:text-document
+                        {:semantic-tokens
+                         {:requests {:range true
+                                     :full {:delta true}}
+                          ;; Below, "variable" is replaced with "member"
+                          :token-types ["member" "type" "function"]}}}})
+   (send "textDocument/semanticTokens/full"
+         {:text-document text-document}) => {:data [3 55 3 2 0]} ;; "foo" only.
+   (shutdown)))

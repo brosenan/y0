@@ -6,5 +6,6 @@
     [y0lsp.addons.highlight]
     [y0lsp.addons.hover]
     [y0lsp.addons.init]
+    [y0lsp.addons.sem_tokens]
     [y0lsp.addons.ws_folders]
   ))

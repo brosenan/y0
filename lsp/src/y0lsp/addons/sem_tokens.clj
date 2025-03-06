@@ -1,8 +1,8 @@
 (ns y0lsp.addons.sem-tokens
   (:require
-   [y0.location-util :refer [encode-file-pos]]
-   [y0lsp.addon-utils :refer [register-addon merge-server-capabilities]]
-   [y0lsp.location-utils :refer [to-lsp-pos]]))
+   [y0lsp.addon-utils :refer [register-addon add-req-handler get-module]]
+   [y0lsp.location-utils :refer [to-lsp-pos uri-to-path]]
+   [y0lsp.server :refer [register-req]]))
 
 (defn token-type-encoder [strs]
   (let [idx (->> strs
@@ -54,6 +54,24 @@
                              len (symbol-len sym)]
                          (concat (f start len) cls)))))))))
 
+(defn- sem-tokens [{:keys [lang-map client-capabilities] :as ctx}
+                   {:keys [text-document]}]
+  (let [path (uri-to-path (:uri text-document))
+        {:keys [lang statements]} (get-module ctx path)
+        {:keys [lss]} (get lang-map lang)
+        tt-enc (token-type-encoder (-> @client-capabilities :text-document
+                                       :semantic-tokens :token-types))
+        classify (fn [sym]
+                   (let [type (lss sym :token-type)]
+                     (if (nil? type)
+                       nil
+                       (let [n (tt-enc type)]
+                         (if (>= n 0)
+                           [n 0]
+                           nil)))))]
+    {:data (encode-symbols statements classify)}))
+
+(register-req "textDocument/semanticTokens/full" any?)
 (register-addon "sem-tokens"
                 #(update % :capability-providers conj
                          (fn [{:keys [text-document]}]
@@ -62,4 +80,6 @@
                               {:legend {:token-types
                                         (:token-types semantic-tokens)
                                         :token-modifiers []}
-                               :full true}}))))
+                               :full true}})))
+                (->> sem-tokens
+                     (add-req-handler "textDocument/semanticTokens/full")))
