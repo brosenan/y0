@@ -1,7 +1,7 @@
 (ns y0lsp.addons.sem-tokens
   (:require
    [y0.location-util :refer [encode-file-pos]]
-   [y0lsp.addon-utils :refer [register-addon]]
+   [y0lsp.addon-utils :refer [register-addon merge-server-capabilities]]
    [y0lsp.location-utils :refer [to-lsp-pos]]))
 
 (defn token-type-encoder [strs]
@@ -52,4 +52,11 @@
                      (concat (f start len) (sym-class sym))))))))
 
 (register-addon "sem-tokens"
-                )
+                #(update % :capability-providers conj
+                         (fn [{:keys [text-document]}]
+                           (let [{:keys [semantic-tokens]} text-document]
+                             {:semantic-tokens-provider 
+                              {:legend {:token-types
+                                        (:token-types semantic-tokens)
+                                        :token-modifiers []}
+                               :full true}}))))

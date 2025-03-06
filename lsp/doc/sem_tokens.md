@@ -187,5 +187,42 @@ modifiers.
     0 5 3 7 0
     0 4 2 7 0
     1 4 2 7 0]))
+
+```
+## Capabilities Exchange
+
+The capability exchange for semantic tokens is used to agree on the type of
+requests that can be made (range or full) and to agree on the set of semantic
+types.
+
+This addon currently supports a subset of the capabilities provided by the
+protocol:
+
+1. We only support `full` requests. `range` and `full/delta` requests are not
+   supported.
+2. We return the full list of `:token-types` in the
+   [SemanticTokensLegend](https://microsoft.github.io/language-server-protocol/specifications/lsp/3.17/specification/#semanticTokensLegend)
+   and to not try to restrict the list to only the types used by the language
+   definition.
+3. Motifiers are not supported.
+
+In the following example we perform an `initialize` request, sending client
+capabilities that contain three types of tokens. The response will contain
+the same types of tokens in the same order as the `SemanticTokensLegend`.
+```clojure
+(fact
+ (let [{:keys [send shutdown]} (addon-test "init" "sem-tokens")
+       {:keys [capabilities]}
+       (send "initialize" {:capabilities
+                           {:text-document
+                            {:semantic-tokens
+                             {:requests {:range true
+                                         :full {:delta true}}
+                              :token-types ["foo" "bar" "baz"]}}}})]
+   (-> capabilities :semantic-tokens-provider) =>
+   {:legend {:token-types ["foo" "bar" "baz"]
+             :token-modifiers []}
+    :full true}
+   (shutdown)))
 ```
 
