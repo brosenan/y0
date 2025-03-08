@@ -10,6 +10,8 @@
                  [instaparse "1.5.0"]
                  [aysylu/loom "1.0.2"]
                  [hiccup "2.0.0-RC3"]]
-  :profiles {:dev {:dependencies [[midje "1.10.10"]]}}
+  :profiles {:dev {:dependencies [[midje "1.10.10"]]}
+             :uberjar {:aot :all}}
+  :main y0.main
   :plugins [[lein-midje "3.2.2"]]
   :repl-options {:init-ns y0.core})

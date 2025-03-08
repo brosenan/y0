@@ -14,13 +14,18 @@ for addon in $addons; do
 done
 echo "  ))" >> "$all_addons_file"
 
-lein uberjar
+(cd $basedir && lein uberjar)
 
 bindir="$basedir/bin"
 mkdir -p "$bindir"
 
 jarfile="$bindir/y0lsp.jar"
 cp $basedir/target/y0lsp-*-standalone.jar "$jarfile"
+
+(cd $basedir/.. && lein uberjar)
+
+y0jarfile="$bindir/y0.jar"
+cp $basedir/../target/y0-*-standalone.jar "$y0jarfile"
 
 echo "$jarfile built successfully."
 "$basedir/create-docs.sh"
