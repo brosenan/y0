@@ -1,0 +1,21 @@
+{"d0" {;; Use an EDN parser
+       :parser :edn
+       ;; Initialize the root namespace from a list of symbols
+       :root-refer-map :root-symbols
+       ;; All these symbols...
+       :root-symbols []
+       ;; ...populate this namespace
+       :root-namespace "d0.core"
+       ;; The resolver is based on a prefix list
+       :resolver :prefix-list
+       ;; The path relative to the prefixes is based on dots in
+       ;; the module name (e.g., a.b.c => a/b/c.ext)
+       :relative-path-resolution :dots
+       ;; The file extension for the source files
+       :file-ext "d0"
+       ;; The modules that define the language's semantics
+       :y0-modules ["d0"]
+       ;; Read files using Clojure's slurp function.
+       :reader :slurp
+       ;; Empty language stylesheet
+       :stylesheet [{}]}}

@@ -1,0 +1,6 @@
+(ns d0)
+
+;; # $d_0$: Dynamic Semantics
+;;
+;; This module defines the semantics of the $d_0$ language, validated against
+;; [d0-spec.md](doc/d0-spec.md).
