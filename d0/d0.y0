@@ -1,6 +1,7 @@
-(ns d0)
+(ns d0
+  (:declare d0.core))
 
 ;; # $d_0$: Dynamic Semantics
-;;
-;; This module defines the semantics of the $d_0$ language, validated against
-;; [d0-spec.md](doc/d0-spec.md).
+
+(all [name args]
+     (d0.core/deftrait name args) =>)
