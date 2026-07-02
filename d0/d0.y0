@@ -4,4 +4,7 @@
 ;; # $d_0$: Dynamic Semantics
 
 (all [name args]
-     (d0.core/deftrait name args) =>)
+     (d0.core/deftrait name args) =>
+     (assert (exist [s]
+                    (symbol-name name s ! "A trait name must be a symbol, but" name "is given")
+                    (re-match s "[a-z0-9-]+" ! "Invalid trait name " name ". A trait name should only use lower-case letters, digits and dashes"))))

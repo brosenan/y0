@@ -30,3 +30,26 @@ definition of a trait.
 ```status
 Success
 ```
+
+A trait name must be a symbol.
+
+```clojure
+(ns example)
+
+(deftrait "bad-name" [])
+```
+```status
+ERROR: A trait name must be a symbol, but bad-name is given in (deftrait "bad-name" [])
+```
+
+A trait name must only use lowercase letters, digits and dashes.
+
+```clojure
+(ns example)
+
+(deftrait Bad-name [])
+```
+```status
+ERROR: Invalid trait name  Bad-name . A trait name should only use lower-case letters, digits and dashes in (deftrait Bad-name [])
+```
+
