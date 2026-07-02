@@ -43,9 +43,15 @@
               res (handle-normal-directive args res resolve)]
              (recur vecs res)))))
 
+(defn- handle-declare [[sym] [paths ns-map refer-map]]
+  (ok [paths
+       (assoc ns-map (str sym) (str sym))
+       refer-map]))
+
 (defn- handle-directive [[name & vecs] res resolve]
   (cond
     (= name :require) (handle-require vecs res resolve)
+    (= name :declare) (handle-declare vecs res)
     :else {:err ["Invalid ns directive" name]}))
 
 (defn parse-ns-decl [[_ns module-name & directives] resolve]

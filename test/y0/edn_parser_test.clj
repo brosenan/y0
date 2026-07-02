@@ -99,6 +99,19 @@
         "c" "/baz/y0ux.y0"
         "x" "/baz/puux.y0"}]})
 
+;; The `declare` directive takes a single fully-qualified namespace name (a
+;; symbol) and declares it as an alias for itself. This adds an entry to the
+;; `ns-map` mapping the namespace to itself, allowing symbols to be written with
+;; their fully-qualified namespace prefix without being translated.
+(fact
+ (parse-ns-decl '(ns foo.bar
+                   (:declare baz.quux))
+                dummy-resolve) =>
+ {:ok [[]
+       {nil "/foo/bar.y0"
+        "baz.quux" "baz.quux"}
+       {}]})
+
 ;; ## Converting Code Locations
 
 ;; [Edamame](https://github.com/borkdude/edamame), the EDN parser we are using,
