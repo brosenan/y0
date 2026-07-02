@@ -64,6 +64,14 @@
         s (reify-term s)]
     (unify-or-err (count s) n why-not)))
 
+(defn re-match [goal why-not _ps]
+  (let [[_re-match s re] goal
+        s (reify-term s)
+        re (reify-term re)]
+    (if (some? (re-matches (re-pattern re) s))
+      {:ok nil}
+      (report-err why-not))))
+
 (defn add-builtin [ps name arity func]
   (assoc ps {:name (str "y0.core/" name) :arity arity} {{} func}))
 
@@ -75,4 +83,5 @@
       (add-builtin "to-list" 2 (gen-to-x seq))
       (add-builtin "to-vec" 2 (gen-to-x vec))
       (add-builtin "symbolize" 3 symbolize)
-      (add-builtin "length" 2 length)))
+      (add-builtin "length" 2 length)
+      (add-builtin "re-match" 2 re-match)))

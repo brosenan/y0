@@ -4,6 +4,7 @@
   * [Conversion Predicates](#conversion-predicates)
   * [Symbols](#symbols)
   * [Length of Vectors and Lists](#length-of-vectors-and-lists)
+  * [Regular Expression Matching](#regular-expression-matching)
 ```clojure
 (ns builtins)
 
@@ -119,6 +120,29 @@ integer.
  (length (1 2 3 4) 4)
  (exist []
         (length [1 2 3] 2 ! "nope")
+        ! "nope"))
+
+```
+## Regular Expression Matching
+
+The predicate `re-match` takes a string as its first argument and a regex
+string as its second argument. It succeeds if and only if the regex is a
+full match for the string.
+```clojure
+(assert
+ (re-match "foobar" "foo.*")
+ (re-match "foobar" "[a-z]+")
+ (re-match "abc123" "[a-z]+[0-9]+"))
+
+```
+A partial match is not enough. The regex must match the entire string.
+```clojure
+(assert
+ (exist []
+        (re-match "foobar" "foo" ! "nope")
+        ! "nope")
+ (exist []
+        (re-match "foobar" "bar" ! "nope")
         ! "nope"))
 ```
 
