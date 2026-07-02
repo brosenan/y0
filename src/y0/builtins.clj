@@ -64,6 +64,13 @@
         s (reify-term s)]
     (unify-or-err (count s) n why-not)))
 
+(defn symbol-name [goal why-not _ps]
+  (let [[_symbol-name sym name] goal
+        sym (reify-term sym)]
+    (if (symbol? sym)
+      (unify-or-err (clojure.core/name sym) name why-not)
+      (report-err why-not))))
+
 (defn re-match [goal why-not _ps]
   (let [[_re-match s re] goal
         s (reify-term s)
@@ -84,4 +91,5 @@
       (add-builtin "to-vec" 2 (gen-to-x vec))
       (add-builtin "symbolize" 3 symbolize)
       (add-builtin "length" 2 length)
-      (add-builtin "re-match" 2 re-match)))
+      (add-builtin "re-match" 2 re-match)
+      (add-builtin "symbol-name" 2 symbol-name)))

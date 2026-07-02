@@ -108,6 +108,29 @@ strings.
  (symbolize foo ["bar"] foo-bar)
  (symbolize foo ["bar" :baz] foo-bar-:baz))
 
+
+```
+The predicate `symbol-name` takes a symbol as its first argument and unifies
+its second argument with the symbol's name, as a string.
+```clojure
+(assert
+ (symbol-name foo "foo")
+ (symbol-name bar "bar")
+ (exist []
+        (symbol-name baz "qux" ! "nope")
+        ! "nope"))
+
+```
+If the first argument is not a symbol, the predicate fails.
+```clojure
+(assert
+ (exist [n]
+        (symbol-name 42 n ! "nope")
+        ! "nope")
+ (exist [n]
+        (symbol-name "foo" n ! "nope")
+        ! "nope"))
+
 ```
 ## Length of Vectors and Lists
 

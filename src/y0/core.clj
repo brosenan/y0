@@ -31,7 +31,8 @@
   to-vec
   symbolize
   length
-  re-match)
+  re-match
+  symbol-name)
 
 (def y0-root-refer-map
   (->> (for [sym y0-symbols]
