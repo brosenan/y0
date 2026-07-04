@@ -3,7 +3,7 @@
        ;; Initialize the root namespace from a list of symbols
        :root-refer-map :root-symbols
        ;; All these symbols...
-       :root-symbols [deftrait]
+       :root-symbols [deftrait decltype]
        ;; ...populate this namespace
        :root-namespace "d0.core"
        ;; The resolver is based on a prefix list

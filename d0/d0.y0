@@ -1,10 +1,40 @@
 (ns d0
   (:declare d0.core))
 
-;; # $d_0$: Dynamic Semantics
+;; # D0: Dynamic Semantics
 
-(all [name args]
-     (d0.core/deftrait name args) =>
-     (assert (exist [s]
-                    (symbol-name name s ! "A trait name must be a symbol, but" name "is given")
-                    (re-match s "[a-z0-9-]+" ! "Invalid trait name " name ". A trait name should only use lower-case letters, digits and dashes"))))
+(all [name] (class-name name) <-
+     (exist [s]
+            (symbol-name name s ! "A trait name must be a symbol, but" name "is given")
+            (re-match s "[a-z0-9-]+" ! "Invalid trait name" name
+                      ". A trait name should only use lower-case letters, digits and dashes")))
+
+(all [name] (type-name name) <-
+     (exist [s]
+            (symbol-name name s ! "A type name must be a symbol, but" name "is given")
+            (re-match s "[A-Z][a-zA-Z0-9]+" ! "Invalid type name " name
+                      ". A type name should start with an upper-case letter,"
+                      "followed by lower and upper case letters and digits")))
+
+(all [params] (trait-params params ! "Invalid param list" params))
+
+(all [p ps] (trait-params [p & ps]) <-
+     (inspect p :symbol ! p "is not a valid trait parameter. Symbol expected")
+     (trait-params ps))
+(all [] (trait-params []))
+
+(all [decls] (trait-decls decls ! decls "is not a list of declarations"))
+(all [d ds] (trait-decls (d & ds)) <-
+     (trait-decl d)
+     (trait-decls ds))
+(all [] (trait-decls ()))
+
+(all [decl] (trait-decl decl ! "invalid trait declaration" decl))
+(all [t] (trait-decl (d0.core/decltype t)) <-
+     (type-name t))
+
+(all [name params decls]
+     (d0.core/deftrait name params & decls) =>
+     (assert (class-name name))
+     (assert (trait-params params))
+     (assert (trait-decls decls)))
