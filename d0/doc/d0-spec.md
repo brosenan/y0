@@ -116,3 +116,46 @@ upper-case letter, consisting only of upper and lower-case letters and digits.
 ```status
 ERROR: Invalid type name  badTypeName . A type name should start with an upper-case letter, followed by lower and upper case letters and digits in (deftrait my-trait [some ...] ...)
 ```
+
+### Method Declarations
+
+Traits can define methods. Methods are functions that operate on a parse-tree
+node and possibly additional arguments, and is implemented differently for
+different types of nodes, thus implementing the semantics of the language.
+
+Method are declared using the `declmethod` declaration, providing the name, an
+argument list and a return type.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod my-method [] Int64))
+```
+```status
+Success
+```
+
+The return type must a valid type.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod my-method [] not-a-type))
+```
+```status
+ERROR: not-a-type is not a declared type in (deftrait my-trait [] ...)
+```
+
+The same applies to all the parameters, if declared.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod my-method [Int64 not-a-type] Int64))
+```
+```status
+ERROR: not-a-type is not a declared type in (deftrait my-trait [] ...)
+```

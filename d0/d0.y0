@@ -1,8 +1,7 @@
 (ns d0
   (:declare d0.core))
 
-;; # D0: Dynamic Semantics
-
+;; ## Predicates for accepting names
 (all [name] (class-name name) <-
      (exist [s]
             (symbol-name name s ! "A trait name must be a symbol, but" name "is given")
@@ -16,6 +15,14 @@
                       ". A type name should start with an upper-case letter,"
                       "followed by lower and upper case letters and digits")))
 
+;; ## Trait definitions
+(all [name params decls]
+     (d0.core/deftrait name params & decls) =>
+     (assert (class-name name))
+     (assert (trait-params params))
+     (assert (trait-decls decls)))
+
+;; ### Trait params
 (all [params] (trait-params params ! "Invalid param list" params))
 
 (all [p ps] (trait-params [p & ps]) <-
@@ -23,6 +30,7 @@
      (trait-params ps))
 (all [] (trait-params []))
 
+;; ### Trait declarations
 (all [decls] (trait-decls decls ! decls "is not a list of declarations"))
 (all [d ds] (trait-decls (d & ds)) <-
      (trait-decl d)
@@ -33,8 +41,17 @@
 (all [t] (trait-decl (d0.core/decltype t)) <-
      (type-name t))
 
-(all [name params decls]
-     (d0.core/deftrait name params & decls) =>
-     (assert (class-name name))
-     (assert (trait-params params))
-     (assert (trait-decls decls)))
+;; #### Method Declaration
+(all [name params ret] (trait-decl (d0.core/declmethod name params ret)) <-
+     (type ret)
+     (method-param-decls params))
+
+(all [params] (method-param-decls params ! params "is not a valid params declaration list"))
+(all [p ps] (method-param-decls [p & ps]) <-
+     (type p)
+     (method-param-decls ps))
+(all [] (method-param-decls []))
+
+;; ## Types
+(all [t] (type t ! t "is not a declared type"))
+(fact (type d0.core/Int64))
