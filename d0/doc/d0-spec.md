@@ -159,3 +159,46 @@ The same applies to all the parameters, if declared.
 ```status
 ERROR: not-a-type is not a declared type in (deftrait my-trait [] ...)
 ```
+
+### Associated Types used in Method Declarations
+
+This is where trait definitions become interesting. In addition to primitive
+types such as `Int64`, method declerations can also use associated types from
+other (previously-defined) classes.
+
+Consider for example a language with expressions. Each expression has a type.
+The type `t` will be a trait-parameter of the `expr` trait. `t` is expected
+to be a `type`, even though this is implicit in `D0`. The `type` trait declares
+a `RunType` associated type, which stands for the `D0` equivalent (the actual
+type at runtime) for `t`. This will be the return type from `expr`'s only
+method: `eval`.
+
+```clojure
+(ns example)
+
+(deftrait type []
+  (decltype RunType))
+
+(deftrait expr [t]
+  (declmethod eval [] (RunType t)))
+```
+```status
+Success
+```
+
+The argument to an associated type must be a parse-tree node. In the context of
+a trait definition, the only place to find such nodes is the list of trait
+parameters.
+
+```clojure
+(ns example)
+
+(deftrait type []
+  (decltype RunType))
+
+(deftrait expr [t]
+  (declmethod eval [] (RunType anything-other-than-t)))
+```
+```status
+ERROR: anything-other-than-t does not represent a parse-tree node in this context in (deftrait expr [t] ...)
+```

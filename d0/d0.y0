@@ -20,7 +20,9 @@
      (d0.core/deftrait name params & decls) =>
      (assert (class-name name))
      (assert (trait-params params))
-     (assert (trait-decls decls)))
+     (assert (given (def-trait-params params)
+                    (trait-decls decls)))
+     (trait-decls decls))
 
 ;; ### Trait params
 (all [params] (trait-params params ! "Invalid param list" params))
@@ -29,6 +31,10 @@
      (inspect p :symbol ! p "is not a valid trait parameter. Symbol expected")
      (trait-params ps))
 (all [] (trait-params []))
+
+(all [p ps] (def-trait-params [p & ps]) =>
+     (fact (tree-node p))
+     (def-trait-params ps))
 
 ;; ### Trait declarations
 (all [decls] (trait-decls decls ! decls "is not a list of declarations"))
@@ -52,6 +58,20 @@
      (method-param-decls ps))
 (all [] (method-param-decls []))
 
+;; #### Trait Declarations as Global Definitions
+(all [d ds] (trait-decls (d & ds)) =>
+     d
+     (trait-decls ds))
+(all [t]
+     (d0.core/decltype t) =>
+     (all [node] (type (t node)) <-
+          (tree-node node)))
+(all [name params ret]
+     (d0.core/declmethod name params ret) =>)
+
 ;; ## Types
 (all [t] (type t ! t "is not a declared type"))
 (fact (type d0.core/Int64))
+
+;; ## Parse Tree Nodes
+(all [n] (tree-node n ! n "does not represent a parse-tree node in this context"))
