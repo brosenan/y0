@@ -22,7 +22,11 @@
      (assert (trait-params params))
      (assert (given (def-trait-params params)
                     (trait-decls decls)))
-     (trait-decls decls))
+     (trait-decls decls)
+     (all [args] (trait (name & args)) <-
+          (trait-args args params name)))
+
+(all [tr] (trait tr ! tr "is not a trait"))
 
 ;; ### Trait params
 (all [params] (trait-params params ! "Invalid param list" params))
@@ -35,6 +39,17 @@
 (all [p ps] (def-trait-params [p & ps]) =>
      (fact (tree-node p))
      (def-trait-params ps))
+
+;; #### Trait args
+(all [as ps tr] (trait-args as ps tr ! as "are not valid trait args for trait" tr))
+(all [a as ps tr] (trait-args (a & as) ps tr) <-
+     (exist [p ps']
+            (= ps [p & ps']
+               ! "Too many arguments given to trait." (a & as) "are extra")
+            (free-var a)
+            (trait-args as ps' tr)))
+(all [ps tr] (trait-args () ps tr) <-
+     (= ps [] ! "Too few arguments given to trait" tr ". Missing arguments for" ps))
 
 ;; ### Trait declarations
 (all [decls] (trait-decls decls ! decls "is not a list of declarations"))
@@ -68,6 +83,19 @@
           (tree-node node)))
 (all [name params ret]
      (d0.core/declmethod name params ret) =>)
+
+;; ## Implementation Blocks
+(all [vars tr pattern]
+     (d0.core/impl vars tr pattern) =>
+     (assert (given (free-var-list vars)
+                    (trait tr))))
+
+;; ### Free variable list
+(all [v] (free-var v ! v "is not a free variable"))
+
+(all [v vs] (free-var-list [v & vs]) =>
+     (fact (free-var v))
+     (free-var-list vs))
 
 ;; ## Types
 (all [t] (type t ! t "is not a declared type"))

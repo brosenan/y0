@@ -202,3 +202,86 @@ parameters.
 ```status
 ERROR: anything-other-than-t does not represent a parse-tree node in this context in (deftrait expr [t] ...)
 ```
+
+## Implementations
+
+Each trait can have multiple _implementation blocks_, defining the declared
+types and functions for a given parse-tree node pattern.
+
+An implementation block is defined using the `impl` symbol. A minimal definition
+looks like this:
+
+```clojure
+(ns example)
+
+(deftrait my-trait [])
+
+(impl [] (my-trait) :foo)
+```
+```status
+Success
+```
+
+The trait must be a defined trait.
+
+```clojure
+(ns example)
+
+(impl [] (my-trait) :foo)
+```
+```status
+ERROR: (my-trait) is not a trait in (impl [] (my-trait) ...)
+```
+
+The trait pattern used in a `impl` block consists of a name of a defined trait,
+followed by placeholders for each parameters. The placeholders must be variables
+defined in the free-variables list provided before the trait pattern.
+
+```clojure
+(ns example)
+
+(deftrait my-trait [a b])
+
+(impl [x y] (my-trait x y) :foo)
+```
+```status
+Success
+```
+
+The number of placeholders much match the number of parameters in the trait.
+
+```clojure
+(ns example)
+
+(deftrait my-trait [a b])
+
+(impl [x] (my-trait x) :foo)
+```
+```status
+ERROR: Too few arguments given to trait my-trait . Missing arguments for [b] in (impl [x] (my-trait ...) ...)
+```
+
+```clojure
+(ns example)
+
+(deftrait my-trait [a b])
+
+(impl [x y z] (my-trait x y z) :foo)
+```
+```status
+ERROR: Too many arguments given to trait. (z) are extra in (impl [x ...] (my-trait ...) ...)
+```
+
+Each trait argument must be a free variable, meaning it must be declared in the
+free variable list at the beginning of the block.
+
+```clojure
+(ns example)
+
+(deftrait my-trait [a b])
+
+(impl [x y] (my-trait x y') :foo)
+```
+```status
+ERROR: y' is not a free variable in (impl [x ...] (my-trait ...) ...)
+```
