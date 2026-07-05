@@ -269,7 +269,7 @@ ERROR: Too few arguments given to trait my-trait . Missing arguments for [b] in 
 (impl [x y z] (my-trait x y z) :foo)
 ```
 ```status
-ERROR: Too many arguments given to trait. (z) are extra in (impl [x ...] (my-trait ...) ...)
+ERROR: Too many arguments given to trait my-trait . (z) are extra in (impl [x ...] (my-trait ...) ...)
 ```
 
 Each trait argument must be a free variable, meaning it must be declared in the

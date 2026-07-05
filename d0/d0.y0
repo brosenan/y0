@@ -45,7 +45,7 @@
 (all [a as ps tr] (trait-args (a & as) ps tr) <-
      (exist [p ps']
             (= ps [p & ps']
-               ! "Too many arguments given to trait." (a & as) "are extra")
+               ! "Too many arguments given to trait" tr "." (a & as) "are extra")
             (free-var a)
             (trait-args as ps' tr)))
 (all [ps tr] (trait-args () ps tr) <-
