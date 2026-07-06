@@ -319,3 +319,53 @@ In addition to keywords, patterns can also be symbols.
 ```status
 Success
 ```
+
+#### Complex Patterns
+
+Patterns can consist of vectors (`[]`) or lists (`()`). For each, they can be
+either _forms_, if the first element is a symbol (that is not a free variable)
+or a keyword.
+
+The following example shows valid patters.
+
+```clojure
+(ns example)
+
+(deftrait my-trait [])
+
+(impl [a b] (my-trait) (some-symbol a b))
+(impl [x y z] (my-trait) [some-symbol x y z])
+(impl [] (my-trait) ())
+(impl [] (my-trait) [])
+(impl [a b] (my-trait) (a b))
+(impl [x y z] (my-trait) [x y z])
+```
+```status
+Success
+```
+
+Other than the first element, which may or may not be a free variable, all other
+elements must be free variables.
+
+```clojure
+(ns example)
+
+(deftrait my-trait [])
+
+(impl [a b] (my-trait) (some-symbol a b'))
+```
+```status
+ERROR: b' is not a free variable in (impl [a ...] (my-trait) ...)
+```
+
+```clojure
+(ns example)
+
+(deftrait my-trait [])
+
+(impl [a b] (my-trait) [some-symbol a b'])
+```
+```status
+ERROR: b' is not a free variable in (impl [a ...] (my-trait) ...)
+```
+

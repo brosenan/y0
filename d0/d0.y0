@@ -67,7 +67,9 @@
      (type ret)
      (method-param-decls params))
 
-(all [params] (method-param-decls params ! params "is not a valid params declaration list"))
+(all [params]
+     (method-param-decls params
+                         ! params "is not a valid params declaration list"))
 (all [p ps] (method-param-decls [p & ps]) <-
      (type p)
      (method-param-decls ps))
@@ -88,8 +90,8 @@
 (all [vars tr pattern]
      (d0.core/impl vars tr pattern) =>
      (assert (given (free-var-list vars)
-                    (trait tr)))
-     (assert (tree-node-pattern pattern)))
+                    (trait tr)
+                    (tree-node-pattern pattern))))
 
 ;; ### Free variable list
 (all [v] (free-var v ! v "is not a free variable"))
@@ -102,11 +104,27 @@
 (all [p] (tree-node-pattern p) <-
      (exist [k]
             (inspect p k)
-            (tree-node-pattern-kind k ! "given" p)))
+            (tree-node-pattern-kind k p)))
 
-(all [k] (tree-node-pattern-kind k ! k "is not a valid tree-node pattern"))
-(fact (tree-node-pattern-kind :keyword))
-(fact (tree-node-pattern-kind :symbol))
+(all [k p]
+     (tree-node-pattern-kind k p
+                             ! k "is not a valid tree-node pattern given" p))
+(all [p] (tree-node-pattern-kind :keyword p))
+(all [p] (tree-node-pattern-kind :symbol p))
+(all [p] (tree-node-pattern-kind :list p) <-
+     (form-or-list-pattern p))
+(all [p] (tree-node-pattern-kind :vector p) <-
+     (form-or-vec-pattern p))
+
+(all [p] (form-or-list-pattern p ! p "is an invalid form or list pattern"))
+(all [a as] (form-or-list-pattern (a & as)) <-
+     (free-vars as))
+(fact (form-or-list-pattern ()))
+
+(all [p] (form-or-vec-pattern p ! p "is an invalid form or vector pattern"))
+(all [a as] (form-or-vec-pattern [a & as]) <-
+     (free-vars as))
+(fact (form-or-vec-pattern []))
 
 ;; ## Types
 (all [t] (type t ! t "is not a declared type"))
@@ -115,3 +133,13 @@
 ;; ## Parse-tree nodes
 (all [n] (tree-node n
                     ! n "does not represent a parse-tree node in this context"))
+
+(all [ns] (free-vars ns ! ns "is not a valid list / vector of free variables"))
+(all [n ns] (free-vars (n & ns)) <-
+     (free-var n)
+     (free-vars ns))
+(all [n ns] (free-vars [n & ns]) <-
+     (free-var n)
+     (free-vars ns))
+(fact (free-vars ()))
+(fact (free-vars []))
