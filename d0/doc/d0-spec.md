@@ -285,3 +285,37 @@ free variable list at the beginning of the block.
 ```status
 ERROR: y' is not a free variable in (impl [x ...] (my-trait ...) ...)
 ```
+
+### Tree Node Pattern
+
+The third element in an `impl` block is a tree-node pattern. This pattern is
+meant to match a node in the parse-tree of a program to which this `impl` block
+applies.
+
+The pattern we have seen in previous example consists of a keyword (`:foo`). Not
+any s-expression would count as a valid pattern. For example, a value, such as a
+number or a string would not.
+
+```clojure
+(ns example)
+
+(deftrait my-trait [])
+
+(impl [] (my-trait) 42)
+```
+```status
+ERROR: :int is not a valid tree-node pattern given 42 in (impl [] (my-trait) ...)
+```
+
+In addition to keywords, patterns can also be symbols.
+
+```clojure
+(ns example)
+
+(deftrait my-trait [])
+
+(impl [] (my-trait) some-symbol)
+```
+```status
+Success
+```

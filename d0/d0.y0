@@ -88,7 +88,8 @@
 (all [vars tr pattern]
      (d0.core/impl vars tr pattern) =>
      (assert (given (free-var-list vars)
-                    (trait tr))))
+                    (trait tr)))
+     (assert (tree-node-pattern pattern)))
 
 ;; ### Free variable list
 (all [v] (free-var v ! v "is not a free variable"))
@@ -97,9 +98,20 @@
      (fact (free-var v))
      (free-var-list vs))
 
+;; ### Tree node patterns
+(all [p] (tree-node-pattern p) <-
+     (exist [k]
+            (inspect p k)
+            (tree-node-pattern-kind k ! "given" p)))
+
+(all [k] (tree-node-pattern-kind k ! k "is not a valid tree-node pattern"))
+(fact (tree-node-pattern-kind :keyword))
+(fact (tree-node-pattern-kind :symbol))
+
 ;; ## Types
 (all [t] (type t ! t "is not a declared type"))
 (fact (type d0.core/Int64))
 
-;; ## Parse Tree Nodes
-(all [n] (tree-node n ! n "does not represent a parse-tree node in this context"))
+;; ## Parse-tree nodes
+(all [n] (tree-node n
+                    ! n "does not represent a parse-tree node in this context"))
