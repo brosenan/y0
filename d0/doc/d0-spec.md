@@ -369,3 +369,45 @@ ERROR: b' is not a free variable in (impl [a ...] (my-trait) ...)
 ERROR: b' is not a free variable in (impl [a ...] (my-trait) ...)
 ```
 
+The first element must be a symbol (free variable or not), or a keyword.
+
+```clojure
+(ns example)
+
+(deftrait my-trait [])
+
+(impl [a] (my-trait) (a))
+(impl [a] (my-trait) [a])
+(impl [] (my-trait) (a))
+(impl [] (my-trait) [a])
+(impl [] (my-trait) (:a))
+(impl [] (my-trait) [:a])
+```
+```status
+Success
+```
+
+But not anything else.
+
+```clojure
+(ns example)
+
+(deftrait my-trait [])
+
+(impl [] (my-trait) (42))
+```
+```status
+ERROR: Invalid form-head 42 in pattern in (impl [] (my-trait) ...)
+```
+
+```clojure
+(ns example)
+
+(deftrait my-trait [])
+
+(impl [] (my-trait) ["42"])
+```
+```status
+ERROR: Invalid form-head 42 in pattern in (impl [] (my-trait) ...)
+```
+

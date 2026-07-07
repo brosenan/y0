@@ -118,13 +118,25 @@
 
 (all [p] (form-or-list-pattern p ! p "is an invalid form or list pattern"))
 (all [a as] (form-or-list-pattern (a & as)) <-
+     (form-header a)
      (free-vars as))
 (fact (form-or-list-pattern ()))
 
 (all [p] (form-or-vec-pattern p ! p "is an invalid form or vector pattern"))
 (all [a as] (form-or-vec-pattern [a & as]) <-
+     (form-header a)
      (free-vars as))
 (fact (form-or-vec-pattern []))
+
+
+(all [h] (form-header h) <-
+     (exist [k]
+            (inspect h k)
+            (form-header-kind k h)))
+
+(all [k h] (form-header-kind k h ! "Invalid form-head" h "in pattern"))
+(all [h] (form-header-kind :symbol h))
+(all [h] (form-header-kind :keyword h))
 
 ;; ## Types
 (all [t] (type t ! t "is not a declared type"))
