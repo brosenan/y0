@@ -5,6 +5,7 @@
        ;; All these symbols...
        :root-symbols [deftrait decltype declmethod
                       impl
+                      &
                       Int64]
        ;; ...populate this namespace
        :root-namespace "d0.core"

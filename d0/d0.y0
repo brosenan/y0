@@ -119,13 +119,13 @@
 (all [p] (form-or-list-pattern p ! p "is an invalid form or list pattern"))
 (all [a as] (form-or-list-pattern (a & as)) <-
      (form-header a)
-     (free-vars as))
+     (form-tail as))
 (fact (form-or-list-pattern ()))
 
 (all [p] (form-or-vec-pattern p ! p "is an invalid form or vector pattern"))
 (all [a as] (form-or-vec-pattern [a & as]) <-
      (form-header a)
-     (free-vars as))
+     (form-tail as))
 (fact (form-or-vec-pattern []))
 
 
@@ -146,12 +146,20 @@
 (all [n] (tree-node n
                     ! n "does not represent a parse-tree node in this context"))
 
-(all [ns] (free-vars ns ! ns "is not a valid list / vector of free variables"))
-(all [n ns] (free-vars (n & ns)) <-
+(all [ns] (form-tail ns ! ns "is not a form tail"))
+(all [n ns] (form-tail (n & ns)) <-
      (free-var n)
-     (free-vars ns))
-(all [n ns] (free-vars [n & ns]) <-
+     (form-tail ns))
+(all [ns] (form-tail (d0.core/& & ns)) <-
+     (exist [n]
+            (= ns (n) ! "& must be followed by a single variable. Got:" ns)
+            (free-var n)))
+(all [n ns] (form-tail [n & ns]) <-
      (free-var n)
-     (free-vars ns))
-(fact (free-vars ()))
-(fact (free-vars []))
+     (form-tail ns))
+(all [ns] (form-tail [d0.core/& & ns]) <-
+     (exist [n]
+            (= ns [n] ! "& must be followed by a single variable. Got:" ns)
+            (free-var n)))
+(fact (form-tail ()))
+(fact (form-tail []))

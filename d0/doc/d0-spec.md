@@ -411,3 +411,63 @@ ERROR: Invalid form-head 42 in pattern in (impl [] (my-trait) ...)
 ERROR: Invalid form-head 42 in pattern in (impl [] (my-trait) ...)
 ```
 
+A pattern can be variadic. Variadic patterns use the `&` symbol before the last
+variable. In this case, the last variable represents the tail of the list of
+vector.
+
+```clojure
+(ns example)
+
+(deftrait my-trait [])
+
+(impl [a as] (my-trait) (a & as))
+(impl [a as] (my-trait) [a & as])
+```
+```status
+Success
+```
+
+```clojure
+(ns example)
+
+(deftrait my-trait [])
+
+(impl [a as b] (my-trait) (a & as b))
+```
+```status
+ERROR: & must be followed by a single variable. Got: (as b) in (impl [a ...] (my-trait) ...)
+```
+
+```clojure
+(ns example)
+
+(deftrait my-trait [])
+
+(impl [a as b] (my-trait) [a & as b])
+```
+```status
+ERROR: & must be followed by a single variable. Got: [as b] in (impl [a ...] (my-trait) ...)
+```
+
+```clojure
+(ns example)
+
+(deftrait my-trait [])
+
+(impl [a as] (my-trait) (a & as'))
+```
+```status
+ERROR: as' is not a free variable in (impl [a ...] (my-trait) ...)
+```
+
+```clojure
+(ns example)
+
+(deftrait my-trait [])
+
+(impl [a as] (my-trait) [a & as'])
+```
+```status
+ERROR: as' is not a free variable in (impl [a ...] (my-trait) ...)
+```
+
