@@ -37,6 +37,11 @@
 
       (vector? a) (and (vector? b)
                        (unify-all a b vec))
+      (map? a) (and (map? b)
+                    (= (count a) (count b))
+                    (every? (fn [[k v]]
+                              (and (contains? b k)
+                                   (unify v (get b k)))) a))
       :else (= a b))))
 
 (defn- valid-tail? [tail]

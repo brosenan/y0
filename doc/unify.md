@@ -2,6 +2,7 @@
     * [Variables](#variables)
     * [Vectors and lists](#vectors-and-lists)
       * [List Deconstruction](#list-deconstruction)
+    * [Maps](#maps)
     * [Bound Variables](#bound-variables)
   * [Reification](#reification)
 ```clojure
@@ -130,6 +131,50 @@ a vector is a vector.
  (unify '(1 y0.core/& (2 3)) '(1 2 3)) => true
  (unify [1 'y0.core/& '(2 3)] [1 2 3]) => false
  (unify '(1 y0.core/& [2 3]) '(1 2 3)) => false)
+
+```
+### Maps
+
+Maps are unified against maps. Two maps unify if they have the same set of keys
+and the values under each key unify.
+```clojure
+(fact
+ (let [x (atom nil)
+       y (atom nil)]
+   (unify {:a 1 :b x} {:a y :b 2}) => true
+   @x => 2
+   @y => 1))
+
+```
+Unification fails when the maps do not have the same set of keys.
+```clojure
+(fact
+ (let [x (atom nil)]
+   (unify {:a 1 :b x} {:a 1 :c 2}) => false))
+
+```
+Unification fails when the maps have a different number of keys, even if one
+key set is a subset of the other.
+```clojure
+(fact
+ (let [x (atom nil)]
+   (unify {:a 1} {:a 1 :b x}) => false
+   (unify {:a 1 :b x} {:a 1}) => false))
+
+```
+A map does not unify with a non-map.
+```clojure
+(fact
+ (unify {:a 1} [:a 1]) => false
+ (unify [:a 1] {:a 1}) => false)
+
+```
+Unification recurses into the values, so nested terms are unified as well.
+```clojure
+(fact
+ (let [x (atom nil)]
+   (unify {:a [1 2]} {:a [1 x]}) => true
+   @x => 2))
 
 ```
 ### Bound Variables
