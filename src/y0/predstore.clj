@@ -1,6 +1,7 @@
 (ns y0.predstore
   (:require [y0.core :refer [&]]
             [y0.status :refer [let-s ok ->s update-with-status]]
+            [y0.unify :refer [reify-term]]
             [clojure.string :refer [ends-with?]]
             [clojure.set :refer [union]]))
 
@@ -41,6 +42,7 @@
     (instance? clojure.lang.Atom arg) (recur @arg)
     (seq? arg) (sequential-key arg :list)
     (vector? arg) (sequential-key arg :vec)
+    (map? arg) {:value (reify-term arg)}
     :else {:value arg}))
 
 (defn generalize-arg [key]

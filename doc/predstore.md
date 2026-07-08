@@ -120,6 +120,17 @@ Vectors are similar to lists, but use the `:vec` attribute rather than `:list`.
  (arg-key ['foo (atom nil) (atom nil)]) => {:vec 3 :symbol "foo"})
 
 ```
+Maps are keyed by their `:value`, like other scalars, but because a map may contain bound variables
+nested at any depth, we first [reify](unify.md#reification) it, so that two structurally-equal maps
+produce equal keys regardless of the identity of the atoms holding their (bound) values.
+```clojure
+(fact
+ (arg-key {:keyword ":foo"}) => {:value {:keyword ":foo"}}
+ (arg-key {:foo (atom {:keyword ":foo"})}) => {:value {:foo {:keyword ":foo"}}}
+ (arg-key {:foo (atom {:keyword ":foo"})}) =>
+ (arg-key {:foo (atom {:keyword ":foo"})}))
+
+```
 ### Argument Key Generalization
 
 Consider the goal `(mypred (foo 1 2 3) x)`. It is certainly a call to the predicate `{:name "mypred" :arity 2}`.
