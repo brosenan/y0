@@ -378,8 +378,8 @@ The first element must be a symbol (free variable or not), or a keyword.
 
 (impl [a] (my-trait) (a))
 (impl [a] (my-trait) [a])
-(impl [] (my-trait) (a))
-(impl [] (my-trait) [a])
+(impl [] (my-trait) (sym))
+(impl [] (my-trait) [sym])
 (impl [] (my-trait) (:a))
 (impl [] (my-trait) [:a])
 ```
@@ -471,3 +471,141 @@ ERROR: as' is not a free variable in (impl [a ...] (my-trait) ...)
 ERROR: as' is not a free variable in (impl [a ...] (my-trait) ...)
 ```
 
+#### Tree Node Pattern Uniqueness
+
+Tree-node patterns must be unique in the sense that it is not allowed for two
+`impl` blocks to exist for the same trait, for two, effectively identical
+patterns. This is important to make the semantics well-defined, by avoiding
+situations in which there is more than one way to interpret a parse-tree.
+
+But what does it mean for two patterns to be effectively identical? The
+following examples will try to answer this question.
+
+Two simple patterns are identical if they are using the same symbol or keyword.
+
+```clojure
+(ns example)
+
+(deftrait my-trait [])
+
+(impl [] (my-trait) foo)
+(impl [] (my-trait) foo)
+```
+```status
+ERROR: The rule for (impl {:trait example/my-trait, :pattern {:symbol example/foo}}) conflicts with a previous rule defining (impl {:trait example/my-trait, :pattern {:symbol example/foo}}) in predicate impl with arity 1
+```
+
+Note: due to a current limitation in $y_0$, the error message for such conflicts
+talk about the internal representation rather than the source code features that
+cause it. At this point we disregard the messages themselves and just regard
+whether an error was reported or not.
+
+```clojure
+(ns example)
+
+(deftrait my-trait [])
+
+(impl [] (my-trait) :foo)
+(impl [] (my-trait) :foo)
+```
+```status
+ERROR: The rule for (impl {:trait example/my-trait, :pattern {:keyword :foo}}) conflicts with a previous rule defining (impl {:trait example/my-trait, :pattern {:keyword :foo}}) in predicate impl with arity 1
+```
+
+This uniquness is specific per-trait, so defining instances for the same pattern
+for different traits is completely allowed.
+
+```clojure
+(ns example)
+
+(deftrait trait1 [])
+(deftrait trait2 [])
+
+(impl [] (trait1) :foo)
+(impl [] (trait2) :foo)
+(impl [] (trait1) foo)
+(impl [] (trait2) foo)
+```
+```status
+Success
+```
+
+The patterns for empty lists and vectors conflict for the same kind for the same
+trait.
+
+```clojure
+(ns example)
+
+(deftrait my-trait [])
+
+(impl [] (my-trait) [])
+(impl [] (my-trait) [])
+```
+```status
+ERROR: The rule for (impl {:trait example/my-trait, :pattern {:vetor :empty}}) conflicts with a previous rule defining (impl {:trait example/my-trait, :pattern {:vetor :empty}}) in predicate impl with arity 1
+```
+
+```clojure
+(ns example)
+
+(deftrait my-trait [])
+
+(impl [] (my-trait) ())
+(impl [] (my-trait) ())
+```
+```status
+ERROR: The rule for (impl {:trait example/my-trait, :pattern {:list :empty}}) conflicts with a previous rule defining (impl {:trait example/my-trait, :pattern {:list :empty}}) in predicate impl with arity 1
+```
+
+Form heads need to be unique.
+
+```clojure
+(ns example)
+
+(deftrait my-trait [])
+
+(impl [] (my-trait) (foo))
+(impl [] (my-trait) (foo))
+```
+```status
+ERROR: The rule for (impl {:trait example/my-trait, :pattern {:list :nonempty, :head {:value example/foo}, :tail :empty}}) conflicts with a previous rule defining (impl {:trait example/my-trait, :pattern {:list :nonempty, :head {:value example/foo}, :tail :empty}}) in predicate impl with arity 1
+```
+
+```clojure
+(ns example)
+
+(deftrait my-trait [])
+
+(impl [] (my-trait) [foo])
+(impl [] (my-trait) [foo])
+```
+```status
+ERROR: The rule for (impl {:trait example/my-trait, :pattern {:vector :nonempty, :head {:value example/foo}, :tail :empty}}) conflicts with a previous rule defining (impl {:trait example/my-trait, :pattern {:vector :nonempty, :head {:value example/foo}, :tail :empty}}) in predicate impl with arity 1
+```
+
+If the head is a free variable, the name of the variable doesn't matter for
+uniqueness.
+
+```clojure
+(ns example)
+
+(deftrait my-trait [])
+
+(impl [foo] (my-trait) (foo))
+(impl [bar] (my-trait) (bar))
+```
+```status
+ERROR: The rule for (impl {:trait example/my-trait, :pattern {:list :nonempty, :head :any, :tail :empty}}) conflicts with a previous rule defining (impl {:trait example/my-trait, :pattern {:list :nonempty, :head :any, :tail :empty}}) in predicate impl with arity 1
+```
+
+```clojure
+(ns example)
+
+(deftrait my-trait [])
+
+(impl [foo] (my-trait) [foo])
+(impl [bar] (my-trait) [bar])
+```
+```status
+ERROR: The rule for (impl {:trait example/my-trait, :pattern {:vector :nonempty, :head :any, :tail :empty}}) conflicts with a previous rule defining (impl {:trait example/my-trait, :pattern {:vector :nonempty, :head :any, :tail :empty}}) in predicate impl with arity 1
+```

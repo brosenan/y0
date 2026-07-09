@@ -23,10 +23,10 @@
      (assert (given (def-trait-params params)
                     (trait-decls decls)))
      (trait-decls decls)
-     (all [args] (trait (name & args)) <-
+     (all [args] (trait (name & args) name) <-
           (trait-args args params name)))
 
-(all [tr] (trait tr ! tr "is not a trait"))
+(all [tr n] (trait tr n ! tr "is not a trait"))
 
 ;; ### Trait params
 (all [params] (trait-params params ! "Invalid param list" params))
@@ -87,49 +87,58 @@
      (d0.core/declmethod name params ret) =>)
 
 ;; ## Implementation Blocks
-(all [vars tr pattern]
+(all [vars tr tr-name pattern pattern-map]
      (d0.core/impl vars tr pattern) =>
      (assert (given (free-var-list vars)
-                    (trait tr)
-                    (tree-node-pattern pattern))))
+                    (trait tr tr-name)
+                    (tree-node-pattern pattern pattern-map)))
+     (fact (impl {:trait tr-name
+                  :pattern pattern-map})))
+
+(all [m] (impl m))
 
 ;; ### Free variable list
 (all [v] (free-var v ! v "is not a free variable"))
 
 (all [v vs] (free-var-list [v & vs]) =>
      (fact (free-var v))
+     (fact (form-header v :any))
      (free-var-list vs))
 
 ;; ### Tree node patterns
-(all [p] (tree-node-pattern p) <-
+(all [p m] (tree-node-pattern p m) <-
      (exist [k]
             (inspect p k)
-            (tree-node-pattern-kind k p)))
+            (tree-node-pattern-kind k p m)))
 
-(all [k p]
-     (tree-node-pattern-kind k p
+(all [k p m]
+     (tree-node-pattern-kind k p m
                              ! k "is not a valid tree-node pattern given" p))
-(all [p] (tree-node-pattern-kind :keyword p))
-(all [p] (tree-node-pattern-kind :symbol p))
-(all [p] (tree-node-pattern-kind :list p) <-
-     (form-or-list-pattern p))
-(all [p] (tree-node-pattern-kind :vector p) <-
-     (form-or-vec-pattern p))
+(all [p] (tree-node-pattern-kind :keyword p {:keyword p}))
+(all [p] (tree-node-pattern-kind :symbol p {:symbol p}))
+(all [p m] (tree-node-pattern-kind :list p m) <-
+     (form-or-list-pattern p m))
+(all [p m] (tree-node-pattern-kind :vector p m) <-
+     (form-or-vec-pattern p m))
 
-(all [p] (form-or-list-pattern p ! p "is an invalid form or list pattern"))
-(all [a as] (form-or-list-pattern (a & as)) <-
-     (form-header a)
+(all [p m] (form-or-list-pattern p m ! p "is an invalid form or list pattern"))
+(all [a as hm] (form-or-list-pattern (a & as) {:list :nonempty
+                                               :head hm
+                                               :tail :empty}) <-
+     (form-header a hm)
      (form-tail as))
-(fact (form-or-list-pattern ()))
+(fact (form-or-list-pattern () {:list :empty}))
 
-(all [p] (form-or-vec-pattern p ! p "is an invalid form or vector pattern"))
-(all [a as] (form-or-vec-pattern [a & as]) <-
-     (form-header a)
+(all [p m] (form-or-vec-pattern p m ! p "is an invalid form or vector pattern"))
+(all [a as hm] (form-or-vec-pattern [a & as] {:vector :nonempty
+                                             :head hm
+                                             :tail :empty}) <-
+     (form-header a hm)
      (form-tail as))
-(fact (form-or-vec-pattern []))
+(fact (form-or-vec-pattern [] {:vetor :empty}))
 
 
-(all [h] (form-header h) <-
+(all [h] (form-header h {:value h}) <-
      (exist [k]
             (inspect h k)
             (form-header-kind k h)))

@@ -301,6 +301,7 @@ It also recurses into maps and sets.
                 :b x}) => {:a 1
                            :b 2}
    (reify-term #{1 x}) => #{1 2}))
+
 ```
 Reification is deep: a variable bound to a compound value has that value reified
 too, so nested atoms are resolved regardless of how deep they are.
