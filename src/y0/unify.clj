@@ -66,7 +66,10 @@
 
 (defn reify-term [t]
   (cond
-    (instance? clojure.lang.Atom t) (resolve-var t)
+    (instance? clojure.lang.Atom t) (let [r (resolve-var t)]
+                                      (if (instance? clojure.lang.Atom r)
+                                        r
+                                        (reify-term r)))
     (vector? t) (with-meta (vec (reify-terms t)) (meta t))
     (seq? t) (if (empty? t)
                t

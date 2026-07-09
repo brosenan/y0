@@ -244,3 +244,10 @@
                 :b x}) => {:a 1
                            :b 2}
    (reify-term #{1 x}) => #{1 2}))
+
+;; Reification is deep: a variable bound to a compound value has that value reified
+;; too, so nested atoms are resolved regardless of how deep they are.
+(fact
+ (let [inner (atom 3)
+       outer (atom {:value inner})]
+   (reify-term {:head outer}) => {:head {:value 3}}))
