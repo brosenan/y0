@@ -609,3 +609,30 @@ ERROR: The rule for (impl {:trait example/my-trait, :pattern {:list :nonempty, :
 ```status
 ERROR: The rule for (impl {:trait example/my-trait, :pattern {:vector :nonempty, :head :any, :tail :empty}}) conflicts with a previous rule defining (impl {:trait example/my-trait, :pattern {:vector :nonempty, :head :any, :tail :empty}}) in predicate impl with arity 1
 ```
+
+Two patterns of the same head and a different arity can co-exist.
+
+```clojure
+(ns example)
+
+(deftrait my-trait [])
+
+(impl [a b] (my-trait) (foo a b))
+(impl [a b c] (my-trait) (foo a b c))
+(impl [a b c d] (my-trait) (foo a b c & d))
+```
+```status
+Success
+```
+
+```clojure
+(ns example)
+
+(deftrait my-trait [])
+
+(impl [a b] (my-trait) [foo a b])
+(impl [a b c d] (my-trait) [foo a b c & d])
+```
+```status
+Success
+```

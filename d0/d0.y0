@@ -122,19 +122,19 @@
      (form-or-vec-pattern p m))
 
 (all [p m] (form-or-list-pattern p m ! p "is an invalid form or list pattern"))
-(all [a as hm] (form-or-list-pattern (a & as) {:list :nonempty
-                                               :head hm
-                                               :tail :empty}) <-
+(all [a as hm arity] (form-or-list-pattern (a & as) {:list :nonempty
+                                                     :head hm
+                                                     :tail arity}) <-
      (form-header a hm)
-     (form-tail as))
+     (form-tail as arity))
 (fact (form-or-list-pattern () {:list :empty}))
 
 (all [p m] (form-or-vec-pattern p m ! p "is an invalid form or vector pattern"))
-(all [a as hm] (form-or-vec-pattern [a & as] {:vector :nonempty
-                                             :head hm
-                                             :tail :empty}) <-
+(all [a as hm arity] (form-or-vec-pattern [a & as] {:vector :nonempty
+                                                    :head hm
+                                                    :tail arity}) <-
      (form-header a hm)
-     (form-tail as))
+     (form-tail as arity))
 (fact (form-or-vec-pattern [] {:vetor :empty}))
 
 
@@ -155,20 +155,20 @@
 (all [n] (tree-node n
                     ! n "does not represent a parse-tree node in this context"))
 
-(all [ns] (form-tail ns ! ns "is not a form tail"))
-(all [n ns] (form-tail (n & ns)) <-
+(all [ns arity] (form-tail ns arity ! ns "is not a form tail"))
+(all [n ns arity] (form-tail (n & ns) [:s arity]) <-
      (free-var n)
-     (form-tail ns))
-(all [ns] (form-tail (d0.core/& & ns)) <-
+     (form-tail ns arity))
+(all [ns] (form-tail (d0.core/& & ns) :any) <-
      (exist [n]
             (= ns (n) ! "& must be followed by a single variable. Got:" ns)
             (free-var n)))
-(all [n ns] (form-tail [n & ns]) <-
+(all [n ns arity] (form-tail [n & ns] [:s arity]) <-
      (free-var n)
-     (form-tail ns))
-(all [ns] (form-tail [d0.core/& & ns]) <-
+     (form-tail ns arity))
+(all [ns] (form-tail [d0.core/& & ns] :any) <-
      (exist [n]
             (= ns [n] ! "& must be followed by a single variable. Got:" ns)
             (free-var n)))
-(fact (form-tail ()))
-(fact (form-tail []))
+(fact (form-tail () :empty))
+(fact (form-tail [] :empty))
