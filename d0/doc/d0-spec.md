@@ -636,3 +636,94 @@ Success
 ```status
 Success
 ```
+
+### Type Definitions
+
+Following the parse-tree pattern, definitions that match the declarations in the
+corresponding trait follow. Specifically, each [type
+declaration](#associated-type-declarations) in the trait must have a
+corresponding type definition, introduced with the `deftype` keyword, providing
+the concrete type for the associated type.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (decltype T))
+
+(impl [] (my-trait) :pattern
+  (deftype T Int64))
+```
+```status
+Success
+```
+
+The definitions must match the trait's declarations _in the same order_. When a
+trait declares more than one associated type, the corresponding `deftype`
+definitions must appear in the same order in which they were declared.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (decltype T)
+  (decltype S))
+
+(impl [] (my-trait) :pattern
+  (deftype T Int64)
+  (deftype S Int64))
+```
+```status
+Success
+```
+
+Providing the definitions in a different order than the declarations is an
+error.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (decltype T)
+  (decltype S))
+
+(impl [] (my-trait) :pattern
+  (deftype S Int64)
+  (deftype T Int64))
+```
+```status
+ERROR: Expected definition of type T but found definition for type S instead in (impl [] (my-trait) ...)
+```
+
+A declaration with no corresponding definition is an error.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (decltype T)
+  (decltype S))
+
+(impl [] (my-trait) :pattern
+  (deftype T Int64))
+```
+```status
+ERROR: Missing definitions for the trait's declarations ((decltype ...)) in (impl [] (my-trait) ...)
+```
+
+Similarly, a definition with no corresponding declaration is an error.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (decltype T))
+
+(impl [] (my-trait) :pattern
+  (deftype T Int64)
+  (deftype S Int64))
+```
+```status
+ERROR: Too many definitions. (deftype S Int64) is extra in (impl [] (my-trait) ...)
+```
+

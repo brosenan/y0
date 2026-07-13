@@ -4,7 +4,7 @@
        :root-refer-map :root-symbols
        ;; All these symbols...
        :root-symbols [deftrait decltype declmethod
-                      impl
+                      impl deftype
                       &
                       Int64]
        ;; ...populate this namespace

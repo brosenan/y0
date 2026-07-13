@@ -11,7 +11,7 @@
 (all [name] (type-name name) <-
      (exist [s]
             (symbol-name name s ! "A type name must be a symbol, but" name "is given")
-            (re-match s "[A-Z][a-zA-Z0-9]+" ! "Invalid type name " name
+            (re-match s "[A-Z][a-zA-Z0-9]*" ! "Invalid type name " name
                       ". A type name should start with an upper-case letter,"
                       "followed by lower and upper case letters and digits")))
 
@@ -23,10 +23,15 @@
      (assert (given (def-trait-params params)
                     (trait-decls decls)))
      (trait-decls decls)
+     (fact (trait-decls-list name decls))
      (all [args] (trait (name & args) name) <-
           (trait-args args params name)))
 
 (all [tr n] (trait tr n ! tr "is not a trait"))
+
+(all [name decls]
+     (trait-decls-list name decls
+                       ! "Internal error: no declarations recorded for trait" name))
 
 ;; ### Trait params
 (all [params] (trait-params params ! "Invalid param list" params))
@@ -87,15 +92,39 @@
      (d0.core/declmethod name params ret) =>)
 
 ;; ## Implementation Blocks
-(all [vars tr tr-name pattern pattern-map]
-     (d0.core/impl vars tr pattern) =>
+(all [vars tr tr-name pattern defs pattern-map]
+     (d0.core/impl vars tr pattern & defs) =>
      (assert (given (free-var-list vars)
                     (trait tr tr-name)
-                    (tree-node-pattern pattern pattern-map)))
+                    (tree-node-pattern pattern pattern-map)
+                    (exist [decls]
+                           (trait-decls-list tr-name decls)
+                           (defs-match-decls defs decls))))
      (fact (impl {:trait tr-name
                   :pattern pattern-map})))
 
 (all [m] (impl m))
+
+;; ### Matching definitions to declarations
+(all [defs decls]
+     (defs-match-decls defs decls
+                       ! "Invalid definition block" defs))
+(all [def defs decls] (defs-match-decls (def & defs) decls) <-
+     (exist [decl decls']
+            (= decls (decl & decls') ! "Too many definitions." def "is extra")
+            (def-match-decl def decl)
+            (defs-match-decls defs decls')))
+(all [decls] (defs-match-decls () decls) <-
+     (= decls () ! "Missing definitions for the trait's declarations" decls))
+
+(all [def decl] (def-match-decl def decl ! "Invalid definition" def))
+
+;; ### Type Definitions
+(all [ta t decl]
+     (def-match-decl (d0.core/deftype ta t) decl) <-
+     (exist [ta']
+            (= decl (d0.core/decltype ta'))
+            (= ta' ta ! "Expected definition of type" ta' "but found definition for type" ta "instead")))
 
 ;; ### Free variable list
 (all [v] (free-var v ! v "is not a free variable"))
