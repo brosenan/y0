@@ -727,3 +727,89 @@ Similarly, a definition with no corresponding declaration is an error.
 ERROR: Too many definitions. (deftype S Int64) is extra in (impl [] (my-trait) ...)
 ```
 
+The types used in a type definition must be valid types.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (decltype T))
+
+(impl [] (my-trait) :pattern
+  (deftype T FooType))
+```
+```status
+ERROR: FooType is not a declared type in definition of T in (impl [] (my-trait) ...)
+```
+
+#### Using Associated Types in Type Definitions
+
+Type definitions can use associated types. The tree-nodes for the associated
+types can come either from the trait parameters or the pattern.
+
+```clojure
+(ns example)
+
+(deftrait my-trait [foo]
+  (decltype T))
+
+(impl [bar] (my-trait bar) :pattern
+  (deftype T (T bar)))
+```
+```status
+Success
+```
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (decltype T))
+
+(impl [foo] (my-trait) (:pattern foo)
+  (deftype T (T foo)))
+```
+```status
+Success
+```
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (decltype T))
+
+(impl [foo] (my-trait) [:pattern foo]
+  (deftype T (T foo)))
+```
+```status
+Success
+```
+
+This includes cases where the variable is in the pattern's head position.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (decltype T))
+
+(impl [foo] (my-trait) (foo)
+  (deftype T (T foo)))
+```
+```status
+Success
+```
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (decltype T))
+
+(impl [foo] (my-trait) [foo]
+  (deftype T (T foo)))
+```
+```status
+Success
+```

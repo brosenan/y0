@@ -20,14 +20,14 @@
      (d0.core/deftrait name params & decls) =>
      (assert (class-name name))
      (assert (trait-params params))
-     (assert (given (def-trait-params params)
+     (assert (given (def-tree-nodes params)
                     (trait-decls decls)))
      (trait-decls decls)
      (fact (trait-decls-list name decls))
-     (all [args] (trait (name & args) name) <-
+     (all [args] (trait (name & args) name args) <-
           (trait-args args params name)))
 
-(all [tr n] (trait tr n ! tr "is not a trait"))
+(all [tr n args] (trait tr n args ! tr "is not a trait"))
 
 (all [name decls]
      (trait-decls-list name decls
@@ -41,9 +41,9 @@
      (trait-params ps))
 (all [] (trait-params []))
 
-(all [p ps] (def-trait-params [p & ps]) =>
+(all [p ps] (def-tree-nodes [p & ps]) =>
      (fact (tree-node p))
-     (def-trait-params ps))
+     (def-tree-nodes ps))
 
 ;; #### Trait args
 (all [as ps tr] (trait-args as ps tr ! as "are not valid trait args for trait" tr))
@@ -95,11 +95,17 @@
 (all [vars tr tr-name pattern defs pattern-map]
      (d0.core/impl vars tr pattern & defs) =>
      (assert (given (free-var-list vars)
-                    (trait tr tr-name)
-                    (tree-node-pattern pattern pattern-map)
-                    (exist [decls]
-                           (trait-decls-list tr-name decls)
-                           (defs-match-decls defs decls))))
+                    (exist [tr-args]
+                           (trait tr tr-name tr-args)
+                           (exist [pattern-vars]
+                                  (tree-node-pattern pattern pattern-map pattern-vars)
+                                  (exist [decls]
+                                         (trait-decls-list tr-name decls)
+                                         (exist [tr-args-vec]
+                                                (to-vec tr-args tr-args-vec)
+                                                (given (def-tree-nodes tr-args-vec)
+                                                       (given (def-tree-nodes pattern-vars)
+                                                              (defs-match-decls defs decls)))))))))
      (fact (impl {:trait tr-name
                   :pattern pattern-map})))
 
@@ -124,57 +130,61 @@
      (def-match-decl (d0.core/deftype ta t) decl) <-
      (exist [ta']
             (= decl (d0.core/decltype ta'))
-            (= ta' ta ! "Expected definition of type" ta' "but found definition for type" ta "instead")))
+            (= ta' ta ! "Expected definition of type" ta' "but found definition for type" ta "instead")
+            (type t ! "in definition of" ta)))
 
 ;; ### Free variable list
 (all [v] (free-var v ! v "is not a free variable"))
 
 (all [v vs] (free-var-list [v & vs]) =>
      (fact (free-var v))
-     (fact (form-header v :any))
+     (all [vs] (form-header v :any vs [v & vs]))
      (free-var-list vs))
 
 ;; ### Tree node patterns
-(all [p m] (tree-node-pattern p m) <-
+(all [p m vs] (tree-node-pattern p m vs) <-
      (exist [k]
             (inspect p k)
-            (tree-node-pattern-kind k p m)))
+            (tree-node-pattern-kind k p m vs)))
 
-(all [k p m]
-     (tree-node-pattern-kind k p m
+(all [k p m vs]
+     (tree-node-pattern-kind k p m vs
                              ! k "is not a valid tree-node pattern given" p))
-(all [p] (tree-node-pattern-kind :keyword p {:keyword p}))
-(all [p] (tree-node-pattern-kind :symbol p {:symbol p}))
-(all [p m] (tree-node-pattern-kind :list p m) <-
-     (form-or-list-pattern p m))
-(all [p m] (tree-node-pattern-kind :vector p m) <-
-     (form-or-vec-pattern p m))
+(all [p] (tree-node-pattern-kind :keyword p {:keyword p} []))
+(all [p] (tree-node-pattern-kind :symbol p {:symbol p} []))
+(all [p m vs] (tree-node-pattern-kind :list p m vs) <-
+     (form-or-list-pattern p m vs))
+(all [p m vs] (tree-node-pattern-kind :vector p m vs) <-
+     (form-or-vec-pattern p m vs))
 
-(all [p m] (form-or-list-pattern p m ! p "is an invalid form or list pattern"))
-(all [a as hm arity] (form-or-list-pattern (a & as) {:list :nonempty
-                                                     :head hm
-                                                     :tail arity}) <-
-     (form-header a hm)
-     (form-tail as arity))
-(fact (form-or-list-pattern () {:list :empty}))
+(all [p m vs] (form-or-list-pattern p m vs ! p "is an invalid form or list pattern"))
+(all [a as hm arity vs] (form-or-list-pattern (a & as) {:list :nonempty
+                                                        :head hm
+                                                        :tail arity} vs) <-
+     (form-tail as arity)
+     (exist [vs']
+            (to-vec as vs')
+            (form-header a hm vs' vs)))
+(fact (form-or-list-pattern () {:list :empty} []))
 
-(all [p m] (form-or-vec-pattern p m ! p "is an invalid form or vector pattern"))
-(all [a as hm arity] (form-or-vec-pattern [a & as] {:vector :nonempty
-                                                    :head hm
-                                                    :tail arity}) <-
-     (form-header a hm)
-     (form-tail as arity))
-(fact (form-or-vec-pattern [] {:vetor :empty}))
+(all [p m vs] (form-or-vec-pattern p m vs ! p "is an invalid form or vector pattern"))
+(all [a as hm arity vs] (form-or-vec-pattern [a & as] {:vector :nonempty
+                                                       :head hm
+                                                       :tail arity} vs) <-
+     (form-tail as arity)
+     (form-header a hm as vs))
+(fact (form-or-vec-pattern [] {:vetor :empty} []))
 
 
-(all [h] (form-header h {:value h}) <-
+(all [h vs' vs] (form-header h {:value h} vs' vs) <-
      (exist [k]
             (inspect h k)
-            (form-header-kind k h)))
+            (form-header-kind k h vs' vs)))
 
-(all [k h] (form-header-kind k h ! "Invalid form-head" h "in pattern"))
-(all [h] (form-header-kind :symbol h))
-(all [h] (form-header-kind :keyword h))
+(all [k h vs' vs]
+     (form-header-kind k h vs' vs ! "Invalid form-head" h "in pattern"))
+(all [h vs] (form-header-kind :symbol h vs vs))
+(all [h vs] (form-header-kind :keyword h vs vs))
 
 ;; ## Types
 (all [t] (type t ! t "is not a declared type"))
