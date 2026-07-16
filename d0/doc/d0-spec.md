@@ -825,7 +825,7 @@ Every [method declaration](#method-declarations) in the trait mentioned in the
 (deftrait my-trait []
   (declmethod foo [] Int64))
 
-(impl [foo] (my-trait) :pattern
+(impl [] (my-trait) :pattern
   (defmethod foo [] 42))
 ```
 ```status
@@ -838,10 +838,10 @@ Success
 (deftrait my-trait []
   (declmethod foo [] Int64))
 
-(impl [foo] (my-trait) :pattern)
+(impl [] (my-trait) :pattern)
 ```
 ```status
-ERROR: Missing definitions for the trait's declarations ((declmethod ...)) in (impl [foo] (my-trait) ...)
+ERROR: Missing definitions for the trait's declarations ((declmethod ...)) in (impl [] (my-trait) ...)
 ```
 
 ```clojure
@@ -850,11 +850,11 @@ ERROR: Missing definitions for the trait's declarations ((declmethod ...)) in (i
 (deftrait my-trait []
   (declmethod foo [] Int64))
 
-(impl [foo] (my-trait) :pattern
+(impl [] (my-trait) :pattern
   (deftype Foo Int64))
 ```
 ```status
-ERROR: Definition of type Foo matches the wrong declaration (declmethod foo [] ...) in (impl [foo] (my-trait) ...)
+ERROR: Definition of type Foo matches the wrong declaration (declmethod foo [] ...) in (impl [] (my-trait) ...)
 ```
 
 ```clojure
@@ -863,11 +863,11 @@ ERROR: Definition of type Foo matches the wrong declaration (declmethod foo [] .
 (deftrait my-trait []
   (decltype Foo))
 
-(impl [foo] (my-trait) :pattern
+(impl [] (my-trait) :pattern
   (defmethod bar [] 42))
 ```
 ```status
-ERROR: Definition for method bar matches the wrong declaration (decltype Foo) in (impl [foo] (my-trait) ...)
+ERROR: Definition for method bar matches the wrong declaration (decltype Foo) in (impl [] (my-trait) ...)
 ```
 
 ```clojure
@@ -876,11 +876,11 @@ ERROR: Definition for method bar matches the wrong declaration (decltype Foo) in
 (deftrait my-trait []
   (declmethod foo [] Int64))
 
-(impl [foo] (my-trait) :pattern
+(impl [] (my-trait) :pattern
   (defmethod bar [] 42))
 ```
 ```status
-ERROR: Expected definition of method foo but got definition for bar in (impl [foo] (my-trait) ...)
+ERROR: Expected definition of method foo but got definition for bar in (impl [] (my-trait) ...)
 ```
 
 The argument list should be a vector containing symbols, which must match the
@@ -892,7 +892,7 @@ length of the parameter types vector provided in the method declaration.
 (deftrait my-trait []
   (declmethod foo [Int64 Int64] Int64))
 
-(impl [foo] (my-trait) :pattern
+(impl [] (my-trait) :pattern
   (defmethod foo [a b] 42))
 ```
 ```status
@@ -905,11 +905,11 @@ Success
 (deftrait my-trait []
   (declmethod foo [Int64 Int64] Int64))
 
-(impl [foo] (my-trait) :pattern
+(impl [] (my-trait) :pattern
   (defmethod foo [a] 42))
 ```
 ```status
-ERROR: Missing params for types [Int64] in definition of method foo in (impl [foo] (my-trait) ...)
+ERROR: Missing params for types [Int64] in definition of method foo in (impl [] (my-trait) ...)
 ```
 
 ```clojure
@@ -918,11 +918,11 @@ ERROR: Missing params for types [Int64] in definition of method foo in (impl [fo
 (deftrait my-trait []
   (declmethod foo [Int64 Int64] Int64))
 
-(impl [foo] (my-trait) :pattern
+(impl [] (my-trait) :pattern
   (defmethod foo [a b c] 42))
 ```
 ```status
-ERROR: Parameter c is not matched by a type in the declaration in definition of method foo in (impl [foo] (my-trait) ...)
+ERROR: Parameter c is not matched by a type in the declaration in definition of method foo in (impl [] (my-trait) ...)
 ```
 
 The body of a method definition is an _expression_. Due to the importance and
@@ -946,11 +946,11 @@ As a baseline, the following example shows an invalid expression.
 (deftrait my-trait []
   (declmethod foo [] Int64))
 
-(impl [foo] (my-trait) :pattern
+(impl [] (my-trait) :pattern
   (defmethod foo [] invalid-expression))
 ```
 ```status
-ERROR: Invalid expression invalid-expression in definition of method foo in (impl [foo] (my-trait) ...)
+ERROR: Invalid expression invalid-expression in definition of method foo in (impl [] (my-trait) ...)
 ```
 
 ### Literals
@@ -965,11 +965,47 @@ Numeric and string literals are valid expressions.
   (declmethod float-literal [] Float64)
   (declmethod string-literal [] String))
 
-(impl [foo] (my-trait) :pattern
+(impl [] (my-trait) :pattern
   (defmethod int-literal [] 42)
   (defmethod float-literal [] 3.1415)
   (defmethod string-literal [] "foobar"))
 ```
 ```status
 Success
+```
+
+### Parameters
+
+Method parameters are considered valid expressions.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [Int64 Float64] Int64))
+
+(impl [] (my-trait) :pattern
+  (defmethod foo [a b] a))
+```
+```status
+Success
+```
+
+`D0` makes a distinction between _expressions_ and _tree-nodes_. Tree nodes are
+represented with symbols that are first introduced as free variables and are
+then bound to either a trait argument or a part of a pattern, whereas
+expressions are discussed here. When trying to use a tree-node placeholder as an
+expression, we get a dedicated error message.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [Int64 Float64] Int64))
+
+(impl [x y] (my-trait) [:pattern x y]
+  (defmethod foo [a b] x))
+```
+```status
+ERROR: x is a tree-node placeholder, not an expression in definition of method foo in (impl [x ...] (my-trait) ...)
 ```

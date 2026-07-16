@@ -43,6 +43,7 @@
 
 (all [p ps] (def-tree-nodes [p & ps]) =>
      (fact (tree-node p))
+     (fact (expression p ! p "is a tree-node placeholder, not an expression"))
      (def-tree-nodes ps))
 
 ;; #### Trait args
@@ -143,7 +144,8 @@
                ! "Definition for method" name "matches the wrong declaration" decl)
             (= name name' ! "Expected definition of method" name' "but got definition for" name)
             (method-params-for-types params param-types ! "in definition of method" name)
-            (expression expr ! "in definition of method" name)))
+            (given (def-params params)
+                   (expression expr ! "in definition of method" name))))
 
 (all [params param-types]
      (method-params-for-types params param-types ! "Invalid param list" params))
@@ -159,6 +161,11 @@
 
 (all [param t]
      (method-param-type param t))
+
+(all [p ps]
+     (def-params [p & ps]) =>
+     (fact (expression p))
+     (def-params ps))
 
 ;; ### Free variable list
 (all [v] (free-var v ! v "is not a free variable"))
