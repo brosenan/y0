@@ -1113,3 +1113,119 @@ ERROR: Too few arguments in method call. Missing values of types [Int64] in call
 ERROR: Too many arguments in method call. Arguments (p) are extra in call to method a in definition of method b in (impl [x] (trait-b) ...)
 ```
 
+All arguments must be valid expressions.
+
+```clojure
+(ns example)
+
+(deftrait trait-a []
+  (declmethod a [Int64] Int64))
+(deftrait trait-b []
+  (declmethod b [Int64] Int64))
+
+(impl [x] (trait-b) [:pattern x]
+  (defmethod b [p] (a x not-an-expression)))
+```
+```status
+ERROR: Invalid expression not-an-expression in call to method a in definition of method b in (impl [x] (trait-b) ...)
+```
+
+### `let` Expressions
+
+`let` expressions have similar syntax to their Clojure counterparts, but they
+have a slightly different role. By defining variables explicitly, `let`
+expressions force their values to be computed eagerly. This is not the case with
+method invocations, where due to inlining the arguments are actually computed
+lazily.
+
+A `let` expression has the form `(let [var vexpr...] expr)`, with any number of
+`var vexpr` pairs. The `var`s are added to the scope of `expr`.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [Int64 Float64] Int64))
+
+(impl [n] (my-trait) [:pattern n]
+  (defmethod foo [a b]
+    (let [x a
+          y b]
+          (foo n x y))))
+```
+```status
+Success
+```
+
+The number of elements in the bindings vector (following the `let` symbol) must
+be even.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [Int64 Float64] Int64))
+
+(impl [n] (my-trait) [:pattern n]
+  (defmethod foo [a b]
+    (let [x a
+          y]
+          (foo n x y))))
+```
+```status
+ERROR: An odd number of elements in a let-bindings block. y has no assigned value in definition of method foo in (impl [n] (my-trait) ...)
+```
+
+In the bindings, the variables must be symbols.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [Int64 Float64] Int64))
+
+(impl [n] (my-trait) [:pattern n]
+  (defmethod foo [a b]
+    (let [:x a
+          :y b]
+          (foo n :x :y))))
+```
+```status
+ERROR: Invalid variable name :x (symbol expected) in binding of let expression in definition of method foo in (impl [n] (my-trait) ...)
+```
+
+The expressions must be valid `D0` expressions.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [Int64 Float64] Int64))
+
+(impl [n] (my-trait) [:pattern n]
+  (defmethod foo [a b]
+    (let [x a
+          y not-an-expression]
+          (foo n x y))))
+```
+```status
+ERROR: Invalid expression not-an-expression in binding of variable y in definition of method foo in (impl [n] (my-trait) ...)
+```
+
+Finally, `expr` must be a valid expression.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [Int64 Float64] Int64))
+
+(impl [n] (my-trait) [:pattern n]
+  (defmethod foo [a b]
+    (let [x a
+          y b]
+          invalid-expression)))
+```
+```status
+ERROR: Invalid expression invalid-expression in definition of method foo in (impl [n] (my-trait) ...)
+```

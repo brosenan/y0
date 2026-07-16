@@ -260,6 +260,8 @@
 (all [x] (expression-kind :int x))
 (all [x] (expression-kind :float x))
 (all [x] (expression-kind :string x))
+
+;; ### Method calls
 (all [x] (expression-kind :list x) <-
      (exist [name node args]
             (= x (name node & args))
@@ -283,4 +285,28 @@
      (method-args () types) <-
      (= types [] ! "Too few arguments in method call. Missing values of types" types))
 
-(all [arg type] (method-arg arg type))
+(all [arg type] (method-arg arg type) <-
+     (expression arg))
+
+;; ### Let Expressions
+
+(all [bindings expr]
+     (expression (d0.core/let bindings expr)) <-
+     (let-bindings bindings)
+     (given (def-let-bindings bindings)
+            (expression expr)))
+
+(all [bindings] (let-bindings bindings ! "Invalid let bindings" binding))
+(all [var vexpr bindings]
+     (let-bindings [var vexpr & bindings]) <-
+     (inspect var :symbol ! "Invalid variable name" var "(symbol expected) in binding of let expression")
+     (expression vexpr ! "in binding of variable" var)
+     (let-bindings bindings))
+(fact (let-bindings []))
+(all [var] (let-bindings [var]
+                         ! "An odd number of elements in a let-bindings block." var "has no assigned value"))
+
+(all [v x bs]
+     (def-let-bindings [v x & bs]) =>
+     (fact (expression v))
+     (def-let-bindings bs))
