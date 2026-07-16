@@ -813,3 +813,72 @@ Success
 ```status
 Success
 ```
+
+### Method Definitions
+
+Every [method declaration](#method-declarations) in the trait mentioned in the
+`impl` block must be matched with a method definition.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [] Int64))
+
+(impl [foo] (my-trait) :pattern
+  (defmethod foo [] 42))
+```
+```status
+Success
+```
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [] Int64))
+
+(impl [foo] (my-trait) :pattern)
+```
+```status
+ERROR: Missing definitions for the trait's declarations ((declmethod ...)) in (impl [foo] (my-trait) ...)
+```
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [] Int64))
+
+(impl [foo] (my-trait) :pattern
+  (deftype Foo Int64))
+```
+```status
+ERROR: Definition of type Foo matches the wrong declaration (declmethod foo [] ...) in (impl [foo] (my-trait) ...)
+```
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (decltype Foo))
+
+(impl [foo] (my-trait) :pattern
+  (defmethod bar [] 42))
+```
+```status
+ERROR: Definition for method bar matches the wrong declaration (decltype Foo) in (impl [foo] (my-trait) ...)
+```
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [] Int64))
+
+(impl [foo] (my-trait) :pattern
+  (defmethod bar [] 42))
+```
+```status
+ERROR: Expected definition of method foo but got definition for bar in (impl [foo] (my-trait) ...)
+```

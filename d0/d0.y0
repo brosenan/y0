@@ -129,9 +129,19 @@
 (all [ta t decl]
      (def-match-decl (d0.core/deftype ta t) decl) <-
      (exist [ta']
-            (= decl (d0.core/decltype ta'))
-            (= ta' ta ! "Expected definition of type" ta' "but found definition for type" ta "instead")
+            (= decl (d0.core/decltype ta')
+               ! "Definition of type" ta "matches the wrong declaration" decl)
+            (= ta' ta
+               ! "Expected definition of type" ta' "but found definition for type" ta "instead")
             (type t ! "in definition of" ta)))
+
+;; ### Method Definition
+(all [name params expr decl]
+     (def-match-decl (d0.core/defmethod name params expr) decl) <-
+     (exist [name' param-types ret-type]
+            (= decl (d0.core/declmethod name' param-types ret-type)
+               ! "Definition for method" name "matches the wrong declaration" decl)
+            (= name name' ! "Expected definition of method" name' "but got definition for" name)))
 
 ;; ### Free variable list
 (all [v] (free-var v ! v "is not a free variable"))
