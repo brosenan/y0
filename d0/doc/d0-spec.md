@@ -1009,3 +1009,107 @@ expression, we get a dedicated error message.
 ```status
 ERROR: x is a tree-node placeholder, not an expression in definition of method foo in (impl [x ...] (my-trait) ...)
 ```
+
+### Method Invocations
+
+Expressions may consist of method invocations. A method invocation has the form
+`(method tree-node args...)`, where `args` are zero or more expressions.
+
+```clojure
+(ns example)
+
+(deftrait trait-a []
+  (declmethod a [Int64] Int64))
+(deftrait trait-b []
+  (declmethod b [Int64] Int64))
+
+(impl [x] (trait-b) [:pattern x]
+  (defmethod b [p] (a x p)))
+```
+```status
+Success
+```
+
+The method being called must be declared in a trait.
+
+```clojure
+(ns example)
+
+(deftrait trait-a []
+  (declmethod a [Int64] Int64))
+(deftrait trait-b []
+  (declmethod b [Int64] Int64))
+
+(impl [x] (trait-b) [:pattern x]
+  (defmethod b [p] (foo x p)))
+```
+```status
+ERROR: Undefined method foo in definition of method b in (impl [x] (trait-b) ...)
+```
+
+Recursion through the parse-tree is supported.
+
+```clojure
+(ns example)
+
+(deftrait trait-b []
+  (declmethod b [Int64] Int64))
+
+(impl [x] (trait-b) [:pattern x]
+  (defmethod b [p] (b x p)))
+```
+```status
+Success
+```
+
+The first element after the name in a method invocation must be a tree-node
+placeholder.
+
+```clojure
+(ns example)
+
+(deftrait trait-a []
+  (declmethod a [Int64] Int64))
+(deftrait trait-b []
+  (declmethod b [Int64] Int64))
+
+(impl [x] (trait-b) [:pattern x]
+  (defmethod b [p] (a p p)))
+```
+```status
+ERROR: p does not represent a parse-tree node in this context in call to method a in definition of method b in (impl [x] (trait-b) ...)
+```
+
+The number of arguments must match that of types defined in the method
+declaration.
+
+```clojure
+(ns example)
+
+(deftrait trait-a []
+  (declmethod a [Int64] Int64))
+(deftrait trait-b []
+  (declmethod b [Int64] Int64))
+
+(impl [x] (trait-b) [:pattern x]
+  (defmethod b [p] (a x)))
+```
+```status
+ERROR: Too few arguments in method call. Missing values of types [Int64] in call to method a in definition of method b in (impl [x] (trait-b) ...)
+```
+
+```clojure
+(ns example)
+
+(deftrait trait-a []
+  (declmethod a [Int64] Int64))
+(deftrait trait-b []
+  (declmethod b [Int64] Int64))
+
+(impl [x] (trait-b) [:pattern x]
+  (defmethod b [p] (a x p p)))
+```
+```status
+ERROR: Too many arguments in method call. Arguments (p) are extra in call to method a in definition of method b in (impl [x] (trait-b) ...)
+```
+

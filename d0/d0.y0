@@ -22,7 +22,7 @@
      (assert (trait-params params))
      (assert (given (def-tree-nodes params)
                     (trait-decls decls)))
-     (trait-decls decls)
+     (def-trait-decls decls)
      (fact (trait-decls-list name decls))
      (all [args] (trait (name & args) name args) <-
           (trait-args args params name)))
@@ -82,15 +82,16 @@
 (all [] (method-param-decls []))
 
 ;; #### Trait Declarations as Global Definitions
-(all [d ds] (trait-decls (d & ds)) =>
+(all [d ds] (def-trait-decls (d & ds)) =>
      d
-     (trait-decls ds))
+     (def-trait-decls ds))
 (all [t]
      (d0.core/decltype t) =>
      (all [node] (type (t node)) <-
           (tree-node node)))
 (all [name params ret]
-     (d0.core/declmethod name params ret) =>)
+     (d0.core/declmethod name params ret) =>
+     (fact (method-decl name params ret)))
 
 ;; ## Implementation Blocks
 (all [vars tr tr-name pattern defs pattern-map]
@@ -259,3 +260,27 @@
 (all [x] (expression-kind :int x))
 (all [x] (expression-kind :float x))
 (all [x] (expression-kind :string x))
+(all [x] (expression-kind :list x) <-
+     (exist [name node args]
+            (= x (name node & args))
+            (exist [param-types ret-type]
+                   (method-decl name param-types ret-type)
+                   (tree-node node ! "in call to method" name)
+                   (method-args args param-types ! "in call to method" name))))
+
+(all [name param-types ret-type]
+     (method-decl name param-types ret-type ! "Undefined method" name))
+
+(all [args param-types] 
+     (method-args args param-types ! "Invalid method args" args))
+(all [arg args types]
+     (method-args (arg & args) types) <-
+     (exist [type types']
+            (= types [type & types'] ! "Too many arguments in method call. Arguments" (arg & args) "are extra")
+            (method-arg arg type)
+            (method-args args types')))
+(all [types]
+     (method-args () types) <-
+     (= types [] ! "Too few arguments in method call. Missing values of types" types))
+
+(all [arg type] (method-arg arg type))
