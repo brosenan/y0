@@ -924,3 +924,52 @@ ERROR: Missing params for types [Int64] in definition of method foo in (impl [fo
 ```status
 ERROR: Parameter c is not matched by a type in the declaration in definition of method foo in (impl [foo] (my-trait) ...)
 ```
+
+The body of a method definition is an _expression_. Due to the importance and
+complexity of the topic, we dedicate a whoe section to
+[expressions](#expressions).
+
+## Expressions
+
+Expressions appear in bodies of methods. Here we specify what they can consist
+of.
+
+Note: `D0` performs type checking only when applied to a specific parse-tree.
+Therefore, we will not discuss the types of expressions here, although every
+expression is guaranteed to have a well-defined type.
+
+As a baseline, the following example shows an invalid expression.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [] Int64))
+
+(impl [foo] (my-trait) :pattern
+  (defmethod foo [] invalid-expression))
+```
+```status
+ERROR: Invalid expression invalid-expression in definition of method foo in (impl [foo] (my-trait) ...)
+```
+
+### Literals
+
+Numeric and string literals are valid expressions.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod int-literal [] Int64)
+  (declmethod float-literal [] Float64)
+  (declmethod string-literal [] String))
+
+(impl [foo] (my-trait) :pattern
+  (defmethod int-literal [] 42)
+  (defmethod float-literal [] 3.1415)
+  (defmethod string-literal [] "foobar"))
+```
+```status
+Success
+```

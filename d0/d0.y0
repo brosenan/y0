@@ -114,7 +114,7 @@
 ;; ### Matching definitions to declarations
 (all [defs decls]
      (defs-match-decls defs decls
-                       ! "Invalid definition block" defs))
+       ! "Invalid definition block" defs))
 (all [def defs decls] (defs-match-decls (def & defs) decls) <-
      (exist [decl decls']
             (= decls (decl & decls') ! "Too many definitions." def "is extra")
@@ -142,7 +142,8 @@
             (= decl (d0.core/declmethod name' param-types ret-type)
                ! "Definition for method" name "matches the wrong declaration" decl)
             (= name name' ! "Expected definition of method" name' "but got definition for" name)
-            (method-params-for-types params param-types ! "in definition of method" name)))
+            (method-params-for-types params param-types ! "in definition of method" name)
+            (expression expr ! "in definition of method" name)))
 
 (all [params param-types]
      (method-params-for-types params param-types ! "Invalid param list" params))
@@ -215,6 +216,8 @@
 ;; ## Types
 (all [t] (type t ! t "is not a declared type"))
 (fact (type d0.core/Int64))
+(fact (type d0.core/Float64))
+(fact (type d0.core/String))
 
 ;; ## Parse-tree nodes
 (all [n] (tree-node n
@@ -237,3 +240,15 @@
             (free-var n)))
 (fact (form-tail () :empty))
 (fact (form-tail [] :empty))
+
+;; ## Expressions
+
+(all [x] (expression x) <-
+     (exist [k]
+            (inspect x k)
+            (expression-kind k x)))
+
+(all [k x] (expression-kind k x ! "Invalid expression" x))
+(all [x] (expression-kind :int x))
+(all [x] (expression-kind :float x))
+(all [x] (expression-kind :string x))
