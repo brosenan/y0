@@ -882,3 +882,45 @@ ERROR: Definition for method bar matches the wrong declaration (decltype Foo) in
 ```status
 ERROR: Expected definition of method foo but got definition for bar in (impl [foo] (my-trait) ...)
 ```
+
+The argument list should be a vector containing symbols, which must match the
+length of the parameter types vector provided in the method declaration.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [Int64 Int64] Int64))
+
+(impl [foo] (my-trait) :pattern
+  (defmethod foo [a b] 42))
+```
+```status
+Success
+```
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [Int64 Int64] Int64))
+
+(impl [foo] (my-trait) :pattern
+  (defmethod foo [a] 42))
+```
+```status
+ERROR: Missing params for types [Int64] in definition of method foo in (impl [foo] (my-trait) ...)
+```
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [Int64 Int64] Int64))
+
+(impl [foo] (my-trait) :pattern
+  (defmethod foo [a b c] 42))
+```
+```status
+ERROR: Parameter c is not matched by a type in the declaration in definition of method foo in (impl [foo] (my-trait) ...)
+```

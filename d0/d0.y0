@@ -141,7 +141,23 @@
      (exist [name' param-types ret-type]
             (= decl (d0.core/declmethod name' param-types ret-type)
                ! "Definition for method" name "matches the wrong declaration" decl)
-            (= name name' ! "Expected definition of method" name' "but got definition for" name)))
+            (= name name' ! "Expected definition of method" name' "but got definition for" name)
+            (method-params-for-types params param-types ! "in definition of method" name)))
+
+(all [params param-types]
+     (method-params-for-types params param-types ! "Invalid param list" params))
+(all [param params param-types]
+     (method-params-for-types [param & params] param-types) <-
+     (exist [t ts]
+            (= param-types [t & ts] ! "Parameter" param "is not matched by a type in the declaration")
+            (method-param-type param t)
+            (method-params-for-types params ts)))
+(all [param-types]
+     (method-params-for-types [] param-types) <-
+     (= param-types [] ! "Missing params for types" param-types))
+
+(all [param t]
+     (method-param-type param t))
 
 ;; ### Free variable list
 (all [v] (free-var v ! v "is not a free variable"))
