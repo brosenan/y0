@@ -119,35 +119,40 @@
      (defs-match-decls defs decls
        ! "Invalid definition block" defs))
 (all [def defs decls] (defs-match-decls (def & defs) decls) <-
-     (exist [decl decls']
-            (= decls (decl & decls') ! "Too many definitions." def "is extra")
-            (def-match-decl def decl)
+     (exist [decls']
+            (def-match-decl def decls decls')
             (defs-match-decls defs decls')))
 (all [decls] (defs-match-decls () decls) <-
      (= decls () ! "Missing definitions for the trait's declarations" decls))
 
-(all [def decl] (def-match-decl def decl ! "Invalid definition" def))
+(all [def decls decls-remaining] (def-match-decl def decls decls-remaining 
+                                   ! "Invalid definition" def))
 
 ;; ### Type Definitions
-(all [ta t decl]
-     (def-match-decl (d0.core/deftype ta t) decl) <-
-     (exist [ta']
-            (= decl (d0.core/decltype ta')
-               ! "Definition of type" ta "matches the wrong declaration" decl)
-            (= ta' ta
-               ! "Expected definition of type" ta' "but found definition for type" ta "instead")
-            (type t ! "in definition of" ta)))
+(all [ta t decls decls']
+     (def-match-decl (d0.core/deftype ta t) decls decls') <-
+     (exist [decl]
+            (= decls (decl & decls') 
+               ! "Type definition for" ta "doesn't have a matching declaration")
+            (exist [ta']
+                   (= decl (d0.core/decltype ta')
+                      ! "Definition of type" ta "matches the wrong declaration" decl)
+                   (= ta' ta
+                      ! "Expected definition of type" ta' "but found definition for type" ta "instead")
+                   (type t ! "in definition of" ta))))
 
 ;; ### Method Definition
-(all [name params expr decl]
-     (def-match-decl (d0.core/defmethod name params expr) decl) <-
-     (exist [name' param-types ret-type]
-            (= decl (d0.core/declmethod name' param-types ret-type)
-               ! "Definition for method" name "matches the wrong declaration" decl)
-            (= name name' ! "Expected definition of method" name' "but got definition for" name)
-            (method-params-for-types params param-types ! "in definition of method" name)
-            (given (def-params params)
-                   (expression expr ! "in definition of method" name))))
+(all [name params expr decls decls']
+     (def-match-decl (d0.core/defmethod name params expr) decls decls') <-
+     (exist [decl]
+            (= decls (decl & decls') ! "Definition of method" name "doesn't have a matching declaration")
+            (exist [name' param-types ret-type]
+                   (= decl (d0.core/declmethod name' param-types ret-type)
+                      ! "Definition for method" name "matches the wrong declaration" decl)
+                   (= name name' ! "Expected definition of method" name' "but got definition for" name)
+                   (method-params-for-types params param-types ! "in definition of method" name)
+                   (given (def-params params)
+                          (expression expr ! "in definition of method" name)))))
 
 (all [params param-types]
      (method-params-for-types params param-types ! "Invalid param list" params))

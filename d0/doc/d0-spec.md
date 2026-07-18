@@ -724,7 +724,7 @@ Similarly, a definition with no corresponding declaration is an error.
   (deftype S Int64))
 ```
 ```status
-ERROR: Too many definitions. (deftype S Int64) is extra in (impl [] (my-trait) ...)
+ERROR: Type definition for S doesn't have a matching declaration in (impl [] (my-trait) ...)
 ```
 
 The types used in a type definition must be valid types.
