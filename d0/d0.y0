@@ -44,6 +44,7 @@
 (all [p ps] (def-tree-nodes [p & ps]) =>
      (fact (tree-node p))
      (fact (expression p ! p "is a tree-node placeholder, not an expression"))
+     (all [map] (tree-node-pattern p map []))
      (def-tree-nodes ps))
 
 ;; #### Trait args
@@ -310,3 +311,9 @@
      (def-let-bindings [v x & bs]) =>
      (fact (expression v))
      (def-let-bindings bs))
+
+;; ### With Expressions
+(all [vars trait pattern defs expr]
+     (expression (d0.core/with (d0.core/impl vars trait pattern & defs) expr)) <-
+     (given (d0.core/impl vars trait pattern & defs)
+            (expression expr)))

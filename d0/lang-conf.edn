@@ -7,7 +7,7 @@
                       impl deftype defmethod
                       &
                       Int64 Float64 String
-                      let]
+                      let with]
        ;; ...populate this namespace
        :root-namespace "d0.core"
        ;; The resolver is based on a prefix list

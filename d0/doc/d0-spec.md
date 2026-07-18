@@ -1229,3 +1229,101 @@ Finally, `expr` must be a valid expression.
 ```status
 ERROR: Invalid expression invalid-expression in definition of method foo in (impl [n] (my-trait) ...)
 ```
+
+### `with` Expressions
+
+Similar to how definitions can be injected into contexts in $y_0$ using the
+[`given`](https://github.com/brosenan/y0/blob/main/doc/conditions.md#given-conditions)
+condition, in `D0` it is possible to inject definitions, namely `impl` blocks,
+into contexs using `with` expressions.
+
+The syntax is `(with (impl ...) expr)`.
+
+```clojure
+(ns example)
+
+(deftrait trait1 []
+  (declmethod foo [] Int64))
+(deftrait trait2 []
+  (declmethod bar [] Int64))
+
+(impl [n] (trait1) [:pattern n]
+  (defmethod foo []
+    (with (impl [] (trait2) :something
+            (defmethod bar [] 42))
+      (foo n))))
+```
+```status
+Success
+```
+
+In the above example we define a local `impl` for pattern `:something` for trait
+`trait2`, returning 42 from `bar`. Semantically, any calls `(bar :something)`
+from within `(foo n)` will return 42, but will remain undefied outside of `(foo
+n)`.
+
+The `impl` definition must be a valid one.
+
+```clojure
+(ns example)
+
+(deftrait trait1 []
+  (declmethod foo [] Int64))
+
+(impl [n] (trait1) [:pattern n]
+  (defmethod foo []
+    (with (impl [] (trait-that-doesnt-exist) :something
+            (defmethod bar [] 42))
+      (foo n))))
+```
+```status
+ERROR: (trait-that-doesnt-exist) is not a trait in (impl [] (trait-that-doesnt-exist) ...)
+```
+
+Similarly, the underlying expression must be a valid expression.
+
+```clojure
+(ns example)
+
+(deftrait trait1 []
+  (declmethod foo [] Int64))
+(deftrait trait2 []
+  (declmethod bar [] Int64))
+
+(impl [n] (trait1) [:pattern n]
+  (defmethod foo []
+    (with (impl [] (trait2) :something
+            (defmethod bar [] 42))
+      bad-expression)))
+```
+```status
+ERROR: Invalid expression bad-expression in definition of method foo in (impl [n] (trait1) ...)
+```
+
+The pattern in the enclosed `impl` block may consist of a tree-node. This is
+useful for providing values to variables, where the tree-node represents the
+variable being assigned.
+
+```clojure
+(ns example)
+
+(deftrait trait1 []
+  (declmethod foo [] Int64))
+(deftrait trait2 []
+  (declmethod bar [] Int64))
+
+;; This is an instance block for the symbol "v".
+(impl [] (trait2) v
+  (defmethod bar [] 0))
+
+(impl [v x] (trait1) [:pattern v x]
+  (defmethod foo []
+    ;; This is an instance definition for v, a placeholder for whatever node is
+    ;; in the first position of [:pattern ...]
+    (with (impl [] (trait2) v
+            (defmethod bar [] 42))
+      (foo x))))
+```
+```status
+Success
+```
