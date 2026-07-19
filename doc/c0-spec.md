@@ -886,7 +886,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: Too few elements in initializer list. float64 imaginary; does not have an initializer in Complex64 z = {1};
+ERROR: Too few elements in initializer list. float64 imaginary; are not initalized in Complex64 z = {1};
 ```
 
 Similarly, in the following example we get an error for making the list too
@@ -903,7 +903,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: Too many elements in initializer list. 3 are extra in Complex64 z = {1, 2, 3};
+ERROR: Too many elements in initializer list. 3 is extra in Complex64 z = {1, 2, 3};
 ```
 
 The types of values in the initializer list must be appropriate initializers for

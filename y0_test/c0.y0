@@ -75,27 +75,27 @@
 
 (all [xs t]
      (expr-of-type [:initializer_list & xs] t) <-
-     (initialization t xs))
+     (initializer-for-type t xs))
 (all [xs t]
      (typeof [:initializer_list & xs] t
              ! "Cannot infer the type of initializer list" ?))
 (all [xs t]
      (typeof [:typed_initializer_list t & xs] t) <-
-     (initialization t xs))
+     (initializer-for-type t xs))
 
 ;; ### Initializers
 (all [t xs]
-     (initialization t xs ! "Cannot use an initializer list for type" t))
+     (initializer-for-type t xs ! "Cannot use an initializer list for type" t))
 
 (all [alias xs]
-     (initialization [:type_alias alias] xs) <-
+     (initializer-for-type [:type_alias alias] xs) <-
      (exist [t]
             (type-alias alias t)
-            (initialization t xs)))
+            (initializer-for-type t xs)))
 
 (all [fds xs]
-     (initialization [:struct_type & fds] xs) <-
-     (member-initializations fds xs))
+     (initializer-for-type [:struct_type & fds] xs) <-
+     (member-initializations xs fds))
 
 ;; ### Arithmetic Operators
 (all [op]
@@ -187,7 +187,7 @@
      (fact
           (numeric-type t))
      (all [xs]
-          (initialization t xs) <-
+          (initializer-for-type t xs) <-
           (exist [x]
                  (= xs [x]
                     ! "An initializer list for a numeric type must have exactly one element."
@@ -320,26 +320,26 @@
      (fact
           (member v t)))
 
-(all [fds xs]
-     (member-initializations fds xs ! fds "is not a member definition list"))
+(all [xs fds]
+     (member-initializations xs fds ! xs "is not a member initializer list"))
 
-(all [fd fds xs]
-     (member-initializations [fd & fds] xs) <-
-     (exist [x xs']
-            (= xs [x & xs']
-               ! "Too few elements in initializer list." fd "does not have an initializer")
-            (member-initialization fd x)
-            (member-initializations fds xs')))
+(all [x xs fds]
+     (member-initializations [x & xs] fds) <-
+     (exist [fd fds']
+            (= fds [fd & fds']
+               ! "Too many elements in initializer list." x "is extra")
+            (member-initialization-for-field-kind fd x)
+            (member-initializations xs fds')))
 
-(all [xs]
-     (member-initializations [] xs) <-
-     (= xs [] ! "Too many elements in initializer list." xs "are extra"))
+(all [fds]
+     (member-initializations [] fds) <-
+     (= fds [] ! "Too few elements in initializer list." fds "are not initalized"))
 
 (all [fd x]
-     (member-initialization fd x ! fd "is not a member definition"))
+     (member-initialization-for-field-kind fd x ! fd "is not a member definition"))
 
 (all [t v x]
-     (member-initialization [:field_def t v] x) <-
+     (member-initialization-for-field-kind [:field_def t v] x) <-
      (expr-of-type x t))
 
 ;; ### Unions
@@ -372,7 +372,11 @@
                   "outside a case expression")))
 
 (all [n opt-defs x]
-     (member-initialization [:union_def n & opt-defs] x) <-
+     (member-initialization-for-field-kind [:union_def n & opt-defs] x) <-
+     (union-member-initialization x n opt-defs))
+
+(all [x n opt-defs]
+     (union-member-initialization x n opt-defs) <-
      (exist [opt val]
             (= x [:option_initializer opt val]
                ! "Initialization for union" n
@@ -479,7 +483,7 @@
      (type t))
 
 (all [n t xs]
-     (initialization [:array_type n t] xs) <-
+     (initializer-for-type [:array_type n t] xs) <-
      (exist [vn]
             (static-eval-int n vn)
             (exist [la]
@@ -554,7 +558,7 @@
      (indexable-type [:slice_type telem] telem))
 
 (all [t xs]
-     (initialization [:slice_type t] xs) <-
+     (initializer-for-type [:slice_type t] xs) <-
      (exist [begin end]
             (= xs [begin end]
                ! "The initializer list for a slice must be of size 2,"
