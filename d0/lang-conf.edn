@@ -7,7 +7,7 @@
                       impl deftype defmethod match-def
                       &
                       Int64 Float64 String Bool
-                      let if with call]
+                      let if with call const]
        ;; ...populate this namespace
        :root-namespace "d0.core"
        ;; The resolver is based on a prefix list

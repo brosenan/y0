@@ -361,10 +361,26 @@
 (fact (expressions ()))
 
 ;; ### Constant Expressions
+(all [x]
+     (expression (d0.core/const x)) <-
+     (expression x)
+     (const-expr x))
+
 (all [x] (const-expr x) <-
      (exist [k]
             (inspect x k)
             (const-expr-kind k x)))
 
 (all [k x] (const-expr-kind k x ! x "is not a constant expression"))
+(all [x] (const-expr-kind :int x))
+(all [x] (const-expr-kind :float x))
 (all [x] (const-expr-kind :string x))
+
+(all [class method args] (const-expr (d0.core/call class method & args)) <-
+     (const-exprs args))
+
+(all [xs] (const-exprs xs ! xs "is an invalid list of const-exprs"))
+(all [x xs] (const-exprs (x & xs)) <-
+     (const-expr x)
+     (const-exprs xs))
+(fact (const-exprs ()))

@@ -1609,3 +1609,92 @@ ERROR: Class name c is not a constant expression in definition of method foo in 
 ERROR: Method name m is not a constant expression in definition of method foo in (impl [] (my-trait) ...)
 ```
 
+### Constant Expressions
+
+Constant expressions are expressions that are computed in compile time. They are
+used in some contexts, such as for choosing the class and method for [static
+method calls](#calling-static-methods).
+
+A `const` expression forces a const expression to be computed at compile time.
+It has the syntax `(const expr)`, where `expr` is required to be constant.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [] Int64))
+
+(impl [] (my-trait) :pattern
+  (defmethod foo []
+    (const 42)))
+```
+```status
+Success
+```
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [Int64] Int64))
+
+(impl [] (my-trait) :pattern
+  (defmethod foo [a]
+    (const a)))
+```
+```status
+ERROR: a is not a constant expression in definition of method foo in (impl [] (my-trait) ...)
+```
+
+Literals of all types are constant expressions.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod int-const [] Int64)
+  (declmethod float-const [] Float64)
+  (declmethod str-const [] String))
+
+(impl [] (my-trait) :pattern
+  (defmethod int-const []
+    (const 42))
+  (defmethod float-const []
+    (const 3.141592))
+  (defmethod str-const []
+    (const "Hello")))
+```
+```status
+Success
+```
+
+A call to a static method is a constant expression if all arguments are constant
+expressions.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [] Int64))
+
+(impl [] (my-trait) :pattern
+  (defmethod foo []
+    (const (call "java.lang.Math" "max" 2 3))))
+```
+```status
+Success
+```
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [Int64] Int64))
+
+(impl [] (my-trait) :pattern
+  (defmethod foo [x]
+    (const (call "java.lang.Math" "max" x 3))))
+```
+```status
+ERROR: x is not a constant expression in definition of method foo in (impl [] (my-trait) ...)
+```
