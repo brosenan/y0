@@ -248,6 +248,7 @@
 (fact (type d0.core/Int64))
 (fact (type d0.core/Float64))
 (fact (type d0.core/String))
+(fact (type d0.core/Bool))
 
 ;; ## Parse-tree nodes
 (all [n] (tree-node n
@@ -332,6 +333,13 @@
      (def-let-bindings [v x & bs]) =>
      (fact (expression v))
      (def-let-bindings bs))
+
+;; ### If Expressions
+(all [cond then else]
+     (expression (d0.core/if cond then else)) <-
+     (expression cond)
+     (expression then)
+     (expression else))
 
 ;; ### With Expressions
 (all [vars trait pattern defs expr]

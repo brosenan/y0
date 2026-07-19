@@ -1351,6 +1351,91 @@ Finally, `expr` must be a valid expression.
 ERROR: Invalid expression invalid-expression in definition of method foo in (impl [n] (my-trait) ...)
 ```
 
+### `if` Expressions
+
+An `if` expression is a conditional expression, similar to other functional
+languages.
+
+Its syntax is as follows: `(if cond then else)`, where all parameters are
+expressions, where `cond` is expected to evaluat to `Bool` (not checked
+statically) and `then` and `else` are expected to evaluate to the same type
+(again, not checked statically).
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [] Int64)
+  (declmethod bar? [] Bool))
+
+(impl [x y] (my-trait) [:pattern x y]
+  (defmethod foo []
+    (if (bar? x)
+      (foo x)
+      (foo y)))
+  (defmethod bar? []
+    (bar? y)))
+```
+```status
+Success
+```
+
+Both `cond`, `then` and `else` must be valid expressions.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [] Int64))
+
+(impl [x y] (my-trait) [:pattern x y]
+  (defmethod foo []
+    (if invalid-cond-expression
+      (foo x)
+      (foo y))))
+```
+```status
+ERROR: Invalid expression invalid-cond-expression in definition of method foo in (impl [x ...] (my-trait) ...)
+```
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [] Int64)
+  (declmethod bar? [] Bool))
+
+(impl [x y] (my-trait) [:pattern x y]
+  (defmethod foo []
+    (if (bar? x)
+      invalid-then-expression
+      (foo y)))
+  (defmethod bar? []
+    (bar? y)))
+```
+```status
+ERROR: Invalid expression invalid-then-expression in definition of method foo in (impl [x ...] (my-trait) ...)
+```
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [] Int64)
+  (declmethod bar? [] Bool))
+
+(impl [x y] (my-trait) [:pattern x y]
+  (defmethod foo []
+    (if (bar? x)
+      (foo x)
+      invalid-else-expression))
+  (defmethod bar? []
+    (bar? y)))
+```
+```status
+ERROR: Invalid expression invalid-else-expression in definition of method foo in (impl [x ...] (my-trait) ...)
+```
+
 ### `with` Expressions
 
 Similar to how definitions can be injected into contexts in $y_0$ using the

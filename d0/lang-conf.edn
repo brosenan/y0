@@ -6,8 +6,8 @@
        :root-symbols [deftrait decltype declmethod
                       impl deftype defmethod match-def
                       &
-                      Int64 Float64 String
-                      let with]
+                      Int64 Float64 String Bool
+                      let if with]
        ;; ...populate this namespace
        :root-namespace "d0.core"
        ;; The resolver is based on a prefix list
