@@ -929,6 +929,127 @@ The body of a method definition is an _expression_. Due to the importance and
 complexity of the topic, we dedicate a whoe section to
 [expressions](#expressions).
 
+### Definition Matching
+
+In a $y_0$ semantic definition of a language, many rules are defined from parts
+of the program's parse-tree, using [translation
+rules](https://github.com/brosenan/y0/blob/main/doc/statements.md#translation-rules).
+
+As a result, many tree-nodes are associated not only with a predicate that
+matches them, but also with a _definition_, another node that contributed the
+definition that created the rule that matched this node.
+
+As a conceptual example, the definition of a function can contribute the rules
+that make a call to this function valid. Therefore, the node responsible to the
+call is associated with the function's definition.
+
+In `D0`, we leverage this relationship to gain more information about a node. In
+the case of a function, this is how we can use the function's body to interpret
+the call.
+
+This is done through `match-def` blocks insde `impl` blocks. A `match-def` block
+has the syntax `(match-def [vars...] def-pattern defs...)`, where `vars`
+is a vector of symbols, `def-pattern` is a pattern matching the definition's
+parse-tree, where `vars` are treated as free variables, and `defs` are the
+associated type and method definitions for the `impl`, given a matching pattern.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [] Int64))
+
+(impl [] (my-trait) :pattern
+  (match-def [x] [:some-def x]
+    (defmethod foo [] (foo x)))
+  (defmethod foo [] 42))
+```
+```status
+Success
+```
+
+In the above example we provide two different definitions for method `foo`. The
+default definition, which returns 42, and a definition that will take effect if
+the `:pattern` is associated with the definition of the form `[:some-def x]`
+(for some `x`). In that case, the call recurses to `foo` in the definition.
+
+The provided `def-pattern` must be a valid pattern, following the same rules as
+in the tree-node pattern at the head of the `impl` block.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [] Int64))
+
+(impl [] (my-trait) :pattern
+  (match-def [] [:some invalid pattern]
+    (defmethod foo [] (foo x)))
+  (defmethod foo [] 42))
+```
+```status
+ERROR: invalid is not a free variable in definition matching pattern [:some invalid pattern] in (impl [] (my-trait) ...)
+```
+
+The definitions in a `match-def` block must match all _pending_ definitions, not
+yet addressed by previous definitions at the `impl`-block level.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [] Int64))
+
+(impl [] (my-trait) :pattern
+  (defmethod foo [] 42) ;; Now the default definition comes before the
+                        ;; `match-def` block.
+  (match-def [x] [:some-def x]
+    (defmethod foo [] (foo x))))
+```
+```status
+ERROR: Unexpected definition of method foo in definition matching for [:some-def x] in (impl [] (my-trait) ...)
+```
+
+There can be any number of definitions matchings in an `impl` block.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [] Int64))
+
+(impl [] (my-trait) :pattern
+  (match-def [x] [:some-def x]
+    (defmethod foo [] (foo x)))
+  (match-def [y] [:some-other-def y]
+    (defmethod foo [] (foo y)))
+  (defmethod foo [] 42))
+```
+```status
+Success
+```
+
+When default definitions do not make sense, i.e., when the pattern matched by
+the `impl` block _must_ have a definition, the default definitions can be
+replaced by the `:no-default-defs` keyword.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [] Int64))
+
+(impl [] (my-trait) :pattern
+  (match-def [x] [:some-def x]
+    (defmethod foo [] (foo x)))
+  (match-def [y] [:some-other-def y]
+    (defmethod foo [] (foo y)))
+  :no-default-defs)
+```
+```status
+Success
+```
+
 ## Expressions
 
 Expressions appear in bodies of methods. Here we specify what they can consist

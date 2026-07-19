@@ -4,7 +4,7 @@
        :root-refer-map :root-symbols
        ;; All these symbols...
        :root-symbols [deftrait decltype declmethod
-                      impl deftype defmethod
+                      impl deftype defmethod match-def
                       &
                       Int64 Float64 String
                       let with]

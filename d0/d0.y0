@@ -97,7 +97,7 @@
 ;; ## Implementation Blocks
 (all [vars tr tr-name pattern defs pattern-map]
      (d0.core/impl vars tr pattern & defs) =>
-     (assert (given (free-var-list vars)
+     (assert (given (def-free-vars vars)
                     (exist [tr-args]
                            (trait tr tr-name tr-args)
                            (exist [pattern-vars]
@@ -145,7 +145,7 @@
 (all [name params expr decls decls']
      (def-match-decl (d0.core/defmethod name params expr) decls decls') <-
      (exist [decl]
-            (= decls (decl & decls') ! "Definition of method" name "doesn't have a matching declaration")
+            (= decls (decl & decls') ! "Unexpected definition of method" name)
             (exist [name' param-types ret-type]
                    (= decl (d0.core/declmethod name' param-types ret-type)
                       ! "Definition for method" name "matches the wrong declaration" decl)
@@ -174,13 +174,29 @@
      (fact (expression p))
      (def-params ps))
 
+;; ### Definition Matching
+
+(all [vars def-pattern defs decls]
+     (def-match-decl (d0.core/match-def vars def-pattern & defs) decls decls) <-
+     (exist [m vs]
+            (given (def-free-vars vars)
+                   (tree-node-pattern def-pattern m vs
+                                      ! "in definition matching pattern" def-pattern))
+            (given (def-tree-nodes vs)
+                   (defs-match-decls defs decls
+                     ! "in definition matching for" def-pattern))))
+
+
+(all [decls]
+     (def-match-decl :no-default-defs decls ()))
+
 ;; ### Free variable list
 (all [v] (free-var v ! v "is not a free variable"))
 
-(all [v vs] (free-var-list [v & vs]) =>
+(all [v vs] (def-free-vars [v & vs]) =>
      (fact (free-var v))
      (all [vs] (form-header v :any vs [v & vs]))
-     (free-var-list vs))
+     (def-free-vars vs))
 
 ;; ### Tree node patterns
 (all [p m vs] (tree-node-pattern p m vs) <-
