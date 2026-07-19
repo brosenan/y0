@@ -1533,3 +1533,79 @@ variable being assigned.
 ```status
 Success
 ```
+
+### Java Interoperability
+
+`D0` targets the JVM as the runtime environment for itself and all languages
+implemented on top of it. `D0`'s Java interoperability is intended to allow
+implemented languages access to the Java ecosystem. 
+
+Java interoperability is achieved through a set of operations, as explained
+below.
+
+#### Calling Static Methods
+
+A `call` operation calls a static method. Its syntax is: `(call class method
+args...)`, where `class` and `method` are string constants and `args` are
+expressions.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [String] Int64))
+
+(impl [] (my-trait) :pattern
+  (defmethod foo [s]
+    (call "java.lang.System" "println" s)))
+```
+```status
+Success
+```
+
+The arguments must be valid expressions.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [String] Int64))
+
+(impl [] (my-trait) :pattern
+  (defmethod foo [s]
+    (call "java.lang.System" "println" s not-an-expression)))
+```
+```status
+ERROR: Invalid expression not-an-expression in argument of static method call in definition of method foo in (impl [] (my-trait) ...)
+```
+
+The class name and method name must be constants.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [String String] Int64))
+
+(impl [] (my-trait) :pattern
+  (defmethod foo [c s]
+    (call c "println" s)))
+```
+```status
+ERROR: Class name c is not a constant expression in definition of method foo in (impl [] (my-trait) ...)
+```
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [String String] Int64))
+
+(impl [] (my-trait) :pattern
+  (defmethod foo [m s]
+    (call "java.lang.System" m s)))
+```
+```status
+ERROR: Method name m is not a constant expression in definition of method foo in (impl [] (my-trait) ...)
+```
+

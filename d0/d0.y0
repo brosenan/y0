@@ -125,14 +125,14 @@
 (all [decls] (defs-match-decls () decls) <-
      (= decls () ! "Missing definitions for the trait's declarations" decls))
 
-(all [def decls decls-remaining] (def-match-decl def decls decls-remaining 
+(all [def decls decls-remaining] (def-match-decl def decls decls-remaining
                                    ! "Invalid definition" def))
 
 ;; ### Type Definitions
 (all [ta t decls decls']
      (def-match-decl (d0.core/deftype ta t) decls decls') <-
      (exist [decl]
-            (= decls (decl & decls') 
+            (= decls (decl & decls')
                ! "Type definition for" ta "doesn't have a matching declaration")
             (exist [ta']
                    (= decl (d0.core/decltype ta')
@@ -296,7 +296,7 @@
 (all [name param-types ret-type]
      (method-decl name param-types ret-type ! "Undefined method" name))
 
-(all [args param-types] 
+(all [args param-types]
      (method-args args param-types ! "Invalid method args" args))
 (all [arg args types]
      (method-args (arg & args) types) <-
@@ -346,3 +346,25 @@
      (expression (d0.core/with (d0.core/impl vars trait pattern & defs) expr)) <-
      (given (d0.core/impl vars trait pattern & defs)
             (expression expr)))
+
+;; ### Java Interop
+(all [class method args]
+     (expression (d0.core/call class method & args)) <-
+     (expressions args ! "in argument of static method call")
+     (const-expr class ! "Class name" !?)
+     (const-expr method ! "Method name" !?))
+
+(all [xs] (expressions xs ! "Invalid expression list" xs))
+(all [x xs] (expressions (x & xs)) <-
+     (expression x)
+     (expressions xs))
+(fact (expressions ()))
+
+;; ### Constant Expressions
+(all [x] (const-expr x) <-
+     (exist [k]
+            (inspect x k)
+            (const-expr-kind k x)))
+
+(all [k x] (const-expr-kind k x ! x "is not a constant expression"))
+(all [x] (const-expr-kind :string x))
