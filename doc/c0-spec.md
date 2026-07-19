@@ -1013,7 +1013,7 @@ void foo() {
 }
 ```
 ```status
-ERROR: Initialization for union width needs to be done with an option initializer, but 42 was given in Int n = {42};
+ERROR: Field initializer 42 is inappropriate for field definition union width { ... } in Int n = {42};
 ```
 
 The `opt` must be one of the options in the union.
