@@ -1579,7 +1579,8 @@ The arguments must be valid expressions.
 ERROR: Invalid expression not-an-expression in argument of static method call in definition of method foo in (impl [] (my-trait) ...)
 ```
 
-The class name and method name must be constants.
+The class name and method name must be [constant
+expressions](#constant-expressions).
 
 ```clojure
 (ns example)
@@ -1607,6 +1608,24 @@ ERROR: Class name c is not a constant expression in definition of method foo in 
 ```
 ```status
 ERROR: Method name m is not a constant expression in definition of method foo in (impl [] (my-trait) ...)
+```
+
+Being constant expressions, they may contain calls to Java static methods, which
+would be called at compile time to generate the relevant names.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [String] Int64))
+
+(impl [] (my-trait) :pattern
+  (defmethod foo [s]
+    (call (call "java.lang.String" "format" "%s.%s" "java.lang" "System")
+          (call "java.lang.String" "format" "%s%s" "print" "ln") s)))
+```
+```status
+Success
 ```
 
 ### Constant Expressions
