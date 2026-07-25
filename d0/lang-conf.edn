@@ -3,8 +3,8 @@
        ;; Initialize the root namespace from a list of symbols
        :root-refer-map :root-symbols
        ;; All these symbols...
-       :root-symbols [deftrait decltype declmethod
-                      impl deftype defmethod match-def
+       :root-symbols [deftrait decltype declmethod declconst
+                      impl deftype defmethod defconst match-def
                       &
                       Int64 Float64 String Bool
                       let if with call const literal literal-name]

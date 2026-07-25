@@ -94,6 +94,15 @@
      (d0.core/declmethod name params ret) =>
      (fact (method-decl name params ret)))
 
+;; #### Constant Declarations
+(all [name] (trait-decl (d0.core/declconst name)) <-
+     (inspect name :symbol ! "Invalid constant name." name "is not a symbol"))
+
+(all [name] (d0.core/declconst name) =>
+     (all [n] (const-expr (name n)))
+     (all [n] (expression (name n)) <-
+          (tree-node n ! "referencing constant" name)))
+
 ;; ## Implementation Blocks
 (all [vars tr tr-name pattern defs pattern-map]
      (d0.core/impl vars tr pattern & defs) =>
@@ -174,8 +183,21 @@
      (fact (expression p))
      (def-params ps))
 
-;; ### Definition Matching
+;; ### Constant Definitions
+(all [name expr decls decls']
+     (def-match-decl (d0.core/defconst name expr) decls decls') <-
+     (exist [decl]
+            (= decls (decl & decls') ! "Unexpected constant declaration" name)
+            (exist [name']
+                   (= decl (d0.core/declconst name')
+                      ! "Misplaced constant definition for" name
+                      "does not match declaration" decl)
+                   (= name name' ! "Expected definition for constant" name' "but" name
+                      "was defined")))
+     (const-expr expr ! "in definition of constant" name)
+     (expression expr))
 
+;; ### Definition Matching
 (all [vars def-pattern defs decls]
      (def-match-decl (d0.core/match-def vars def-pattern & defs) decls decls) <-
      (exist [m vs]

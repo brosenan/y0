@@ -203,6 +203,35 @@ parameters.
 ERROR: anything-other-than-t does not represent a parse-tree node in this context in (deftrait expr [t] ...)
 ```
 
+### Constant Declarations
+
+In addition to methods and associated types, a trait can also declare constants.
+Each instance will then assign a value to each such declaration.
+
+Declaring a constant is done via a `declconst` form.
+
+```clojure
+(ns example)
+
+(deftrait type []
+  (declconst c))
+```
+```status
+Success
+```
+
+The name must be a symbol.
+
+```clojure
+(ns example)
+
+(deftrait type []
+  (declconst 42))
+```
+```status
+ERROR: Invalid constant name. 42 is not a symbol in (deftrait type [] ...)
+```
+
 ## Implementations
 
 Each trait can have multiple _implementation blocks_, defining the declared
@@ -928,6 +957,119 @@ ERROR: Parameter c is not matched by a type in the declaration in definition of 
 The body of a method definition is an _expression_. Due to the importance and
 complexity of the topic, we dedicate a whoe section to
 [expressions](#expressions).
+
+### Constant Definitions
+
+Given a `declconst` in the trait definition, a matching `defconst` must be
+provided.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declconst foo))
+
+(impl [] (my-trait) :pattern
+  (defconst foo 42))
+```
+```status
+Success
+```
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declconst foo))
+
+(impl [] (my-trait) :pattern
+  (defconst bar 42))
+```
+```status
+ERROR: Expected definition for constant foo but bar was defined in (impl [] (my-trait) ...)
+```
+
+A constant definition requires a matching constant declaration in the trait.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (decltype Foo))
+
+(impl [] (my-trait) :pattern
+  (defconst foo 42))
+```
+```status
+ERROR: Misplaced constant definition for foo does not match declaration (decltype Foo) in (impl [] (my-trait) ...)
+```
+
+```clojure
+(ns example)
+
+(deftrait my-trait [])
+
+(impl [] (my-trait) :pattern
+  (defconst foo 42))
+```
+```status
+ERROR: Unexpected constant declaration foo in (impl [] (my-trait) ...)
+```
+
+The expression in a constant definition must be a [constant
+expression](#constant-expressions).
+
+```clojure
+(ns example)
+
+(deftrait trait-with-method []
+  (declmethod some-method [] Int64))
+
+(deftrait my-trait []
+  (declconst foo))
+
+(impl [n] (my-trait) [:pattern n]
+  (defconst foo (some-method n)))
+```
+```status
+ERROR: (some-method n) is not a constant expression in definition of constant foo in (impl [n] (my-trait) ...)
+```
+
+Defined constants can be used from within constant expressions.
+
+```clojure
+(ns example)
+
+(deftrait trait-with-constant []
+  (declconst some-constant))
+
+(deftrait my-trait []
+  (declconst foo))
+
+(impl [n] (my-trait) [:pattern n]
+  (defconst foo (some-constant n)))
+```
+```status
+Success
+```
+
+The argument when using such a constant must be a tree-node.
+
+```clojure
+(ns example)
+
+(deftrait trait-with-constant []
+  (declconst some-constant))
+
+(deftrait my-trait []
+  (declconst foo))
+
+(impl [n] (my-trait) [:pattern n]
+  (defconst foo (some-constant not-a-tree-node)))
+```
+```status
+ERROR: not-a-tree-node does not represent a parse-tree node in this context referencing constant some-constant in (impl [n] (my-trait) ...)
+```
 
 ### Definition Matching
 
