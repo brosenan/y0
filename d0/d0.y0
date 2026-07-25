@@ -310,6 +310,11 @@
             (type t)))
 (fact (struct-body ()))
 
+;; ### Java Classes
+(all [cls] (type (d0.core/java cls)) <-
+     (expression cls)
+     (const-expr cls ! "in class name expression"))
+
 ;; ## Parse-tree nodes
 (all [n] (tree-node n
                     ! n "does not represent a parse-tree node in this context"))

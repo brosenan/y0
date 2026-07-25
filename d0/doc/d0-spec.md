@@ -1434,6 +1434,58 @@ must evaluate to a struct.
 ERROR: NotAType is not a declared type in definition of RunType in (impl [n ...] (type) ...)
 ```
 
+### Java Types
+
+Types of Java classes can be represented as `D0` types, using the `java` form.
+
+The following example is a semi-realistic scenario, where a source-language type
+is defined as a Java class, based on a literal providing the class's
+fully-qualified name.
+
+```clojure
+(ns example)
+
+(deftrait type []
+  (decltype RunType))
+
+(impl [cls] (type) [:java-class cls]
+  (deftype RunType (java (literal-name cls))))
+```
+```status
+Success
+```
+
+The class name must be a constant expression.
+
+```clojure
+(ns example)
+
+(deftrait type []
+  (decltype RunType))
+
+(impl [cls] (type) [:java-class cls]
+  (deftype RunType (java not-an-expression)))
+```
+```status
+ERROR: Invalid expression not-an-expression in definition of RunType in (impl [cls] (type) ...)
+```
+
+```clojure
+(ns example)
+
+(deftrait trait-with-method []
+  (declmethod foo [] String))
+
+(deftrait type []
+  (decltype RunType))
+
+(impl [cls] (type) [:java-class cls]
+  (deftype RunType (java (foo cls))))
+```
+```status
+ERROR: (foo cls) is not a constant expression in class name expression in definition of RunType in (impl [cls] (type) ...)
+```
+
 ## Expressions
 
 Expressions appear in bodies of methods. Here we specify what they can consist

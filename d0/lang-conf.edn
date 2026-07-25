@@ -10,7 +10,7 @@
                       UInt8 UInt16 UInt32 UInt64
                       Float32 Float64
                       String Bool
-                      tuple struct
+                      tuple struct java
                       let if with call const literal literal-name new-st]
        ;; ...populate this namespace
        :root-namespace "d0.core"
