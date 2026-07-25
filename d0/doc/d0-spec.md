@@ -1192,6 +1192,51 @@ replaced by the `:no-default-defs` keyword.
 Success
 ```
 
+## Types
+
+`D0` types are types that values can take at runtime. Every expression evaluates
+to a specific type. `D0` does not have a notion of inheritance, so types must be
+exact matches when assigining values to variables, e.g., when calling a method.
+
+### Primitive Types
+
+`D0` supports the following primitive types.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (decltype T))
+
+(impl [] (my-trait) :pattern-int8
+  (deftype T Int8))
+(impl [] (my-trait) :pattern-int16
+  (deftype T Int16))
+(impl [] (my-trait) :pattern-int32
+  (deftype T Int32))
+(impl [] (my-trait) :pattern-int64
+  (deftype T Int64))
+(impl [] (my-trait) :pattern-uint8
+  (deftype T UInt8))
+(impl [] (my-trait) :pattern-uint16
+  (deftype T UInt16))
+(impl [] (my-trait) :pattern-uint32
+  (deftype T UInt32))
+(impl [] (my-trait) :pattern-uint64
+  (deftype T UInt64))
+(impl [] (my-trait) :pattern-float32
+  (deftype T Float32))
+(impl [] (my-trait) :pattern-float64
+  (deftype T Float64))
+(impl [] (my-trait) :pattern-bool
+  (deftype T Bool))
+(impl [] (my-trait) :pattern-string
+  (deftype T String))
+```
+```status
+Success
+```
+
 ## Expressions
 
 Expressions appear in bodies of methods. Here we specify what they can consist

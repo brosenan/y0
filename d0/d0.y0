@@ -267,7 +267,15 @@
 
 ;; ## Types
 (all [t] (type t ! t "is not a declared type"))
+(fact (type d0.core/Int8))
+(fact (type d0.core/Int16))
+(fact (type d0.core/Int32))
 (fact (type d0.core/Int64))
+(fact (type d0.core/UInt8))
+(fact (type d0.core/UInt16))
+(fact (type d0.core/UInt32))
+(fact (type d0.core/UInt64))
+(fact (type d0.core/Float32))
 (fact (type d0.core/Float64))
 (fact (type d0.core/String))
 (fact (type d0.core/Bool))
