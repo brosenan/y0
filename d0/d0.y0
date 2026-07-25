@@ -280,6 +280,20 @@
 (fact (type d0.core/String))
 (fact (type d0.core/Bool))
 
+;; ### Tuples
+(all [ts] (type (d0.core/tuple & ts)) <-
+     (tuple-body ts))
+
+(all [ts] (tuple-body ts ! ts "is an invalid tuple body"))
+(all [t ts] (tuple-body (t & ts)) <-
+     (type t)
+     (tuple-body ts))
+(all [ts] (tuple-body (d0.core/& & ts)) <-
+     (exist [t]
+            (= ts (t) ! "Expected exactly one element after &, but got" ts)
+            (type t)))
+(fact (tuple-body ()))
+
 ;; ## Parse-tree nodes
 (all [n] (tree-node n
                     ! n "does not represent a parse-tree node in this context"))

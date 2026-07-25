@@ -1237,6 +1237,86 @@ exact matches when assigining values to variables, e.g., when calling a method.
 Success
 ```
 
+### Tuples
+
+A tuple is an ordered collection of elements with potentially different types.
+They are defined using the syntax `(tuple Types...)`, where `Types` are zero or
+more types.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (decltype T))
+
+(impl [] (my-trait) :pattern
+  (deftype T (tuple Int64 Float32 String)))
+```
+```status
+Success
+```
+
+All elements in the `tuple` must be valid types.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (decltype T))
+
+(impl [] (my-trait) :pattern
+  (deftype T (tuple Int64 NotAType String)))
+```
+```status
+ERROR: NotAType is not a declared type in definition of T in (impl [] (my-trait) ...)
+```
+
+Tuples can be extensions of other tuples. This is done using the syntax `(tuple
+Types... & ParentTuple)`, where `Types` are zero or more types.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (decltype T))
+
+(impl [n] (my-trait) [:pattern n]
+  (deftype T (tuple Int64 Float32 & (T n))))
+```
+```status
+Success
+```
+
+`ParentTuple` is a type, which should resolve to a tuple type.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (decltype T))
+
+(impl [n] (my-trait) [:pattern n]
+  (deftype T (tuple Int64 Float32 & NotAType)))
+```
+```status
+ERROR: NotAType is not a declared type in definition of T in (impl [n] (my-trait) ...)
+```
+
+There must be exactly one element (type) after the `&` symbol.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (decltype T))
+
+(impl [n] (my-trait) [:pattern n]
+  (deftype T (tuple Int64 Float32 & (T n) Int32)))
+```
+```status
+ERROR: Expected exactly one element after &, but got ((T ...) Int32) in definition of T in (impl [n] (my-trait) ...)
+```
+
 ## Expressions
 
 Expressions appear in bodies of methods. Here we specify what they can consist
