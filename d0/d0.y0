@@ -384,3 +384,12 @@
      (const-expr x)
      (const-exprs xs))
 (fact (const-exprs ()))
+
+;; #### Literal Constants
+
+(all [l] (expression (d0.core/literal l)) <-
+     (tree-node l ! "as a literal constant"))
+(all [l] (const-expr (d0.core/literal l)))
+(all [l] (expression (d0.core/literal-name l)) <-
+     (tree-node l ! "as a literal constant"))
+(all [l] (const-expr (d0.core/literal-name l)))

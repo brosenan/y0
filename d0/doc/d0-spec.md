@@ -1717,3 +1717,70 @@ Success
 ```status
 ERROR: x is not a constant expression in definition of method foo in (impl [] (my-trait) ...)
 ```
+
+#### Literal Constants
+
+Constant expressions can depend on tree-nodes. The `literal` operator takes a
+literal tree-node (symbol, keyword or string) and returns a string
+representation of it.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [] Int64))
+
+(impl [l] (my-trait) [:pattern l]
+  (defmethod foo []
+    (const (literal l))))
+```
+```status
+Success
+```
+
+The literal must be a tree-node.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [String] Int64))
+
+(impl [l] (my-trait) [:pattern l]
+  (defmethod foo [s]
+    (const (literal s))))
+```
+```status
+ERROR: s does not represent a parse-tree node in this context as a literal constant in definition of method foo in (impl [l] (my-trait) ...)
+```
+
+`literal-name` has the same conceptual role as `literal`, but applies only to
+symbols and keywords and strips them of their namespace.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [] Int64))
+
+(impl [l] (my-trait) [:pattern l]
+  (defmethod foo []
+    (const (literal-name l))))
+```
+```status
+Success
+```
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [String] Int64))
+
+(impl [l] (my-trait) [:pattern l]
+  (defmethod foo [s]
+    (const (literal-name s))))
+```
+```status
+ERROR: s does not represent a parse-tree node in this context as a literal constant in definition of method foo in (impl [l] (my-trait) ...)
+```
