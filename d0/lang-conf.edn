@@ -10,7 +10,7 @@
                       UInt8 UInt16 UInt32 UInt64
                       Float32 Float64
                       String Bool
-                      tuple
+                      tuple struct
                       let if with call const literal literal-name]
        ;; ...populate this namespace
        :root-namespace "d0.core"

@@ -1317,6 +1317,123 @@ There must be exactly one element (type) after the `&` symbol.
 ERROR: Expected exactly one element after &, but got ((T ...) Int32) in definition of T in (impl [n] (my-trait) ...)
 ```
 
+### Structs
+
+Structs are similar to tuples, but rather than being fields being ordered, the
+fields are named.
+
+In the following example we define a `Point` struct, with fields `x` and `y`.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (decltype Point))
+
+(impl [n] (my-trait) [:pattern n]
+  (deftype Point (struct "x" Float32
+                         "y" Float32)))
+```
+```status
+Success
+```
+
+Field definitions are pairs of elements in the `struct` form. The first element
+is a [constant expression](#constant-expressions) representing the name. It
+should evaluate to a string containing a legal identifier (checked at
+compile-time).
+
+```clojure
+(ns example)
+
+(deftrait some-trait []
+  (declmethod some-method [] String)
+  (declconst some-const))
+
+(deftrait my-trait []
+  (decltype MyStruct))
+
+(impl [n] (my-trait) [:pattern n]
+  (deftype MyStruct (struct (some-const n) Float32      ;; OK
+                            (some-method n) Float32)))  ;; Not const
+```
+```status
+ERROR: (some-method n) is not a constant expression in field name definition in definition of MyStruct in (impl [n] (my-trait) ...)
+```
+
+The second element in each pair is the field type.
+
+```clojure
+(ns example)
+
+(deftrait some-trait []
+  (decltype SomeType))
+
+(deftrait my-trait []
+  (decltype MyStruct))
+
+(impl [n] (my-trait) [:pattern n]
+  (deftype MyStruct (struct "a" (SomeType n)
+                            "b" NotAType)))
+```
+```status
+ERROR: NotAType is not a declared type in definition of MyStruct in (impl [n] (my-trait) ...)
+```
+
+Struct definitions can be based on the definitions of other structs. This is
+done, similar to tuples, using the `&` symbol.
+
+```clojure
+(ns example)
+
+(deftrait type []
+  (decltype RunType))
+
+(impl [n t rest] (type) [:struct n t rest]
+  (deftype RunType (struct (literal-name n) (RunType t) & (RunType rest))))
+```
+```status
+Success
+```
+
+The example above is a semi-realistic example for defining a struct based on a
+definition in the parse-tree. The node `:struct` contains the name and type of
+the first field, along a reference to the `:struct` containing the other fields.
+The trait `type` stands for a source-language type, defining an associated type
+`RunType`, defining the equivalent `D0` type.
+
+As in tuples, the `&` must be followed by a single element.
+
+```clojure
+(ns example)
+
+(deftrait type []
+  (decltype RunType))
+
+(impl [n t rest] (type) [:struct n t rest]
+  (deftype RunType (struct (literal-name n) (RunType t)
+                           & (RunType rest) Int64)))
+```
+```status
+ERROR: Expected exactly one element after &, got ((RunType ...) Int64) in definition of RunType in (impl [n ...] (type) ...)
+```
+
+The additional element (after the `&`) must be a type, which at compile time
+must evaluate to a struct.
+
+```clojure
+(ns example)
+
+(deftrait type []
+  (decltype RunType))
+
+(impl [n t rest] (type) [:struct n t rest]
+  (deftype RunType (struct (literal-name n) (RunType t) & NotAType)))
+```
+```status
+ERROR: NotAType is not a declared type in definition of RunType in (impl [n ...] (type) ...)
+```
+
 ## Expressions
 
 Expressions appear in bodies of methods. Here we specify what they can consist

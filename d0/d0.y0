@@ -294,6 +294,22 @@
             (type t)))
 (fact (tuple-body ()))
 
+;; ### Structs
+(all [fds] (type (d0.core/struct & fds)) <-
+     (struct-body fds))
+
+(all [fds] (struct-body fds ! "Invalid struct body" fds))
+(all [name t fds] (struct-body (name t & fds)) <-
+     (const-expr name ! "in field name definition")
+     (expression name)
+     (type t)
+     (struct-body fds))
+(all [fds] (struct-body (d0.core/& & fds)) <-
+     (exist [t]
+            (= fds (t) ! "Expected exactly one element after &, got" fds)
+            (type t)))
+(fact (struct-body ()))
+
 ;; ## Parse-tree nodes
 (all [n] (tree-node n
                     ! n "does not represent a parse-tree node in this context"))
