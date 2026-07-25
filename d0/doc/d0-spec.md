@@ -2012,6 +2012,85 @@ would be called at compile time to generate the relevant names.
 Success
 ```
 
+The arguments for calling a static method can depend on the parse-tree, by
+providing a suffix after the `&` symbol. In the following example we define an
+`expr` trait and an instance that represents a call to a static method. The name
+of the class and the method are given from literals and the arguments are given
+from an argument list that evaluates to a tuple.
+
+```clojure
+(ns example)
+
+(deftrait type []
+  (decltype RunType))
+
+(deftrait param-list []
+  (decltype ArgsTuple))
+
+(deftrait arg-list [params]
+  (declmethod args-tuple [] (ArgsTuple params)))
+
+(deftrait expr [t]
+  (declmethod eval [] (RunType t)))
+
+(impl [t c m args] (expr t) [:static-method-call c m & args]
+  (defmethod eval []
+    (call (literal-name c) (literal-name m) & (args-tuple args))))
+```
+```status
+Success
+```
+
+Exactly one element is allowed to follow the `&`.
+
+```clojure
+(ns example)
+
+(deftrait type []
+  (decltype RunType))
+
+(deftrait param-list []
+  (decltype ArgsTuple))
+
+(deftrait arg-list [params]
+  (declmethod args-tuple [] (ArgsTuple params)))
+
+(deftrait expr [t]
+  (declmethod eval [] (RunType t)))
+
+(impl [t c m args] (expr t) [:static-method-call c m & args]
+  (defmethod eval []
+    (call (literal-name c) (literal-name m) & (args-tuple args) 1)))
+```
+```status
+ERROR: Exactly one element can follow a &, but ((args-tuple ...) 1) were found in argument of static method call in definition of method eval in (impl [t ...] (expr ...) ...)
+```
+
+The tuple suffix must be an expression.
+
+```clojure
+(ns example)
+
+(deftrait type []
+  (decltype RunType))
+
+(deftrait param-list []
+  (decltype ArgsTuple))
+
+(deftrait arg-list [params]
+  (declmethod args-tuple [] (ArgsTuple params)))
+
+(deftrait expr [t]
+  (declmethod eval [] (RunType t)))
+
+(impl [t c m args] (expr t) [:static-method-call c m & args]
+  (defmethod eval []
+    (call (literal-name c) (literal-name m) & not-a-valid-expression)))
+```
+```status
+ERROR: Invalid expression not-a-valid-expression in argument of static method call in definition of method eval in (impl [t ...] (expr ...) ...)
+```
+
 ### Constant Expressions
 
 Constant expressions are expressions that are computed in compile time. They are
@@ -2232,4 +2311,23 @@ The other arguments need to be valid expressions.
 ```
 ```status
 ERROR: Invalid expression not-an-expression in definition of method foo in (impl [n ...] (my-trait ...) ...)
+```
+
+`new-st` can receive a suffix using the `&` symbol.
+
+```clojure
+(ns example)
+
+(deftrait trait-with-type []
+  (decltype SomeType))
+
+(deftrait my-trait [t]
+  (declmethod foo [] (SomeType t)))
+
+(impl [n t] (my-trait t) [:pattern n]
+  (defmethod foo []
+    (new-st (SomeType n) 1 2 "3" & (foo n))))
+```
+```status
+Success
 ```

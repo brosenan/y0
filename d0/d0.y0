@@ -418,6 +418,10 @@
 (all [x xs] (expressions (x & xs)) <-
      (expression x)
      (expressions xs))
+(all [xs] (expressions (d0.core/& & xs)) <-
+     (exist [x]
+            (= xs (x) ! "Exactly one element can follow a &, but" xs "were found")
+            (expression x)))
 (fact (expressions ()))
 
 ;; ### Constant Expressions
