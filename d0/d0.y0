@@ -464,6 +464,6 @@
 (all [l] (const-expr (d0.core/literal-name l)))
 
 ;; ### Struct and Tuple Expressions
-(all [t args] (expression (d0.core/new-st t & args)) <-
+(all [t args] (expression (d0.core/new t & args)) <-
      (type t)
      (expressions args))

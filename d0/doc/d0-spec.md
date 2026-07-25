@@ -1970,6 +1970,89 @@ variable being assigned.
 Success
 ```
 
+### Struct and Tuple Expressions
+
+Due to their similarities, structs and tuples are handled using the same
+expression types.
+
+To instantiate a tuple, `new` is used, with the syntax `(new Type Values...)`.
+
+
+```clojure
+(ns example)
+
+(deftrait trait-with-type []
+  (decltype SomeType))
+
+(deftrait my-trait [t]
+  (declmethod foo [] (SomeType t)))
+
+(impl [n t] (my-trait t) [:pattern n]
+  (defmethod foo []
+    (new (SomeType n) 1 2 "3")))
+```
+```status
+Success
+```
+
+The first argument to `new` is a type. At compile-type this will be the struct
+or tuple to be instantiated.
+
+```clojure
+(ns example)
+
+(deftrait trait-with-type []
+  (decltype SomeType))
+
+(deftrait my-trait [t]
+  (declmethod foo [] (SomeType t)))
+
+(impl [n t] (my-trait t) [:pattern n]
+  (defmethod foo []
+    (new NotAType 1 2 "3")))
+```
+```status
+ERROR: NotAType is not a declared type in definition of method foo in (impl [n ...] (my-trait ...) ...)
+```
+
+The other arguments need to be valid expressions.
+
+```clojure
+(ns example)
+
+(deftrait trait-with-type []
+  (decltype SomeType))
+
+(deftrait my-trait [t]
+  (declmethod foo [] (SomeType t)))
+
+(impl [n t] (my-trait t) [:pattern n]
+  (defmethod foo []
+    (new (SomeType n) 1 2 not-an-expression)))
+```
+```status
+ERROR: Invalid expression not-an-expression in definition of method foo in (impl [n ...] (my-trait ...) ...)
+```
+
+`new-st` can receive a suffix using the `&` symbol.
+
+```clojure
+(ns example)
+
+(deftrait trait-with-type []
+  (decltype SomeType))
+
+(deftrait my-trait [t]
+  (declmethod foo [] (SomeType t)))
+
+(impl [n t] (my-trait t) [:pattern n]
+  (defmethod foo []
+    (new (SomeType n) 1 2 "3" & (foo n))))
+```
+```status
+Success
+```
+
 ### Java Interoperability
 
 `D0` targets the JVM as the runtime environment for itself and all languages
@@ -1978,6 +2061,10 @@ implemented languages access to the Java ecosystem.
 
 Java interoperability is achieved through a set of operations, as explained
 below.
+
+**Note**: Instantiation of a Java class can be done using the `new` operator
+with a `java` type. We don't show this here because the static semantics is
+identical to [tuples and structs](#struct-and-tuple-expressions).
 
 #### Calling Static Methods
 
@@ -2298,88 +2385,4 @@ Success
 ```
 ```status
 ERROR: s does not represent a parse-tree node in this context as a literal constant in definition of method foo in (impl [l] (my-trait) ...)
-```
-
-### Struct and Tuple Expressions
-
-Due to their similarities, structs and tuples are handled using the same
-expression types. The suffix `-st` is used as an abbreviation of struct-tuple.
-
-To instantiate a tuple, `new-st` is used, with the syntax `(new-st Type
-Values...)`.
-
-
-```clojure
-(ns example)
-
-(deftrait trait-with-type []
-  (decltype SomeType))
-
-(deftrait my-trait [t]
-  (declmethod foo [] (SomeType t)))
-
-(impl [n t] (my-trait t) [:pattern n]
-  (defmethod foo []
-    (new-st (SomeType n) 1 2 "3")))
-```
-```status
-Success
-```
-
-The first argument to `new-st` is a type. At compile-type this will be the
-struct or tuple to be instantiated.
-
-```clojure
-(ns example)
-
-(deftrait trait-with-type []
-  (decltype SomeType))
-
-(deftrait my-trait [t]
-  (declmethod foo [] (SomeType t)))
-
-(impl [n t] (my-trait t) [:pattern n]
-  (defmethod foo []
-    (new-st NotAType 1 2 "3")))
-```
-```status
-ERROR: NotAType is not a declared type in definition of method foo in (impl [n ...] (my-trait ...) ...)
-```
-
-The other arguments need to be valid expressions.
-
-```clojure
-(ns example)
-
-(deftrait trait-with-type []
-  (decltype SomeType))
-
-(deftrait my-trait [t]
-  (declmethod foo [] (SomeType t)))
-
-(impl [n t] (my-trait t) [:pattern n]
-  (defmethod foo []
-    (new-st (SomeType n) 1 2 not-an-expression)))
-```
-```status
-ERROR: Invalid expression not-an-expression in definition of method foo in (impl [n ...] (my-trait ...) ...)
-```
-
-`new-st` can receive a suffix using the `&` symbol.
-
-```clojure
-(ns example)
-
-(deftrait trait-with-type []
-  (decltype SomeType))
-
-(deftrait my-trait [t]
-  (declmethod foo [] (SomeType t)))
-
-(impl [n t] (my-trait t) [:pattern n]
-  (defmethod foo []
-    (new-st (SomeType n) 1 2 "3" & (foo n))))
-```
-```status
-Success
 ```
