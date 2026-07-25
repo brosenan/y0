@@ -2168,3 +2168,68 @@ Success
 ```status
 ERROR: s does not represent a parse-tree node in this context as a literal constant in definition of method foo in (impl [l] (my-trait) ...)
 ```
+
+### Struct and Tuple Expressions
+
+Due to their similarities, structs and tuples are handled using the same
+expression types. The suffix `-st` is used as an abbreviation of struct-tuple.
+
+To instantiate a tuple, `new-st` is used, with the syntax `(new-st Type
+Values...)`.
+
+
+```clojure
+(ns example)
+
+(deftrait trait-with-type []
+  (decltype SomeType))
+
+(deftrait my-trait [t]
+  (declmethod foo [] (SomeType t)))
+
+(impl [n t] (my-trait t) [:pattern n]
+  (defmethod foo []
+    (new-st (SomeType n) 1 2 "3")))
+```
+```status
+Success
+```
+
+The first argument to `new-st` is a type. At compile-type this will be the
+struct or tuple to be instantiated.
+
+```clojure
+(ns example)
+
+(deftrait trait-with-type []
+  (decltype SomeType))
+
+(deftrait my-trait [t]
+  (declmethod foo [] (SomeType t)))
+
+(impl [n t] (my-trait t) [:pattern n]
+  (defmethod foo []
+    (new-st NotAType 1 2 "3")))
+```
+```status
+ERROR: NotAType is not a declared type in definition of method foo in (impl [n ...] (my-trait ...) ...)
+```
+
+The other arguments need to be valid expressions.
+
+```clojure
+(ns example)
+
+(deftrait trait-with-type []
+  (decltype SomeType))
+
+(deftrait my-trait [t]
+  (declmethod foo [] (SomeType t)))
+
+(impl [n t] (my-trait t) [:pattern n]
+  (defmethod foo []
+    (new-st (SomeType n) 1 2 not-an-expression)))
+```
+```status
+ERROR: Invalid expression not-an-expression in definition of method foo in (impl [n ...] (my-trait ...) ...)
+```

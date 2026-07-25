@@ -11,7 +11,7 @@
                       Float32 Float64
                       String Bool
                       tuple struct
-                      let if with call const literal literal-name]
+                      let if with call const literal literal-name new-st]
        ;; ...populate this namespace
        :root-namespace "d0.core"
        ;; The resolver is based on a prefix list
