@@ -1,12 +1,21 @@
 * [The d0 Spec Analyzer](#the-d0-spec-analyzer)
-  * [Recognizing a Translation Example](#recognizing-a-translation-example)
-  * [Strict Adjacency](#strict-adjacency)
-  * [Non-Matching-Sequences](#non-matching-sequences)
-  * [Multiple Examples](#multiple-examples)
+  * [Recognizing Translation Examples](#recognizing-translation-examples)
+    * [A Single Example](#a-single-example)
+    * [Strict Adjacency](#strict-adjacency)
+    * [Non-Matching-Sequences](#non-matching-sequences)
+    * [Multiple Examples](#multiple-examples)
+  * [Parsing the Code Blocks](#parsing-the-code-blocks)
+    * [d0 Code](#d0-code)
+    * [c0 Code](#c0-code)
+    * [Clojure Code](#clojure-code)
+    * [Assembling the Callback](#assembling-the-callback)
 ```clojure
 (ns d0.d0-spec-analyzer-test
-  (:require [midje.sweet :refer [fact => provided anything]]
-            [d0.d0-spec-analyzer :refer [process-d0-spec]]))
+  (:require [midje.sweet :refer [fact => provided anything contains]]
+            [d0.d0-spec-analyzer :refer [process-d0-spec
+                                         analyze-d0 analyze-c0 parse-clojure
+                                         wrap-callback]]
+            [y0.explanation :refer [explanation-to-str]]))
 
 ```
 # The d0 Spec Analyzer
@@ -32,7 +41,11 @@ For example:
 When the analyzer recognizes such a pattern, it invokes a callback function,
 given as an argument, with the three code snippets, as strings.
 
-## Recognizing a Translation Example
+## Recognizing Translation Examples
+The analyzer scans the spec line by line, looking for the three-block
+pattern described above.
+
+### A Single Example
 `process-d0-spec` takes a `callback` and a sequence of `lines`. When it
 recognizes the three-block pattern it calls `callback` with the d0 code, the
 c0 code and the resulting Clojure code.
@@ -76,7 +89,7 @@ with newlines.
             "(clj line 1)\n(clj line 2)") => nil))
 
 ```
-## Strict Adjacency
+### Strict Adjacency
 The three code blocks must be _strictly consecutive_: the fence opening each
 block must appear on the line immediately following the fence closing the
 previous block. Any line in between (text or blank) abandons the pattern, and
@@ -98,7 +111,7 @@ the callback is not invoked.
   (callback anything anything anything) => nil :times 0))
 
 ```
-## Non-Matching Sequences
+### Non-Matching Sequences
 A sequence of code blocks with the wrong languages is not recognized, and
 the callback is not invoked.
 ```clojure
@@ -160,7 +173,7 @@ Here the second `clojure` block begins a valid example.
   (callback "(the d0 code)" "the c0 code" "(the resulting clojure)") => nil))
 
 ```
-## Multiple Examples
+### Multiple Examples
 A single spec may contain any number of translation examples. The callback is
 invoked once for each.
 ```clojure
@@ -188,5 +201,84 @@ invoked once for each.
  (provided
   (callback "(d0 one)" "c0 one" "(clj one)") => nil
   (callback "(d0 two)" "c0 two" "(clj two)") => nil))
+
+```
+## Parsing the Code Blocks
+Once a translation example has been recognized, each of its three code blocks
+is parsed. The two source-language blocks (d0 and c0) are analyzed using the
+$y_0$ mechanism into a _predicate store_ (`ps`), while the resulting Clojure
+block is parsed into a list of s-expressions.
+Each of the three functions takes a string and returns a
+[status](status.md).
+
+### d0 Code
+`analyze-d0` analyzes d0 code (using the `d0` language definition) into a
+predicate store.
+```clojure
+(fact
+ (analyze-d0 "(ns example)\n(deftrait simple-trait [])") =>
+ (contains {:ok anything}))
+
+```
+If the d0 code is invalid, an `:err` status is returned, with the explanation
+produced by the d0 language definition.
+```clojure
+(fact
+ (-> (analyze-d0 "(ns example)\n(deftrait \"bad-name\" [])")
+     :err
+     explanation-to-str) =>
+ "A trait name must be a symbol, but \"bad-name\" is given in (deftrait \"bad-name\" [])")
+
+```
+### c0 Code
+`analyze-c0` analyzes c0 code (using the `c0` language definition) into a
+predicate store.
+```clojure
+(fact
+ (analyze-c0 "int32 main() { return 0; }") =>
+ (contains {:ok anything}))
+
+```
+Invalid c0 code results in an `:err` status.
+```clojure
+(fact
+ (analyze-c0 "this is not valid c0") =>
+ (contains {:err anything}))
+
+```
+### Clojure Code
+`parse-clojure` parses the resulting Clojure code into a list of
+s-expressions.
+```clojure
+(fact
+ (parse-clojure "(foo 1 2) (bar 3)") =>
+ {:ok ['(foo 1 2) '(bar 3)]})
+
+```
+If the Clojure code cannot be parsed, an `:err` status is returned.
+```clojure
+(fact
+ (parse-clojure "(foo 1 2") =>
+ (contains {:err anything}))
+
+```
+### Assembling the Callback
+`wrap-callback` bridges between the two levels of callback. It takes a
+callback that operates on the _parsed_ representations of an example -- the d0
+predicate store, the c0 predicate store and the list of Clojure s-expressions
+-- and returns a callback for the spec processor, which operates on the raw
+code _strings_.
+The returned callback analyzes each of the three code blocks and unwraps the
+resulting status before calling the underlying callback.
+```clojure
+(defn parsed-callback [d0-ps c0-ps sexprs])
+(fact
+ ((wrap-callback parsed-callback) "the d0 code" "the c0 code" "the clj code") =>
+ anything
+ (provided
+  (analyze-d0 "the d0 code") => {:ok :the-d0-ps}
+  (analyze-c0 "the c0 code") => {:ok :the-c0-ps}
+  (parse-clojure "the clj code") => {:ok :the-sexprs}
+  (parsed-callback :the-d0-ps :the-c0-ps :the-sexprs) => nil))
 ```
 
