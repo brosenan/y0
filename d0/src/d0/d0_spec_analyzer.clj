@@ -28,13 +28,13 @@
 ;; using a dedicated state per block, and an "after" state between blocks that
 ;; enforces that the blocks are strictly consecutive (no line in between).
 (def d0-spec-sm
-  {;; Outside any example. Look for the opening `clojure` fence.
-   :init [{:pattern #"```clojure\s*"
+  {;; Outside any example. Look for the opening `wisp` fence.
+   :init [{:pattern #"```wisp\s*"
            :transition :in-d0
            :update-fn (fn [v _m] (start-block v))}
           {:pattern #"```.*"
            :transition :skip}]
-   ;; Collecting the d0 code (first `clojure` block).
+   ;; Collecting the d0 code (`wisp` block).
    :in-d0 [{:pattern #"```\s*"
             :transition :after-d0
             :update-fn (fn [v _m] (end-block v :d0-code))}
@@ -43,8 +43,8 @@
    :after-d0 [{:pattern #"```go\s*"
                :transition :in-c0
                :update-fn (fn [v _m] (start-block v))}
-              ;; A new `clojure` fence restarts the pattern from the d0 block.
-              {:pattern #"```clojure\s*"
+              ;; A new `wisp` fence restarts the pattern from the d0 block.
+              {:pattern #"```wisp\s*"
                :transition :in-d0
                :update-fn (fn [v _m] (start-block v))}
               {:pattern #"```.*"

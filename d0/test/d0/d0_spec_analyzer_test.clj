@@ -13,13 +13,17 @@
 ;; A translation example consists of three _strictly consecutive_ code blocks
 ;; (with no lines in between):
 ;;
-;; 1. A `clojure` block, containing some d0 code,
+;; 1. A `wisp` block, containing some d0 code,
 ;; 2. A `go` block, containing the equivalent c0 code, and
 ;; 3. A `clojure` block, containing the resulting Clojure code.
 ;;
+;; The d0 code is written in a `wisp` block rather than a `clojure` block, in
+;; order to distinguish it from the (real) Clojure block at the end of each
+;; example.
+;;
 ;; For example:
 ;; ````md
-;; ```clojure
+;; ```wisp
 ;; <some d0 code>
 ;; ```
 ;; ```go
@@ -46,7 +50,7 @@
 (defn callback [d0-code c0-code clj-code])
 (fact
  (process-d0-spec callback
-                  ["```clojure"
+                  ["```wisp"
                    "(the d0 code)"
                    "```"
                    "```go"
@@ -62,7 +66,7 @@
 ;; with newlines.
 (fact
  (process-d0-spec callback
-                  ["```clojure"
+                  ["```wisp"
                    "(d0 line 1)"
                    "(d0 line 2)"
                    "```"
@@ -87,7 +91,7 @@
 ;; the callback is not invoked.
 (fact
  (process-d0-spec callback
-                  ["```clojure"
+                  ["```wisp"
                    "(the d0 code)"
                    "```"
                    ""
@@ -106,7 +110,7 @@
 ;; the callback is not invoked.
 (fact
  (process-d0-spec callback
-                  ["```clojure"
+                  ["```wisp"
                    "(the d0 code)"
                    "```"
                    "```python"
@@ -122,7 +126,7 @@
 ;; must be _consecutive_.
 (fact
  (process-d0-spec callback
-                  ["```clojure"
+                  ["```wisp"
                    "(the d0 code)"
                    "```"
                    "```python"
@@ -142,10 +146,10 @@
 ;; Here the second `clojure` block begins a valid example.
 (fact
  (process-d0-spec callback
-                  ["```clojure"
+                  ["```wisp"
                    "(not the d0 code)"
                    "```"
-                   "```clojure"
+                   "```wisp"
                    "(the d0 code)"
                    "```"
                    "```go"
@@ -163,7 +167,7 @@
 ;; invoked once for each.
 (fact
  (process-d0-spec callback
-                  ["```clojure"
+                  ["```wisp"
                    "(d0 one)"
                    "```"
                    "```go"
@@ -173,7 +177,7 @@
                    "(clj one)"
                    "```"
                    "Some text between examples."
-                   "```clojure"
+                   "```wisp"
                    "(d0 two)"
                    "```"
                    "```go"
