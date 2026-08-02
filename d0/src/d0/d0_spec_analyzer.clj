@@ -20,45 +20,52 @@
       (dissoc :current-block)))
 
 (defn- fire [v]
+  (when-not (contains? v :last-d0)
+    (throw (Exception.
+            "A translation example must be preceded by a d0 (wisp) block, but none was found")))
   (let [clj-code (join "\n" (:current-block v))]
-    ((:callback v) (:d0-code v) (:c0-code v) clj-code)
-    (dissoc v :current-block :d0-code :c0-code)))
+    ((:callback v) (:last-d0 v) (:c0-code v) clj-code)
+    (dissoc v :current-block :c0-code)))
 
-;; The state machine walks through the three blocks of a translation example
-;; using a dedicated state per block, and an "after" state between blocks that
-;; enforces that the blocks are strictly consecutive (no line in between).
+;; The state machine treats a `wisp` (d0) block as a free-standing prerequisite,
+;; stored under `:last-d0`. An example consists of a `go` (c0) block strictly
+;; followed by a `clojure` (result) block; closing the result block fires the
+;; callback with the most recent `:last-d0`.
 (def d0-spec-sm
-  {;; Outside any example. Look for the opening `wisp` fence.
+  {;; Outside any block. A `wisp` block updates the d0 prerequisite; a `go`
+   ;; block starts an example.
    :init [{:pattern #"```wisp\s*"
            :transition :in-d0
            :update-fn (fn [v _m] (start-block v))}
+          {:pattern #"```go\s*"
+           :transition :in-c0
+           :update-fn (fn [v _m] (start-block v))}
           {:pattern #"```.*"
            :transition :skip}]
-   ;; Collecting the d0 code (`wisp` block).
+   ;; Collecting a d0 (`wisp`) block. On close it becomes the `:last-d0`
+   ;; prerequisite, and does not, by itself, produce an example.
    :in-d0 [{:pattern #"```\s*"
-            :transition :after-d0
-            :update-fn (fn [v _m] (end-block v :d0-code))}
+            :transition :init
+            :update-fn (fn [v _m] (end-block v :last-d0))}
            {:update-fn (fn [v [line]] (add-line v line))}]
-   ;; The line immediately after the d0 block must open the `go` block.
-   :after-d0 [{:pattern #"```go\s*"
-               :transition :in-c0
-               :update-fn (fn [v _m] (start-block v))}
-              ;; A new `wisp` fence restarts the pattern from the d0 block.
-              {:pattern #"```wisp\s*"
-               :transition :in-d0
-               :update-fn (fn [v _m] (start-block v))}
-              {:pattern #"```.*"
-               :transition :skip}
-              ;; Anything else: the blocks are not consecutive; abandon.
-              {:transition :init}]
-   ;; Collecting the c0 code (`go` block).
+   ;; Collecting the c0 (`go`) block of an example.
    :in-c0 [{:pattern #"```\s*"
             :transition :after-c0
             :update-fn (fn [v _m] (end-block v :c0-code))}
            {:update-fn (fn [v [line]] (add-line v line))}]
-   ;; The line immediately after the c0 block must open the result block.
+   ;; The line immediately after the c0 block must open the `clojure` result
+   ;; block.
    :after-c0 [{:pattern #"```clojure\s*"
                :transition :in-result
+               :update-fn (fn [v _m] (start-block v))}
+              ;; A `wisp` block updates the prerequisite (this example is
+              ;; abandoned).
+              {:pattern #"```wisp\s*"
+               :transition :in-d0
+               :update-fn (fn [v _m] (start-block v))}
+              ;; A new `go` block starts a new example.
+              {:pattern #"```go\s*"
+               :transition :in-c0
                :update-fn (fn [v _m] (start-block v))}
               {:pattern #"```.*"
                :transition :skip}
@@ -74,9 +81,10 @@
            :transition :init}]})
 
 (defn process-d0-spec
-  "Process the given `lines` of a d0 spec, invoking `callback` with the d0
-  code, c0 code and resulting Clojure code (as strings) for every recognized
-  translation example. Returns the final state map."
+  "Process the given `lines` of a d0 spec. A `wisp` block updates the current d0
+  prerequisite. For every example -- a `go` block strictly followed by a
+  `clojure` block -- `callback` is invoked with the most recent d0 code, the c0
+  code and the resulting Clojure code (as strings). Returns the final state map."
   [callback lines]
   (process-lines d0-spec-sm {:state :init :callback callback} lines))
 

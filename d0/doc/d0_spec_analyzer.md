@@ -1,6 +1,7 @@
 * [The d0 Spec Analyzer](#the-d0-spec-analyzer)
   * [Recognizing Translation Examples](#recognizing-translation-examples)
     * [A Single Example](#a-single-example)
+    * [The d0 Prerequisite](#the-d0-prerequisite)
     * [Strict Adjacency](#strict-adjacency)
     * [Non-Matching-Sequences](#non-matching-sequences)
     * [Multiple Examples](#multiple-examples)
@@ -11,7 +12,7 @@
     * [Assembling the Callback](#assembling-the-callback)
 ```clojure
 (ns d0.d0-spec-analyzer-test
-  (:require [midje.sweet :refer [fact => provided anything contains]]
+  (:require [midje.sweet :refer [fact => provided anything contains throws]]
             [d0.d0-spec-analyzer :refer [process-d0-spec
                                          analyze-d0 analyze-c0 parse-clojure
                                          wrap-callback]]
@@ -21,19 +22,21 @@
 # The d0 Spec Analyzer
 The d0 spec analyzer processes a d0 spec Markdown file (e.g.,
 `foo-d0-spec.md`), recognizing _translation examples_ within it.
-A translation example consists of three _strictly consecutive_ code blocks
-(with no lines in between):
-1. A `wisp` block, containing some d0 code,
-2. A `go` block, containing the equivalent c0 code, and
-3. A `clojure` block, containing the resulting Clojure code.
-The d0 code is written in a `wisp` block rather than a `clojure` block, in
-order to distinguish it from the (real) Clojure block at the end of each
-example.
+The d0 definitions needed by the examples are given in `wisp` code blocks. A
+`wisp` block may appear anywhere in the spec, and updates the _current d0
+prerequisite_. The `wisp` language is used (rather than `clojure`) to
+distinguish these blocks from the (real) Clojure blocks that hold translation
+results.
+A translation example itself consists of two _strictly consecutive_ code
+blocks (with no lines in between):
+1. A `go` block, containing some c0 code, and
+2. A `clojure` block, containing the resulting Clojure code.
 For example:
 ````md
 ```wisp
 <some d0 code>
 ```
+Some explanation...
 ```go
 <some c0 code>
 ```
@@ -41,16 +44,18 @@ For example:
 <the resulting Clojure code>
 ```
 ````
-When the analyzer recognizes such a pattern, it invokes a callback function,
-given as an argument, with the three code snippets, as strings.
+When the analyzer recognizes an example, it invokes a callback function, given
+as an argument, with three strings: the most recent d0 code, the c0 code and
+the resulting Clojure code.
 
 ## Recognizing Translation Examples
-The analyzer scans the spec line by line, looking for the three-block
-pattern described above.
+The analyzer scans the spec line by line, tracking the current d0
+prerequisite and looking for examples.
 
 ### A Single Example
-`process-d0-spec` takes a `callback` and a sequence of `lines`. When it
-recognizes the three-block pattern it calls `callback` with the d0 code, the
+`process-d0-spec` takes a `callback` and a sequence of `lines`. A `wisp` block
+sets the d0 prerequisite; a subsequent `go` block followed by a `clojure`
+block forms an example, for which `callback` is called with the d0 code, the
 c0 code and the resulting Clojure code.
 ```clojure
 (defn callback [d0-code c0-code clj-code])
@@ -92,21 +97,75 @@ with newlines.
             "(clj line 1)\n(clj line 2)") => nil))
 
 ```
-### Strict Adjacency
-The three code blocks must be _strictly consecutive_: the fence opening each
-block must appear on the line immediately following the fence closing the
-previous block. Any line in between (text or blank) abandons the pattern, and
-the callback is not invoked.
+### The d0 Prerequisite
+The `wisp` block is not part of the example. It may appear anywhere before the
+example, separated from it by text, and updates the d0 prerequisite.
 ```clojure
 (fact
  (process-d0-spec callback
                   ["```wisp"
                    "(the d0 code)"
                    "```"
-                   ""
+                   "Some explanatory text."
                    "```go"
                    "the c0 code"
                    "```"
+                   "```clojure"
+                   "(the resulting clojure)"
+                   "```"]) => anything
+ (provided
+  (callback "(the d0 code)" "the c0 code" "(the resulting clojure)") => nil))
+
+```
+When more than one `wisp` block appears, the most recent one takes effect.
+```clojure
+(fact
+ (process-d0-spec callback
+                  ["```wisp"
+                   "(old d0 code)"
+                   "```"
+                   "```wisp"
+                   "(new d0 code)"
+                   "```"
+                   "```go"
+                   "the c0 code"
+                   "```"
+                   "```clojure"
+                   "(the resulting clojure)"
+                   "```"]) => anything
+ (provided
+  (callback "(new d0 code)" "the c0 code" "(the resulting clojure)") => nil))
+
+```
+If an example (a `go` block followed by a `clojure` block) appears with no
+preceding `wisp` block, an exception is thrown.
+```clojure
+(fact
+ (process-d0-spec callback
+                  ["```go"
+                   "the c0 code"
+                   "```"
+                   "```clojure"
+                   "(the resulting clojure)"
+                   "```"]) =>
+ (throws "A translation example must be preceded by a d0 (wisp) block, but none was found"))
+
+```
+### Strict Adjacency
+The `go` and `clojure` blocks of an example must be _strictly consecutive_:
+the `clojure` fence must appear on the line immediately following the fence
+closing the `go` block. Any line in between (text or blank) abandons the
+example, and the callback is not invoked.
+```clojure
+(fact
+ (process-d0-spec callback
+                  ["```wisp"
+                   "(the d0 code)"
+                   "```"
+                   "```go"
+                   "the c0 code"
+                   "```"
+                   ""
                    "```clojure"
                    "(the resulting clojure)"
                    "```"]) => anything
@@ -115,56 +174,45 @@ the callback is not invoked.
 
 ```
 ### Non-Matching Sequences
-A sequence of code blocks with the wrong languages is not recognized, and
-the callback is not invoked.
+A `go` block that is not immediately followed by a `clojure` block does not
+form an example.
 ```clojure
 (fact
  (process-d0-spec callback
                   ["```wisp"
                    "(the d0 code)"
-                   "```"
-                   "```python"
-                   "the python code"
-                   "```"
-                   "```clojure"
-                   "(the resulting clojure)"
-                   "```"]) => anything
- (provided
-  (callback anything anything anything) => nil :times 0))
-
-```
-A code block of an unrelated language breaks the sequence: the three blocks
-must be _consecutive_.
-```clojure
-(fact
- (process-d0-spec callback
-                  ["```wisp"
-                   "(the d0 code)"
-                   "```"
-                   "```python"
-                   "the python code"
                    "```"
                    "```go"
                    "the c0 code"
                    "```"
-                   "```clojure"
-                   "(the resulting clojure)"
+                   "```python"
+                   "the python code"
                    "```"]) => anything
  (provided
   (callback anything anything anything) => nil :times 0))
 
 ```
-A `clojure` block immediately followed by another `clojure` block does not
-match, but the second block is treated as a potential start of a new example.
-Here the second `clojure` block begins a valid example.
+A `clojure` block that is not immediately preceded by a `go` block is ignored.
+```clojure
+(fact
+ (process-d0-spec callback
+                  ["```clojure"
+                   "(some clojure)"
+                   "```"]) => anything
+ (provided
+  (callback anything anything anything) => nil :times 0))
+
+```
+A `go` block immediately followed by another `go` block does not form an
+example, but the second block begins a new potential example.
 ```clojure
 (fact
  (process-d0-spec callback
                   ["```wisp"
-                   "(not the d0 code)"
-                   "```"
-                   "```wisp"
                    "(the d0 code)"
+                   "```"
+                   "```go"
+                   "(not the c0 code)"
                    "```"
                    "```go"
                    "the c0 code"
@@ -177,13 +225,14 @@ Here the second `clojure` block begins a valid example.
 
 ```
 ### Multiple Examples
-A single spec may contain any number of translation examples. The callback is
-invoked once for each.
+A single spec may contain any number of examples. The callback is invoked once
+for each. Examples that follow a single `wisp` block all share it as their d0
+prerequisite.
 ```clojure
 (fact
  (process-d0-spec callback
                   ["```wisp"
-                   "(d0 one)"
+                   "(the d0 code)"
                    "```"
                    "```go"
                    "c0 one"
@@ -192,9 +241,6 @@ invoked once for each.
                    "(clj one)"
                    "```"
                    "Some text between examples."
-                   "```wisp"
-                   "(d0 two)"
-                   "```"
                    "```go"
                    "c0 two"
                    "```"
@@ -202,8 +248,8 @@ invoked once for each.
                    "(clj two)"
                    "```"]) => anything
  (provided
-  (callback "(d0 one)" "c0 one" "(clj one)") => nil
-  (callback "(d0 two)" "c0 two" "(clj two)") => nil))
+  (callback "(the d0 code)" "c0 one" "(clj one)") => nil
+  (callback "(the d0 code)" "c0 two" "(clj two)") => nil))
 
 ```
 ## Parsing the Code Blocks
