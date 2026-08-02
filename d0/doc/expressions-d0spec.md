@@ -1,0 +1,14 @@
+# Expressions
+
+Here is some `D0` code:
+```wisp
+(ns example)
+```
+
+And here is an example:
+```go
+int32 foo() { return 42; }
+```
+```clojure
+(defn foo [] 42)
+```
