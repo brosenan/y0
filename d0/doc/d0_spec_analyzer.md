@@ -5,6 +5,7 @@
     * [Strict Adjacency](#strict-adjacency)
     * [Non-Matching-Sequences](#non-matching-sequences)
     * [Multiple Examples](#multiple-examples)
+  * [Tracking Results](#tracking-results)
   * [Parsing the Code Blocks](#parsing-the-code-blocks)
     * [d0 Code](#d0-code)
     * [c0 Code](#c0-code)
@@ -252,6 +253,112 @@ prerequisite.
   (callback "(the d0 code)" "c0 two" "(clj two)") => nil))
 
 ```
+## Tracking Results
+The `callback` is expected to return a [status](status.md): `{:ok ...}` for a
+successful example, or `{:err explanation}` for a failed one.
+`process-d0-spec` accumulates these results in the state it returns, under two
+keys:
+* `:success`, counting the number of successful examples, and
+* `:errors`, a list of the explanations returned by failed examples.
+
+A successful example increments the `:success` count.
+```clojure
+(fact
+ (process-d0-spec callback
+                  ["```wisp"
+                   "(the d0 code)"
+                   "```"
+                   "```go"
+                   "the c0 code"
+                   "```"
+                   "```clojure"
+                   "(the resulting clojure)"
+                   "```"]) => (contains {:success 1})
+ (provided
+  (callback "(the d0 code)" "the c0 code" "(the resulting clojure)") =>
+  {:ok nil}))
+
+```
+A failed example adds its explanation to `:errors`.
+```clojure
+(fact
+ (process-d0-spec callback
+                  ["```wisp"
+                   "(the d0 code)"
+                   "```"
+                   "```go"
+                   "the c0 code"
+                   "```"
+                   "```clojure"
+                   "(the resulting clojure)"
+                   "```"]) => (contains {:errors [["Some error"]]})
+ (provided
+  (callback "(the d0 code)" "the c0 code" "(the resulting clojure)") =>
+  {:err ["Some error"]}))
+
+```
+Over multiple examples, successes and errors are accumulated separately.
+```clojure
+(fact
+ (process-d0-spec callback
+                  ["```wisp"
+                   "(the d0 code)"
+                   "```"
+                   "```go"
+                   "c0 one"
+                   "```"
+                   "```clojure"
+                   "(clj one)"
+                   "```"
+                   "```go"
+                   "c0 two"
+                   "```"
+                   "```clojure"
+                   "(clj two)"
+                   "```"
+                   "```go"
+                   "c0 three"
+                   "```"
+                   "```clojure"
+                   "(clj three)"
+                   "```"]) => (contains {:success 2
+                                         :errors [["error two"]]})
+ (provided
+  (callback "(the d0 code)" "c0 one" "(clj one)") => {:ok nil}
+  (callback "(the d0 code)" "c0 two" "(clj two)") => {:err ["error two"]}
+  (callback "(the d0 code)" "c0 three" "(clj three)") => {:ok nil}))
+
+```
+The code locations within a reported error refer to the code block they came
+from (each block is analyzed with its language name as its `:path`). These
+locations are converted to point at the correct line in the spec `path`. In
+the following, the error refers to `path` `"c0"` at (block-relative) row 1.
+The `go` block opens on line 4, so its content begins on line 5, and the
+location is converted accordingly.
+```clojure
+(fact
+ (def loc-err-state
+   (process-d0-spec callback
+                    ["```wisp"                    ;; line 1
+                     "(the d0 code)"              ;; line 2
+                     "```"                        ;; line 3
+                     "```go"                      ;; line 4
+                     "the c0 code"                ;; line 5
+                     "```"                        ;; line 6
+                     "```clojure"                 ;; line 7
+                     "(the resulting clojure)"    ;; line 8
+                     "```"]                       ;; line 9
+                    "path/to/spec.md")) => #'loc-err-state
+ (provided
+  (callback "(the d0 code)" "the c0 code" "(the resulting clojure)") =>
+  {:err [(with-meta `foo {:path "c0"
+                          :start 1000003
+                          :end 1000005})]})
+ (-> loc-err-state :errors first first meta) => {:path "path/to/spec.md"
+                                                 :start 5000003
+                                                 :end 5000005})
+
+```
 ## Parsing the Code Blocks
 Once a translation example has been recognized, each of its three code blocks
 is parsed. The two source-language blocks (d0 and c0) are analyzed using the
@@ -317,17 +424,31 @@ callback that operates on the _parsed_ representations of an example -- the d0
 predicate store, the c0 predicate store and the list of Clojure s-expressions
 -- and returns a callback for the spec processor, which operates on the raw
 code _strings_.
-The returned callback analyzes each of the three code blocks and unwraps the
-resulting status before calling the underlying callback.
+The returned callback analyzes each of the three code blocks and threads
+their statuses using `let-s`. On success, it calls the underlying callback
+with the three parsed values and returns its status.
 ```clojure
 (defn parsed-callback [d0-ps c0-ps sexprs])
 (fact
  ((wrap-callback parsed-callback) "the d0 code" "the c0 code" "the clj code") =>
- anything
+ {:ok :the-result}
  (provided
   (analyze-d0 "the d0 code") => {:ok :the-d0-ps}
   (analyze-c0 "the c0 code") => {:ok :the-c0-ps}
   (parse-clojure "the clj code") => {:ok :the-sexprs}
-  (parsed-callback :the-d0-ps :the-c0-ps :the-sexprs) => nil))
+  (parsed-callback :the-d0-ps :the-c0-ps :the-sexprs) => {:ok :the-result}))
+
+```
+If any of the three code blocks fails to parse, its `:err` status is
+propagated and the underlying callback is not called.
+```clojure
+(fact
+ ((wrap-callback parsed-callback) "the d0 code" "the c0 code" "the clj code") =>
+ {:err ["some c0 error"]}
+ (provided
+  (analyze-d0 "the d0 code") => {:ok :the-d0-ps}
+  (analyze-c0 "the c0 code") => {:err ["some c0 error"]}
+  (parse-clojure "the clj code") => anything :times 0
+  (parsed-callback anything anything anything) => anything :times 0))
 ```
 
