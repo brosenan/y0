@@ -10,5 +10,5 @@ And here is an example:
 int32 foo() { return 42; }
 ```
 ```clojure
-(defn foo [] 42)
+(clojure.core/defn main [args] 42)
 ```

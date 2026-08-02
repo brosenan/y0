@@ -9,7 +9,8 @@
                  [clojure-term-colors "0.1.0"]
                  [instaparse "1.5.0"]
                  [aysylu/loom "1.0.2"]
-                 [hiccup "2.0.0-RC3"]]
+                 [hiccup "2.0.0-RC3"]
+                 [lambdaisland/deep-diff2 "2.14.235"]]
   :profiles {:dev {:dependencies [[midje "1.10.10"]]
                    :resource-paths ["../" "../y0_test/"]}
              :uberjar {:aot :all}}

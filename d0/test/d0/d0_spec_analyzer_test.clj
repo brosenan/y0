@@ -1,8 +1,9 @@
 (ns d0.d0-spec-analyzer-test
   (:require [midje.sweet :refer [fact => provided anything contains throws]]
+            [d0.compiler :refer [compile]]
             [d0.d0-spec-analyzer :refer [process-d0-spec
                                          analyze-d0 analyze-c0 parse-clojure
-                                         wrap-callback]]
+                                         wrap-callback d0-test]]
             [y0.explanation :refer [explanation-to-str]]))
 
 ;; # The d0 Spec Analyzer
@@ -413,3 +414,31 @@
   (analyze-c0 "the c0 code") => {:err ["some c0 error"]}
   (parse-clojure "the clj code") => anything :times 0
   (parsed-callback anything anything anything) => anything :times 0))
+
+;; ## Testing a Translation Example
+;;
+;; `d0-test` is the callback, in its "parsed" form, that tests a single
+;; translation example. It compiles the c0 code (given the d0 definitions) using
+;; [[d0.compiler/compile]], and compares the resulting s-expressions against the
+;; expected Clojure code from the example.
+
+;; If the compiled code is identical to the expected code, the test succeeds.
+(fact
+ (d0-test :d0-ps :c0-ps ['(defn main [args] 42)]) => {:ok nil}
+ (provided
+  (compile :d0-ps :c0-ps) => {:ok ['(defn main [args] 42)]}))
+
+;; If they differ, an error is returned. Its explanation contains a textual diff
+;; between the expected and the actual code.
+(fact
+ (def mismatch (d0-test :d0-ps :c0-ps ['(defn main [args] 43)])) => #'mismatch
+ (provided
+  (compile :d0-ps :c0-ps) => {:ok ['(defn main [args] 42)]})
+ (-> mismatch :err first) => "The compiled code does not match the expected code:"
+ (-> mismatch :err second) => string?)
+
+;; If the compilation itself fails, its error is propagated.
+(fact
+ (d0-test :d0-ps :c0-ps ['(defn main [args] 42)]) => {:err ["compilation failed"]}
+ (provided
+  (compile :d0-ps :c0-ps) => {:err ["compilation failed"]}))

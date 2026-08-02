@@ -1,16 +1,10 @@
 (ns d0.main
   (:require [clojure.term.colors :refer [blue green red]]
-            [d0.d0-spec-analyzer :refer [process-d0-spec-file wrap-callback]]
+            [d0.d0-spec-analyzer :refer [process-d0-spec-file wrap-callback
+                                         d0-test]]
             [y0.explanation :refer [all-unique-locations code-location
                                     explanation-to-str]])
   (:gen-class))
-
-(defn d0-test
-  "The callback for a single translation example, operating on the parsed forms:
-  the d0 predicate store, the c0 predicate store and the expected Clojure code as
-  a list of s-expressions. Returns a status."
-  [_d0-ps _c0-ps _sexprs]
-  {:ok nil})
 
 (defn render-location [location]
   (if (nil? location)

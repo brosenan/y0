@@ -1,6 +1,8 @@
 (ns d0.d0-spec-analyzer
   (:require [clojure.string :refer [join split-lines]]
+            [d0.compiler :refer [compile]]
             [edamame.core :refer [parse-string-all]]
+            [lambdaisland.deep-diff2 :as ddiff]
             [y0.builtins :refer [add-builtins]]
             [y0.config :refer [*y0-path* cwd language-map-from-config]]
             [y0.polyglot-loader :refer [eval-mstore load-with-deps]]
@@ -187,4 +189,18 @@
             c0-ps (analyze-c0 c0-code)
             sexprs (parse-clojure clj-code)]
            (f d0-ps c0-ps sexprs))))
+
+(defn d0-test
+  "The callback for a single translation example, operating on the parsed forms:
+  the d0 predicate store, the c0 predicate store and the expected Clojure code as
+  a list of s-expressions. Compiles the c0 code and compares the result against
+  the expected code, returning `{:ok nil}` if they are identical, or an error
+  containing a diff otherwise."
+  [d0-ps c0-ps sexprs]
+  (let-s [compiled (compile d0-ps c0-ps)]
+         (let [diff (ddiff/diff sexprs compiled)]
+           (if (= sexprs compiled)
+             {:ok nil}
+             {:err ["The compiled code does not match the expected code:"
+                    (with-out-str (ddiff/pretty-print (ddiff/minimize diff)))]}))))
 
