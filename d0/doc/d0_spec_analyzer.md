@@ -465,7 +465,7 @@ If the compiled code is identical to the expected code, the test succeeds.
 (fact
  (d0-test :d0-ps :c0-ps ['(defn main [args] 42)]) => {:ok nil}
  (provided
-  (compile :d0-ps :c0-ps) => {:ok ['(defn main [args] 42)]}))
+  (compile anything :d0-ps :c0-ps) => {:ok ['(defn main [args] 42)]}))
 
 ```
 If they differ, an error is returned. Its explanation contains a textual diff
@@ -474,7 +474,7 @@ between the expected and the actual code.
 (fact
  (def mismatch (d0-test :d0-ps :c0-ps ['(defn main [args] 43)])) => #'mismatch
  (provided
-  (compile :d0-ps :c0-ps) => {:ok ['(defn main [args] 42)]})
+  (compile anything :d0-ps :c0-ps) => {:ok ['(defn main [args] 42)]})
  (-> mismatch :err first) => "The compiled code does not match the expected code:"
  (-> mismatch :err second) => string?)
 
@@ -484,6 +484,6 @@ If the compilation itself fails, its error is propagated.
 (fact
  (d0-test :d0-ps :c0-ps ['(defn main [args] 42)]) => {:err ["compilation failed"]}
  (provided
-  (compile :d0-ps :c0-ps) => {:err ["compilation failed"]}))
+  (compile anything :d0-ps :c0-ps) => {:err ["compilation failed"]}))
 ```
 

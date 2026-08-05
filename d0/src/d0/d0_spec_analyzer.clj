@@ -197,7 +197,7 @@
   the expected code, returning `{:ok nil}` if they are identical, or an error
   containing a diff otherwise."
   [d0-ps c0-ps sexprs]
-  (let-s [compiled (compile d0-ps c0-ps)]
+  (let-s [compiled (compile :some-tree d0-ps c0-ps)]
          (let [diff (ddiff/diff sexprs compiled)]
            (if (= sexprs compiled)
              {:ok nil}
