@@ -5,7 +5,7 @@
             [lambdaisland.deep-diff2 :as ddiff]
             [y0.builtins :refer [add-builtins]]
             [y0.config :refer [*y0-path* cwd language-map-from-config]]
-            [y0.polyglot-loader :refer [eval-mstore load-with-deps]]
+            [y0.polyglot-loader :refer [eval-mstore load-with-deps decorate-tree]]
             [y0.rules :refer [*skip-recoverable-assertions* apply-statements]]
             [y0.spec-analyzer :refer [process-lines]]
             [y0.status :refer [ok let-s]]
@@ -150,12 +150,12 @@
   (binding [*skip-recoverable-assertions* (not is-main)]
     (apply-statements statements ps {})))
 
-(defn- analyze [lang code]
-  ;; Use the language name as the module's `:path`, so that error locations can
-  ;; be attributed to the right code block (see `convert-locations`). Override
-  ;; `:resolve` to return this path regardless of the module name, so that the
-  ;; module's `ns` declaration resolves to its own path.
-  (let [lang-map (update @lang-map lang assoc :resolve (constantly (ok lang)))]
+(defn analyze-d0
+  "Analyze d0 `code`, returning a status containing the resulting predicate
+  store."
+  [code]
+  (let [lang "d0"
+        lang-map (update @lang-map lang assoc :resolve (constantly (ok lang)))]
     (let-s [mstore (load-with-deps [{:lang lang
                                      :path lang
                                      :text code}]
@@ -163,17 +163,26 @@
             mstore (eval-mstore mstore evaluate-statements (add-builtins {}))]
            (ok (-> mstore (get lang) :predstore)))))
 
-(defn analyze-d0
-  "Analyze d0 `code`, returning a status containing the resulting predicate
-  store."
-  [code]
-  (analyze "d0" code))
-
 (defn analyze-c0
-  "Analyze c0 `code`, returning a status containing the resulting predicate
-  store."
+  "Analyze c0 `code`
+  returning a status containing the resulting predicate store"
   [code]
-  (analyze "c0" code))
+  (let [lang "c0"
+        lang-map (update @lang-map lang assoc :resolve (constantly (ok lang)))]
+    (let [stmts (decorate-tree [[:import
+                                 [:dep (symbol "/" lang)]]
+                                [:expr_stmt [:func_call 'c0/test]]])]
+      (let-s [mstore (load-with-deps [{:lang lang
+                                       :path lang
+                                       :text code}
+                                      {:lang lang
+                                       :path "/"
+                                       :statements stmts}]
+                                     lang-map)
+              mstore (eval-mstore mstore evaluate-statements (add-builtins {}))]
+             (ok [(-> mstore (get lang) :predstore)
+                  ;; The expression part of the second statement.
+                  (-> stmts second second)])))))
 
 (defn parse-clojure
   "Parse `code` as a list of Clojure s-expressions, returning a status."
@@ -186,18 +195,13 @@
 (defn wrap-callback [f]
   (fn [d0-code c0-code clj-code]
     (let-s [d0-ps (analyze-d0 d0-code)
-            c0-ps (analyze-c0 c0-code)
-            sexprs (parse-clojure clj-code)]
-           (f d0-ps c0-ps sexprs))))
+             [c0-ps root-expr] (analyze-c0 c0-code)
+             sexprs (parse-clojure clj-code)]
+            (f root-expr c0-ps d0-ps sexprs))))
 
 (defn d0-test
-  "The callback for a single translation example, operating on the parsed forms:
-  the d0 predicate store, the c0 predicate store and the expected Clojure code as
-  a list of s-expressions. Compiles the c0 code and compares the result against
-  the expected code, returning `{:ok nil}` if they are identical, or an error
-  containing a diff otherwise."
-  [d0-ps c0-ps sexprs]
-  (let-s [compiled (compile :some-tree d0-ps c0-ps)]
+  [root-expr c0-ps d0-ps sexprs]
+  (let-s [compiled (compile root-expr c0-ps d0-ps)]
          (let [diff (ddiff/diff sexprs compiled)]
            (if (= sexprs compiled)
              {:ok nil}

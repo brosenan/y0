@@ -8,7 +8,7 @@
 (defn- slurp-text [{:keys [path] :as m} read-fn]
   (ok m assoc :text (read-fn path)))
 
-(defn- decorate-tree [tree]
+(defn decorate-tree [tree]
   (postwalk-meta (fn [m]
                    (merge m {:matches (atom {})
                              :refs (atom nil)})) tree))

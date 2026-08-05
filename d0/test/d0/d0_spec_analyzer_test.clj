@@ -360,9 +360,10 @@
 ;; ### c0 Code
 ;;
 ;; `analyze-c0` analyzes c0 code (using the `c0` language definition) into a
-;; predicate store.
+;; pair consisting of a predicate store and a parse tree of the root expression
+;; (call to `test()`).
 (fact
- (analyze-c0 "int32 main() { return 0; }") =>
+ (analyze-c0 "int32 test() { return 0; }") =>
  (contains {:ok anything}))
 
 ;; Invalid c0 code results in an `:err` status.
@@ -386,23 +387,24 @@
 ;; ### Assembling the Callback
 ;;
 ;; `wrap-callback` bridges between the two levels of callback. It takes a
-;; callback that operates on the _parsed_ representations of an example -- the d0
-;; predicate store, the c0 predicate store and the list of Clojure s-expressions
-;; -- and returns a callback for the spec processor, which operates on the raw
-;; code _strings_.
+;; callback that operates on the _parsed_ representations of an example -- the
+;; parse tree of the root expression (the call to `test()`), the c0 predicate
+;; store, the d0 predicate store and the list of Clojure s-expressions -- and
+;; returns a callback for the spec processor, which operates on the raw code
+;; _strings_.
 ;;
 ;; The returned callback analyzes each of the three code blocks and threads
 ;; their statuses using `let-s`. On success, it calls the underlying callback
-;; with the three parsed values and returns its status.
-(defn parsed-callback [d0-ps c0-ps sexprs])
+;; with the four parsed values and returns its status.
+(defn parsed-callback [root-expr c0-ps d0-ps sexprs])
 (fact
  ((wrap-callback parsed-callback) "the d0 code" "the c0 code" "the clj code") =>
  {:ok :the-result}
  (provided
   (analyze-d0 "the d0 code") => {:ok :the-d0-ps}
-  (analyze-c0 "the c0 code") => {:ok :the-c0-ps}
+  (analyze-c0 "the c0 code") => {:ok [:the-c0-ps :the-root-tree]}
   (parse-clojure "the clj code") => {:ok :the-sexprs}
-  (parsed-callback :the-d0-ps :the-c0-ps :the-sexprs) => {:ok :the-result}))
+  (parsed-callback :the-root-tree :the-c0-ps :the-d0-ps :the-sexprs) => {:ok :the-result}))
 
 ;; If any of the three code blocks fails to parse, its `:err` status is
 ;; propagated and the underlying callback is not called.
@@ -424,21 +426,21 @@
 
 ;; If the compiled code is identical to the expected code, the test succeeds.
 (fact
- (d0-test :d0-ps :c0-ps ['(defn main [args] 42)]) => {:ok nil}
+ (d0-test :root-expr :c0-ps :d0-ps ['(defn main [args] 42)]) => {:ok nil}
  (provided
-  (compile anything :d0-ps :c0-ps) => {:ok ['(defn main [args] 42)]}))
+  (compile :root-expr :c0-ps :d0-ps) => {:ok ['(defn main [args] 42)]}))
 
 ;; If they differ, an error is returned. Its explanation contains a textual diff
 ;; between the expected and the actual code.
 (fact
- (def mismatch (d0-test :d0-ps :c0-ps ['(defn main [args] 43)])) => #'mismatch
+ (def mismatch (d0-test :root-expr :c0-ps :d0-ps ['(defn main [args] 43)])) => #'mismatch
  (provided
-  (compile anything :d0-ps :c0-ps) => {:ok ['(defn main [args] 42)]})
+  (compile :root-expr :c0-ps :d0-ps) => {:ok ['(defn main [args] 42)]})
  (-> mismatch :err first) => "The compiled code does not match the expected code:"
  (-> mismatch :err second) => string?)
 
 ;; If the compilation itself fails, its error is propagated.
 (fact
- (d0-test :d0-ps :c0-ps ['(defn main [args] 42)]) => {:err ["compilation failed"]}
+ (d0-test :root-expr :c0-ps :d0-ps ['(defn main [args] 42)]) => {:err ["compilation failed"]}
  (provided
-  (compile anything :d0-ps :c0-ps) => {:err ["compilation failed"]}))
+  (compile :root-expr :c0-ps :d0-ps) => {:err ["compilation failed"]}))

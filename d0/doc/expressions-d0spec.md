@@ -7,7 +7,7 @@ Here is some `D0` code:
 
 And here is an example:
 ```go
-int32 foo() { return 42; }
+int32 test() { return 42; }
 ```
 ```clojure
 (clojure.core/defn main [args] 42)
