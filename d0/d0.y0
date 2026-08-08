@@ -467,3 +467,15 @@
 (all [t args] (expression (d0.core/new t & args)) <-
      (type t)
      (expressions args))
+
+;; ## Root Expressions
+(all [name node params expr]
+     (d0.core/root-expr name [node & params] expr) =>
+     (assert (given (fact (tree-node node))
+                    (given (def-params params)
+                           (expression expr))))
+     (fact (root-expr name node params expr)))
+
+(all [name node params expr]
+     (root-expr name node params expr 
+                ! name "is not a defined root expression"))

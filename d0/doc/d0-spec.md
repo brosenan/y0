@@ -2386,3 +2386,96 @@ Success
 ```status
 ERROR: s does not represent a parse-tree node in this context as a literal constant in definition of method foo in (impl [l] (my-trait) ...)
 ```
+
+## Root Expressions
+
+A root expression is a `D0` expression that corresponds to an entry-point for a
+compiled program. For example, if a programming language defines a `main`
+function to be a program's entry-point, the language's `D0` definition should
+define a single root expression named `main`.
+
+A rood expression is defined with the following syntax:
+`(root-expr name [node params...] expr)`, where `name` is a symbol (e.g.,
+`main`), `node` is a symbol placeholder for the root-expression tree-node, e.g.,
+a call to the `main` function in the source program, `params` are symbol
+placeholders for parameters for this function, and `expr` is a `D0` expression
+that evaluates the root expression.
+
+```clojure
+(ns example)
+
+(deftrait type []
+  (decltype RunType))
+
+(deftrait expr [t]
+  (declmethod eval [] (RunType t)))
+
+(root-expr main [node args]
+  (with (impl [t] (expr t) :main-args
+          (defmethod eval [] args))
+        (eval node)))
+```
+```status
+Success
+```
+
+The above example shows a typical root expression. The expression evaluates the
+node (containing a call to the source program's `main` function). The node
+contains `:main-args` as a placeholder for the `args` argument, and the value is
+mapped to it using a [`with` expression](#with-expressions).
+
+The expression in the `root-expr`'s body must be a valid expression.
+
+```clojure
+(ns example)
+
+(root-expr main [node args]
+  invalid-expression)
+```
+```status
+ERROR: Invalid expression invalid-expression in (root-expr main [node ...] ...)
+```
+
+A root-expression must be unique per-name.
+
+```clojure
+(ns example)
+
+(deftrait type []
+  (decltype RunType))
+
+(deftrait expr [t]
+  (declmethod eval [] (RunType t)))
+
+(root-expr main [node args]
+  (with (impl [t] (expr t) :main-args
+          (defmethod eval [] args))
+        (eval node)))
+
+(root-expr foo [node]
+  42)
+```
+```status
+Success
+```
+
+```clojure
+(ns example)
+
+(deftrait type []
+  (decltype RunType))
+
+(deftrait expr [t]
+  (declmethod eval [] (RunType t)))
+
+(root-expr main [node args]
+  (with (impl [t] (expr t) :main-args
+          (defmethod eval [] args))
+        (eval node)))
+
+(root-expr main [node]
+  42)
+```
+```status
+ERROR: The rule for (root-expr main node ...) conflicts with a previous rule defining (root-expr main node ...) in predicate root-expr with arity 4
+```
