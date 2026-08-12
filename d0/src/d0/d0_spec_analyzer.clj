@@ -199,9 +199,27 @@
              sexprs (parse-clojure clj-code)]
             (f root-expr c0-ps d0-ps sexprs))))
 
+(defn compiles?
+  [forms]
+  (let [orig-ns     *ns*
+        temp-ns-sym (gensym "temp.ns.")
+        ns-form     `(ns ~temp-ns-sym)
+        all-forms   (cons ns-form forms)]
+    (try
+      (binding [*ns* orig-ns]
+        (doseq [form all-forms]
+          (eval form))
+        {:ok nil})
+      (catch Exception e
+        {:err [(.getMessage e)]})
+      (finally
+        (remove-ns temp-ns-sym)
+        (in-ns (ns-name orig-ns))))))
+
 (defn d0-test
   [root-expr c0-ps d0-ps sexprs]
-  (let-s [compiled (compile root-expr c0-ps d0-ps)]
+  (let-s [compiled (compile root-expr c0-ps d0-ps)
+          _ (compiles? compiled)]
          (let [diff (ddiff/diff sexprs compiled)]
            (if (= sexprs compiled)
              {:ok nil}
