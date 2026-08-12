@@ -1,5 +1,6 @@
 (ns d0
-  (:declare d0.core))
+  (:declare d0.core)
+  (:declare d0.pred))
 
 ;; ## Predicates for accepting names
 (all [name] (class-name name) <-
@@ -474,8 +475,8 @@
      (assert (given (fact (tree-node node))
                     (given (def-params params)
                            (expression expr))))
-     (fact (root-expr name node params expr)))
+     (fact (d0.pred/root-expr name node params expr)))
 
 (all [name node params expr]
-     (root-expr name node params expr 
+     (d0.pred/root-expr name node params expr 
                 ! name "is not a defined root expression"))

@@ -3,6 +3,9 @@
 Here is some `D0` code:
 ```wisp
 (ns example)
+
+(root-expr "test" [node]
+  42)
 ```
 
 And here is an example:
@@ -10,5 +13,5 @@ And here is an example:
 int32 test() { return 42; }
 ```
 ```clojure
-(clojure.core/defn main [args] 42)
+(clojure.core/defn test [] 42)
 ```
