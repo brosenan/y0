@@ -218,11 +218,10 @@
 
 (defn d0-test
   [root-expr c0-ps d0-ps sexprs]
-  (let-s [compiled (compile root-expr c0-ps d0-ps)
-          _ (compiles? compiled)]
+  (let-s [compiled (compile root-expr c0-ps d0-ps)]
          (let [diff (ddiff/diff sexprs compiled)]
            (if (= sexprs compiled)
-             {:ok nil}
+             (compiles? compiled)
              {:err ["The compiled code does not match the expected code:"
                     (with-out-str (ddiff/pretty-print (ddiff/minimize diff)))]}))))
 

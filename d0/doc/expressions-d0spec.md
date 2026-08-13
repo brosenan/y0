@@ -39,3 +39,25 @@ float64 test() { return 0.0; }
 ```clojure
 (clojure.core/defn test [] 3.141592)
 ```
+
+## `let` Expressions
+
+`D0` `let` expressions are translated to Clojure `let` expressions.
+
+```wisp
+(ns example)
+
+(root-expr "test" [node]
+  (let [a 1]
+    a))
+```
+
+And here is an example:
+```go
+int64 test() { return 0; }
+```
+```clojure
+(clojure.core/defn test []
+  (clojure.core/let [a 1]
+    a))
+```
