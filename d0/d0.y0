@@ -381,24 +381,19 @@
 
 (all [bindings expr]
      (expression (d0.core/let bindings expr)) <-
-     (let-bindings bindings)
-     (given (def-let-bindings bindings)
-            (expression expr)))
+     (let-bindings bindings expr))
 
-(all [bindings] (let-bindings bindings ! "Invalid let bindings" binding))
-(all [var vexpr bindings]
-     (let-bindings [var vexpr & bindings]) <-
+(all [bindings expr] (let-bindings bindings expr ! "Invalid let bindings" binding))
+(all [var vexpr bindings expr]
+     (let-bindings [var vexpr & bindings] expr) <-
      (inspect var :symbol ! "Invalid variable name" var "(symbol expected) in binding of let expression")
      (expression vexpr ! "in binding of variable" var)
-     (let-bindings bindings))
-(fact (let-bindings []))
-(all [var] (let-bindings [var]
+     (given (fact (expression var))
+            (let-bindings bindings expr)))
+(all [expr] (let-bindings [] expr) <-
+     (expression expr))
+(all [var expr] (let-bindings [var] expr
                          ! "An odd number of elements in a let-bindings block." var "has no assigned value"))
-
-(all [v x bs]
-     (def-let-bindings [v x & bs]) =>
-     (fact (expression v))
-     (def-let-bindings bs))
 
 ;; ### If Expressions
 (all [cond then else]

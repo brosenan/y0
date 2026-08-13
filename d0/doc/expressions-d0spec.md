@@ -48,8 +48,9 @@ float64 test() { return 0.0; }
 (ns example)
 
 (root-expr "test" [node]
-  (let [a 1]
-    a))
+  (let [a 1
+        b a]
+    b))
 ```
 
 And here is an example:
@@ -58,6 +59,7 @@ int64 test() { return 0; }
 ```
 ```clojure
 (clojure.core/defn test []
-  (clojure.core/let [a 1]
-    a))
+  (clojure.core/let [a 1
+                     b a]
+    b))
 ```

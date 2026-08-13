@@ -1769,6 +1769,25 @@ The expressions must be valid `D0` expressions.
 ERROR: Invalid expression not-an-expression in binding of variable y in definition of method foo in (impl [n] (my-trait) ...)
 ```
 
+Earlier bindings are in scope for later bindings within the same `let`
+expression.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [Int64 Float64] Int64))
+
+(impl [n] (my-trait) [:pattern n]
+  (defmethod foo [a b]
+    (let [x a
+          y x]
+          (foo n x y))))
+```
+```status
+Success
+```
+
 Finally, `expr` must be a valid expression.
 
 ```clojure
