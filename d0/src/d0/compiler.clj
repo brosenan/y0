@@ -27,6 +27,13 @@
   (fn [state]
     (compile-let bindings expr state [])))
 
+(defmethod compile-form "d0.core/if" [[_if cond then else]]
+  (fn [state]
+    (let-s [cond' (compile-expr cond state)
+            then' (compile-expr then state)
+            else' (compile-expr else state)]
+           (ok `(if ~cond' ~then' ~else')))))
+
 (defn- compile-expr [expr state]
   (let [bindings (:bindings state)]
     (cond

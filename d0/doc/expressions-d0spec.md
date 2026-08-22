@@ -63,3 +63,23 @@ int64 test() { return 0; }
                      b a]
     b))
 ```
+
+## `if` Expressions
+
+`D0` `if` expressions are translated to Clojure `if` expressions.
+
+```wisp
+(ns example)
+
+(root-expr "test" [node]
+  (if 1 2 3))
+```
+
+And here is an example:
+```go
+int64 test() { return 0; }
+```
+```clojure
+(clojure.core/defn test []
+  (if 1 2 3))
+```
