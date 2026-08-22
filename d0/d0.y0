@@ -408,6 +408,42 @@
      (given (d0.core/impl vars trait pattern & defs)
             (expression expr)))
 
+;; ### Operators
+(all [op] (operator op) =>
+     (all [args] (expression (op & args)) <-
+          (expressions args)))
+(operator d0.core/+)
+(operator d0.core/-)
+(operator d0.core/*)
+(operator d0.core//)
+(operator d0.core/rem)
+(operator d0.core/min)
+(operator d0.core/max)
+
+(operator d0.core/or)
+(operator d0.core/and)
+
+(all [args] (expression (d0.core/not & args)) <-
+     (exist [arg]
+            (= args (arg) 
+               ! "Operator not expects one argument but" args "were given")
+            (expression arg)))
+
+(all [op] (comp-op op) =>
+     (all [args] (expression (op & args)) <-
+          (exist [arg1 arg2] 
+                 (= args (arg1 arg2) 
+                    ! "Comparison operator" op "takes exactly 2 arguments, but" args "were given")
+                 (expression arg1)
+                 (expression arg2))))
+
+(comp-op d0.core/=)
+(comp-op d0.core/not=)
+(comp-op d0.core/>)
+(comp-op d0.core/<)
+(comp-op d0.core/>=)
+(comp-op d0.core/<=)
+
 ;; ### Java Interop
 (all [class method args]
      (expression (d0.core/call class method & args)) <-

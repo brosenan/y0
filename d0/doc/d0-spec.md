@@ -1989,6 +1989,154 @@ variable being assigned.
 Success
 ```
 
+### Operators
+
+`D0` supports a set of arithmetic and comparison operators. Arithmetic operators
+take one or more values of types `T` and return a value of type `T`, while
+comparison operators take exactly two values of some type `T` and return a
+Boolean.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [] Int64))
+
+(impl [x y] (my-trait) [:pattern x y]
+  (defmethod foo []
+    (+ (foo x)
+       (- (foo y)
+          (* (/ (rem (min (max (foo x))))))))))
+```
+```status
+Success
+```
+
+Arguments of arithmetic operators need to be valid expressions.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [] Int64))
+
+(impl [x y] (my-trait) [:pattern x y]
+  (defmethod foo []
+    (+ (foo x)
+       not-an-expression)))
+```
+```status
+ERROR: Invalid expression not-an-expression in definition of method foo in (impl [x ...] (my-trait) ...)
+```
+
+Operators can be variadic.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [] Int64))
+
+(impl [x y] (my-trait) [:pattern x y]
+  (defmethod foo []
+    (+ & (foo x))))
+```
+```status
+Success
+```
+
+Comparison operators are similar, but take exactly two arguments.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [] Bool))
+
+(impl [x y] (my-trait) [:pattern x y]
+  (defmethod foo []
+    (or (= 1 2)
+        (not= 1 2)
+        (> 1 2)
+        (< 1 2)
+        (>= 1 2)
+        (<= 1 2))))
+```
+```status
+Success
+```
+
+The arguments need to be valid expressions.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [] Bool))
+
+(impl [x y] (my-trait) [:pattern x y]
+  (defmethod foo []
+    (= 1 not-an-expression)))
+```
+```status
+ERROR: Invalid expression not-an-expression in definition of method foo in (impl [x ...] (my-trait) ...)
+```
+
+Comparison operators take _exactly_ two arguments.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [] Bool))
+
+(impl [x y] (my-trait) [:pattern x y]
+  (defmethod foo []
+    (= 1)))
+```
+```status
+ERROR: Comparison operator = takes exactly 2 arguments, but (1) were given in definition of method foo in (impl [x ...] (my-trait) ...)
+```
+
+Finally, logic operators behave just like arithmetic operators.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [] Bool))
+
+(impl [x y] (my-trait) [:pattern x y]
+  (defmethod foo []
+    (or (= 1 2)
+        (and (not= 1 2)
+             (> 1 2)
+             (< 1 2))
+        (not (>= 1 2))
+        (<= 1 2))))
+```
+```status
+Success
+```
+
+The only exception is that `not` accepts only one expression.
+
+```clojure
+(ns example)
+
+(deftrait my-trait []
+  (declmethod foo [] Bool))
+
+(impl [x y] (my-trait) [:pattern x y]
+  (defmethod foo []
+    (not (= 1 2)
+         (> 1 2))))
+```
+```status
+ERROR: Operator not expects one argument but ((= ...) (> ...)) were given in definition of method foo in (impl [x ...] (my-trait) ...)
+```
+
+
 ### Struct and Tuple Expressions
 
 Due to their similarities, structs and tuples are handled using the same
